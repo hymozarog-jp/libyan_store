@@ -104,9 +104,40 @@ async function loadStore(){
 function startAdminTopupRealtime(){if(profile?.role!=='admin'||!sb)return;if(adminTopupChannel){sb.removeChannel(adminTopupChannel);adminTopupChannel=null}adminTopupChannel=sb.channel('admin-wallet-topups').on('postgres_changes',{event:'INSERT',schema:'public',table:'wallet_topups'},payload=>{const row=payload.new;if(row?.status==='pending')showTopupNotification(row)}).subscribe(status=>{if(status!=='SUBSCRIBED')console.log('Topup realtime status:',status)})}
 function showTopupNotification(row){const old=document.getElementById('topupToast');if(old)old.remove();const toast=document.createElement('div');toast.id='topupToast';toast.dir='rtl';toast.style.cssText='position:fixed;top:18px;right:18px;z-index:99999;max-width:360px;background:#17100c;border:1px solid #ff7a18;box-shadow:0 12px 35px rgba(0,0,0,.45);border-radius:16px;padding:15px;color:#fff;font-family:inherit';toast.innerHTML=`<div style="font-size:18px;font-weight:800">🔔 طلب تعبئة رصيد جديد</div><div style="margin-top:8px;color:#ffd9bd">المبلغ: <b>${money(row.amount)}</b></div><div style="margin-top:3px;color:#ffd9bd">الطريقة: <b>${esc(row.method)}</b></div><div style="margin-top:3px;color:#ffd9bd">رقم المحوّل: <b>${esc(row.sender_phone||'غير متوفر')}</b></div><button class="btn primary" id="closeTopupToast" style="width:100%;margin-top:12px">فتح طلبات الشحن</button>`;document.body.appendChild(toast);el('closeTopupToast').onclick=()=>{toast.remove();const adminBtn=document.querySelector('[data-view="admin"]');if(adminBtn)adminBtn.click()};try{const Ctx=window.AudioContext||window.webkitAudioContext;if(Ctx){const ctx=new Ctx(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.frequency.value=880;gain.gain.value=.05;osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.18);setTimeout(()=>ctx.close(),300)}}catch(e){}if('Notification'in window&&Notification.permission==='granted'){try{new Notification('طلب تعبئة رصيد جديد',{body:`${money(row.amount)} — ${row.method}`})}catch(e){}}}
 function renderStore(){
-  app.innerHTML=`<div class="shell"><header class="topbar"><div><b style="font-size:22px">⚡ Libyan Store</b><div class="muted">${esc(profile?.full_name||session.user.email||session.user.phone||'')}</div></div><button class="btn" id="logout">خروج</button></header><section class="card" style="margin:15px 0;background:#24150f;border-color:#5a3020"><span class="accent">رصيد المحفظة</span><strong style="display:block;font-size:30px;margin-top:4px">${money(wallet?.balance)}</strong></section><div id="view"></div><nav class="nav"><div class="nav-inner"><button class="active" data-view="store">🛍️ المتجر</button><button data-view="cart">🛒 السلة</button><button data-view="wallet">💰 المحفظة</button><button data-view="orders">📦 طلباتي</button><button data-view="account">👤 حسابي</button>${profile?.role==='admin'?'<button data-view="admin">⚙️ الإدارة</button>':''}</div></nav></div>`;
-  el('logout').onclick=async()=>{if(adminTopupChannel){await sb.removeChannel(adminTopupChannel);adminTopupChannel=null}await sb.auth.signOut();session=null;cart={};renderLogin()};
-  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');({store:renderProducts,cart:renderCartPage,wallet:renderWallet,orders:renderOrders,account:renderAccount,admin:renderAdmin}[b.dataset.view])()});
+  app.innerHTML=`<div class="shell lc-shell">
+    <header class="lc-header">
+      <button class="lc-icon" id="lcMenu" aria-label="القائمة">☰</button>
+      <button class="lc-icon" id="lcSearch" aria-label="بحث">⌕</button>
+      <button class="lc-icon" id="lcBell" aria-label="الإشعارات">♟</button>
+      <div class="lc-wallet">💳 <b>${money(wallet?.balance)}</b><span class="wallet-text">المحفظة</span></div>
+      <div class="lc-logo"><span>Libyan Store</span><span class="lc-logo-mark">LS</span></div>
+    </header>
+    <section class="lc-hero"><h1>بطاقات واشتراكات رقمية</h1><p>اشترِ بطاقاتك المفضلة واستلم الأكواد مباشرة بعد الدفع.</p></section>
+    <div id="view"></div>
+    <nav class="lc-bottom">
+      <button class="active" data-view="store">⌂<br>الرئيسية</button>
+      <button data-view="cart">▣<span class="lc-badge" id="navCartCount">0</span><br>المشتريات</button>
+      <button data-view="orders">▤<br>طلباتي</button>
+      <button data-view="wallet">▱<br>المحفظة</button>
+      <button data-view="account">⚙<br>الإعدادات</button>
+    </nav>
+    <div class="lc-drawer" id="lcDrawer"><div class="lc-drawer-backdrop" id="lcBackdrop"></div><aside class="lc-drawer-panel">
+      <button class="lc-icon" id="lcDrawerClose">×</button><div class="lc-drawer-title">القائمة الرئيسية</div>
+      <div class="lc-profile"><div class="lc-profile-avatar">●</div><div style="font-size:21px;font-weight:900">${esc(profile?.full_name||session.user.email||'العميل')}</div><div class="muted">${esc(session.user.email||'')}</div><div class="lc-profile-balance">${money(wallet?.balance)}</div></div>
+      <button class="lc-drawer-btn" data-view="store">⌂ &nbsp; الرئيسية</button>
+      <button class="lc-drawer-btn" data-view="orders">▤ &nbsp; طلباتي</button>
+      <button class="lc-drawer-btn" data-view="wallet">▱ &nbsp; إضافة الأموال</button>
+      <button class="lc-drawer-btn" data-view="account">● &nbsp; المعلومات الشخصية</button>
+      ${profile?.role==='admin'?'<button class="lc-drawer-btn" data-view="admin">⚙ &nbsp; الإدارة</button>':''}
+      <button class="lc-drawer-btn" id="lcLogout" style="color:#ff776f;margin-top:18px">⇥ &nbsp; تسجيل الخروج</button>
+    </aside></div>
+  </div>`;
+  const close=()=>el('lcDrawer')?.classList.remove('open');
+  el('lcMenu').onclick=()=>el('lcDrawer').classList.add('open');el('lcBackdrop').onclick=close;el('lcDrawerClose').onclick=close;
+  el('lcSearch').onclick=()=>{const q=prompt('ابحث عن منتج');if(!q)return;const found=products.find(p=>String(p.name||'').toLowerCase().includes(q.toLowerCase()));if(found)showProduct(found);else alert('لم يتم العثور على المنتج')};
+  el('lcBell').onclick=()=>alert('لا توجد إشعارات جديدة حالياً.');
+  el('lcLogout').onclick=async()=>{if(adminTopupChannel){await sb.removeChannel(adminTopupChannel);adminTopupChannel=null}await sb.auth.signOut();session=null;cart={};renderLogin()};
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');({store:renderProducts,cart:renderCartPage,wallet:renderWallet,orders:renderOrders,account:renderAccount,admin:renderAdmin}[b.dataset.view])();close()});
   renderProducts();
 }
 function renderCartPage(){
@@ -119,7 +150,30 @@ function renderCartPage(){
   document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{delete cart[b.dataset.remove];renderCartPage()});
   if(el('pageBuy'))el('pageBuy').onclick=checkout;
 }
-function renderProducts(){el('view').innerHTML=`<div class="topbar"><h2>المنتجات</h2><span class="pill">${products.length} منتج</span></div><div class="grid">${products.map(p=>`<article class="card"><span class="pill">${esc(p.category||'رقمي')}</span><h3>${esc(p.name)}</h3><p class="muted">${esc(p.description||'')}</p><strong class="accent">${money(p.price)}</strong>${p.stock_count>0?`<button class="btn light" style="display:block;width:100%;margin-top:12px" data-add="${p.id}">أضف للسلة</button>`:`<div class="pill" style="display:block;text-align:center;margin-top:12px;padding:10px;color:#ffb4b4;border-color:#6b3030">نفد المخزون</div>`}</article>`).join('')}</div><div id="cartBox" style="margin-top:15px"></div>`;document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.add);if(!p||p.stock_count<1)return;cart[b.dataset.add]=Math.min((cart[b.dataset.add]||0)+1,p.stock_count);renderCart()});renderCart()}
+function renderProducts(){
+  const view=el('view');if(!view)return;
+  const imageFor=p=>typeof productImage==='function'?productImage(p.name):'';
+  const cards=products.map(p=>{const img=imageFor(p);return `<article class="card lc-product">
+    <button type="button" class="lc-product-open" data-product-open="${p.id}">
+      <div class="lc-product-img">${img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>'}</div>
+      <div class="lc-product-body"><span class="pill">${esc(p.category||'رقمي')}</span><h3>${esc(p.name)}</h3><div class="lc-product-desc">${esc(p.description||'بطاقة رقمية')}</div><div class="lc-product-price">${money(p.price)}</div></div>
+    </button>
+    ${p.stock_count>0?'<div style="padding:0 15px 15px"><button class="btn lc-buy" type="button" data-product-buy="'+p.id+'">اشترِ الآن</button></div>':'<div style="padding:0 15px 15px"><div class="pill" style="text-align:center">نفد المخزون</div></div>'}
+  </article>`}).join('');
+  view.innerHTML=`<div class="lc-section-title"><h2>المنتجات</h2><span class="pill">${products.length} منتج</span></div>${cards?'<div class="lc-products">'+cards+'</div>':'<div class="lc-empty">لا توجد منتجات متاحة حالياً.</div>'}<div id="cartBox" style="margin-top:15px"></div>`;
+  document.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productOpen);if(p)showProduct(p)});
+  document.querySelectorAll('[data-product-buy]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productBuy);if(p)showProduct(p)});
+  renderCart();
+}
+function showProduct(p){
+  const img=typeof productImage==='function'?productImage(p.name):'';
+  const old=el('lcProductModal');if(old)old.remove();
+  const modal=document.createElement('div');modal.id='lcProductModal';modal.className='lc-modal show';modal.dir='rtl';
+  modal.innerHTML=`<div class="lc-modal-card"><button class="lc-modal-close" id="lcProductClose">×</button><div class="lc-modal-img">${img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>'}</div><div class="lc-modal-body"><div class="muted">${esc(p.category||'منتج رقمي')}</div><h2 style="margin:5px 0 4px">${esc(p.name)}</h2><p class="muted">${esc(p.description||'بطاقة رقمية يتم تسليمها مباشرة بعد إتمام الشراء.')}</p><div class="lc-product-price" style="font-size:30px">${money(p.price)}</div><label class="lc-check"><input type="checkbox" id="lcTerms"><span>أوافق على الشروط والأحكام</span></label><div class="lc-modal-actions"><button class="btn" id="lcCloseBottom">إغلاق</button><button class="btn primary" id="lcBuyNow">اشترِ الآن</button></div></div></div>`;
+  document.body.appendChild(modal);
+  el('lcProductClose').onclick=()=>modal.remove();el('lcCloseBottom').onclick=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)modal.remove()};
+  el('lcBuyNow').onclick=async()=>{if(!el('lcTerms').checked)return alert('وافق على الشروط والأحكام أولاً');cart[p.id]=Math.min((cart[p.id]||0)+1,p.stock_count||1);modal.remove();await checkout()};
+}
 function renderCart(){
   const entries=Object.entries(cart).filter(([id,q])=>Number(q)>0&&products.some(p=>p.id===id));
   const badge=el('cartCount');
