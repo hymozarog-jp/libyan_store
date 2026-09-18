@@ -38,7 +38,7 @@ async function socialLogin(provider){
  const msg=el('msg');authBusy=true;if(msg)msg.textContent=provider==='google'?'جارٍ فتح Google...':'جارٍ فتح تسجيل الدخول...';
  try{
   localStorage.setItem('__libyan_social_login_pending','1');
-  const redirectTo=location.origin+'/';
+  const redirectTo='https://libyanstore.pages.dev/';
   const r=await sb.auth.signInWithOAuth({provider,options:{redirectTo,queryParams:{prompt:'select_account'}}});
   if(r.error){
    localStorage.removeItem('__libyan_social_login_pending');
