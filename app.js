@@ -10,13 +10,21 @@ async function boot(){
   if(window.__LIBYAN_RECOVERY_ACTIVE)return;
   const r=await sb.auth.getSession();
   session=r.data.session||null;
-  if(session) await loadStore(); else renderLogin();
+  if(session){
+   await loadStore();
+   if(localStorage.getItem('__libyan_social_login_pending')==='1'){localStorage.removeItem('__libyan_social_login_pending');notifyLoginToDiscord()}
+  } else renderLogin();
   sb.auth.onAuthStateChange(async(event,nextSession)=>{
    if(event==='SIGNED_OUT'){session=null;cart={};if(adminTopupChannel){await sb.removeChannel(adminTopupChannel);adminTopupChannel=null}renderLogin();}
   });
  }catch(e){app.innerHTML=`<div class="card" style="text-align:center;margin-top:30px"><h1>⚡ Libyan Store</h1><p class="muted">${esc(e.message||'تعذر تشغيل تسجيل الدخول')}</p><button class="btn primary" onclick="location.reload()">إعادة المحاولة</button></div>`}
 }
-function renderLogin(msg=''){app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">⚡</div><h1>Libyan Store</h1><p class="muted">اشتراكات رقمية ومحفظة وتسليم أكواد</p><div class="card" style="display:grid;gap:10px;text-align:right"><input id="email" class="field" type="email" placeholder="البريد الإلكتروني"><input id="pass" class="field" type="password" placeholder="كلمة المرور"><button class="btn primary" id="login">دخول</button><button class="btn" id="signup">إنشاء حساب</button><button class="btn" id="forgot">نسيت كلمة المرور؟</button><small id="msg" class="muted">${esc(msg)}</small></div></div>`;el('login').onclick=()=>auth(false);el('signup').onclick=()=>auth(true);el('forgot').onclick=resetPassword}
+function renderLogin(msg=''){app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">⚡</div><h1>Libyan Store</h1><p class="muted">اشتراكات رقمية ومحفظة وتسليم أكواد</p><div class="card" style="display:grid;gap:10px;text-align:right"><button class="btn" id="googleLogin" style="width:100%;font-weight:800">🔵 المتابعة باستخدام Google</button><button class="btn" id="appleLogin" style="width:100%;font-weight:800;background:#fff;color:#111;border-color:#ddd"> المتابعة باستخدام Apple</button><div style="display:flex;align-items:center;gap:8px;margin:4px 0;color:#8f9baa"><span style="height:1px;background:#263345;flex:1"></span><small>أو بالبريد الإلكتروني</small><span style="height:1px;background:#263345;flex:1"></span></div><input id="email" class="field" type="email" placeholder="البريد الإلكتروني"><input id="pass" class="field" type="password" placeholder="كلمة المرور"><button class="btn primary" id="login">دخول</button><button class="btn" id="signup">إنشاء حساب</button><button class="btn" id="forgot">نسيت كلمة المرور؟</button><small id="msg" class="muted">${esc(msg)}</small></div></div>`;el('login').onclick=()=>auth(false);el('signup').onclick=()=>auth(true);el('forgot').onclick=resetPassword;el('googleLogin').onclick=()=>socialLogin('google');el('appleLogin').onclick=()=>socialLogin('apple')}
+async function socialLogin(provider){
+ if(authBusy)return;
+ const msg=el('msg');authBusy=true;if(msg)msg.textContent=provider==='google'?'جارٍ فتح Google...':'جارٍ فتح Apple...';
+ try{localStorage.setItem('__libyan_social_login_pending','1');const r=await sb.auth.signInWithOAuth({provider,options:{redirectTo:location.origin+location.pathname}});if(r.error){localStorage.removeItem('__libyan_social_login_pending');if(msg)msg.textContent=humanAuthError(r.error)}}catch(e){localStorage.removeItem('__libyan_social_login_pending');if(msg)msg.textContent=e.message||'تعذر بدء تسجيل الدخول'}finally{authBusy=false}
+}
 async function resetPassword(){const email=el('email').value.trim(),msg=el('msg');if(!email)return msg.textContent='اكتب بريدك الإلكتروني أولاً';msg.textContent='جارٍ إرسال رابط الاستعادة...';try{const r=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(r.error)return msg.textContent=r.error.message;msg.textContent='تم إرسال رابط تغيير كلمة المرور إلى بريدك. افتح الرابط من نفس الجهاز.'}catch(e){msg.textContent=e.message||'تعذر إرسال رابط الاستعادة'}}
 async function notifyLoginToDiscord(){try{const r=await sb.functions.invoke('discord-notify',{body:{type:'login',id:session.user.id}});if(r.error)console.log('Discord login notification error:',r.error);else console.log('Discord login notification sent:',r.data)}catch(e){console.log('Discord login notification:',e)}}
 async function auth(signup){
