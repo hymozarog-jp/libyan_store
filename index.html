@@ -16,7 +16,7 @@
     var loaded=false;
     for(var i=0;i<files.length;i++){try{await loadScript(files[i],7000);if(window.supabase){loaded=true;break}}catch(e){}}
     if(!loaded){document.getElementById('app').innerHTML='<div class="card" style="text-align:center;margin-top:30px"><h2>تعذر تحميل مكتبة المتجر</h2><p class="muted">تحقق من اتصال الإنترنت ثم أعد فتح الصفحة.</p></div>';return}
-    var list=['supabase.js?v=20260916-2','app.js?v=20260918-22','product-images.js?v=20260917-1','auth-recovery.js?v=20260918-2'];
+    var list=['supabase.js?v=20260916-2','app.js?v=20260918-23','product-images.js?v=20260917-1','auth-recovery.js?v=20260918-2'];
     for(var j=0;j<list.length;j++)await loadScript(list[j],10000);
   }
   start();
