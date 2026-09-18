@@ -200,15 +200,62 @@ function renderCart(){
   document.querySelectorAll('[data-remove]').forEach(btn=>btn.onclick=()=>{delete cart[btn.dataset.remove];renderCart()});
   el('buy').onclick=checkout;
 }async function checkout(){
- const name=(profile?.full_name||session.user.email||'عميل').trim();const phone=(profile?.phone||session.user.phone||'').trim();
+ const name=(profile?.full_name||session.user.email||'عميل').trim();
+ const phone=(profile?.phone||session.user.phone||'').trim();
  const items=Object.entries(cart).map(([product_id,quantity])=>({product_id,quantity}));
- const r=await sb.rpc('create_wallet_order',{p_items:items,p_customer_name:name,p_customer_phone:phone});if(r.error)return alert(r.error.message);
- const orderId=r.data;cart={};await loadStore();
- const codesResult=await sb.rpc('get_my_order_codes',{p_order_id:orderId});if(codesResult.error)return alert(codesResult.error.message);
- const codes=codesResult.data||[],grouped={};codes.forEach(x=>{(grouped[x.product_id]??=[]).push(x.code)});
- let sections='';Object.entries(grouped).forEach(([productId,productCodes])=>{const p=products.find(x=>x.id===productId);sections+='<div style="margin-top:14px"><div style="font-weight:800;font-size:16px">📦 '+esc(p?.name||'المنتج')+'</div>';productCodes.forEach(code=>{sections+='<div style="margin-top:8px;padding:13px;background:#0a1017;border:1px solid #263345;border-radius:10px;font-family:monospace;word-break:break-all;direction:ltr;text-align:left;user-select:text">'+esc(code)+'</div>'});sections+='</div>';});
- el('view').innerHTML='<div class="card" style="border-color:#2f6b45;background:#101c16"><div style="font-size:24px">🎉</div><h2 style="margin:6px 0">تم الشراء بنجاح</h2><p class="muted">بيانات منتجاتك جاهزة الآن وتظهر أمامك مباشرة.</p>'+ (sections||'<p class="muted">تم الشراء، لكن لم يتم العثور على بيانات المنتج.</p>') +'<button class="btn primary" id="ordersAfterBuy" style="width:100%;margin-top:16px">📦 عرض طلباتي</button></div>';
- el('ordersAfterBuy').onclick=()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));const b=document.querySelector('[data-view="orders"]');if(b)b.classList.add('active');renderOrders()};
+ if(!items.length)return alert('السلة فارغة');
+ const r=await sb.rpc('create_wallet_order',{p_items:items,p_customer_name:name,p_customer_phone:phone});
+ if(r.error)return alert(r.error.message);
+ const orderId=r.data;
+ cart={};
+ const orderRes=await sb.from('orders').select('id,total,status,created_at').eq('id',orderId).maybeSingle();
+ const codesResult=await sb.rpc('get_my_order_codes',{p_order_id:orderId});
+ if(codesResult.error)return alert(codesResult.error.message);
+ const codes=codesResult.data||[];
+ const grouped={};
+ codes.forEach(x=>{(grouped[x.product_id]??=[]).push(x.code)});
+ const order=orderRes.data||{id:orderId,total:0,status:'paid',created_at:new Date().toISOString()};
+ const productsHtml=Object.entries(grouped).map(([productId,productCodes])=>{
+   const p=products.find(x=>x.id===productId);
+   const img=typeof productImage==='function'?productImage(p?.name):'';
+   return `<section class="lc-purchase-product">
+     <div class="lc-purchase-cover">${img?'<img src="'+img+'" alt="'+esc(p?.name||'المنتج')+'">':'<div class="lc-product-placeholder">⚡</div>'}</div>
+     <h2>${esc(p?.name||'المنتج')}</h2>
+     ${productCodes.map((code,index)=>`<div class="lc-secret-row">
+       <div class="lc-secret-label">الرقم السري <span>♢</span></div>
+       <div class="lc-secret-box"><button type="button" class="lc-secret-action" data-copy-code="${esc(code)}" aria-label="نسخ الرقم السري">▣</button><button type="button" class="lc-secret-action" data-toggle-code aria-label="إظهار الرقم السري">◉</button><span class="lc-secret-value" data-code-value="${esc(code)}">${'•'.repeat(Math.min(14,Math.max(8,code.length)))}</span></div>
+     </div>`).join('')}
+   </section>`;
+ }).join('');
+ const productFallback='<section class="lc-purchase-product"><h2>تم إتمام الشراء</h2><p class="muted">تمت العملية بنجاح، ويمكنك مراجعة طلباتك من قسم طلباتي.</p></section>';
+ await loadStore();
+ const modal=document.createElement('div');
+ modal.id='lcPurchaseModal';modal.className='lc-modal show';modal.dir='rtl';
+ modal.innerHTML=`<div class="lc-modal-card lc-purchase-modal">
+   <button class="lc-modal-close" id="lcPurchaseClose" aria-label="إغلاق">×</button>
+   <div class="lc-purchase-head"><span class="lc-purchase-ok">✓</span><div><div class="muted">تمت عملية الشراء</div><strong>تفاصيل الطلب</strong></div></div>
+   ${productsHtml||productFallback}
+   <div class="lc-purchase-meta"><div><span>تاريخ الشراء</span><b>${new Date(order.created_at).toLocaleDateString('ar-LY',{day:'numeric',month:'long',year:'numeric'})}</b></div><div><span>رقم الطلب</span><b>#${String(order.id).slice(-5)}</b></div></div>
+   <div class="lc-purchase-expiry"><span>تاريخ الانتهاء</span><b>غير محدد</b></div>
+   <div class="lc-purchase-actions"><button class="btn" id="lcPurchaseOrders">طلباتي</button><button class="btn primary" id="lcPurchaseClose2">إغلاق</button></div>
+ </div>`;
+ document.body.appendChild(modal);
+ const close=()=>modal.remove();
+ el('lcPurchaseClose').onclick=close;el('lcPurchaseClose2').onclick=close;
+ modal.onclick=e=>{if(e.target===modal)close()};
+ document.querySelectorAll('[data-toggle-code]').forEach(btn=>btn.onclick=()=>{
+   const value=btn.parentElement.querySelector('.lc-secret-value');
+   const shown=value.dataset.shown==='1';
+   value.textContent=shown?'•'.repeat(Math.min(14,Math.max(8,value.dataset.codeValue.length))):value.dataset.codeValue;
+   value.dataset.shown=shown?'0':'1';
+   btn.textContent=shown?'◉':'◌';
+ });
+ document.querySelectorAll('[data-copy-code]').forEach(btn=>btn.onclick=async()=>{
+   const code=btn.dataset.copyCode;
+   try{await navigator.clipboard.writeText(code);btn.textContent='✓';setTimeout(()=>btn.textContent='▣',900)}
+   catch(e){const ta=document.createElement('textarea');ta.value=code;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();btn.textContent='✓';setTimeout(()=>btn.textContent='▣',900)}
+ });
+ el('lcPurchaseOrders').onclick=()=>{close();document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));const btn=document.querySelector('[data-view="orders"]');if(btn)btn.classList.add('active');renderOrders()};
 }
 async function renderAccount(){
   const current=profile||{};
