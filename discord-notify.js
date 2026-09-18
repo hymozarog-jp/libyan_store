@@ -16,7 +16,7 @@
           await sb.functions.invoke('discord-notify', {
             body: {
               type: 'order',
-              id: result.data
+              id: result.data.id
             }
           });
         }
