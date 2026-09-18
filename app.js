@@ -3,14 +3,49 @@ const app=document.getElementById('app');
 const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>`${Number(v||0).toFixed(2)} د.ل`;
 const el=id=>document.getElementById(id);
+let authBusy=false;
 async function boot(){
- try{sb=await loadSupabase();const r=await sb.auth.getSession();session=r.data.session||null;session?await loadStore():renderLogin();}
- catch(e){app.innerHTML=`<div class="card" style="text-align:center;margin-top:30px"><h1>⚡ Libyan Store</h1><p class="muted">${esc(e.message)}</p></div>`}
+ try{
+  sb=await loadSupabase();
+  if(window.__LIBYAN_RECOVERY_ACTIVE)return;
+  const r=await sb.auth.getSession();
+  session=r.data.session||null;
+  if(session) await loadStore(); else renderLogin();
+  sb.auth.onAuthStateChange(async(event,nextSession)=>{
+   if(event==='SIGNED_OUT'){session=null;cart={};if(adminTopupChannel){await sb.removeChannel(adminTopupChannel);adminTopupChannel=null}renderLogin();}
+  });
+ }catch(e){app.innerHTML=`<div class="card" style="text-align:center;margin-top:30px"><h1>⚡ Libyan Store</h1><p class="muted">${esc(e.message||'تعذر تشغيل تسجيل الدخول')}</p><button class="btn primary" onclick="location.reload()">إعادة المحاولة</button></div>`}
 }
 function renderLogin(msg=''){app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">⚡</div><h1>Libyan Store</h1><p class="muted">اشتراكات رقمية ومحفظة وتسليم أكواد</p><div class="card" style="display:grid;gap:10px;text-align:right"><input id="email" class="field" type="email" placeholder="البريد الإلكتروني"><input id="pass" class="field" type="password" placeholder="كلمة المرور"><button class="btn primary" id="login">دخول</button><button class="btn" id="signup">إنشاء حساب</button><button class="btn" id="forgot">نسيت كلمة المرور؟</button><small id="msg" class="muted">${esc(msg)}</small></div></div>`;el('login').onclick=()=>auth(false);el('signup').onclick=()=>auth(true);el('forgot').onclick=resetPassword}
 async function resetPassword(){const email=el('email').value.trim(),msg=el('msg');if(!email)return msg.textContent='اكتب بريدك الإلكتروني أولاً';msg.textContent='جارٍ إرسال رابط الاستعادة...';try{const r=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(r.error)return msg.textContent=r.error.message;msg.textContent='تم إرسال رابط تغيير كلمة المرور إلى بريدك. افتح الرابط من نفس الجهاز.'}catch(e){msg.textContent=e.message||'تعذر إرسال رابط الاستعادة'}}
 async function notifyLoginToDiscord(){try{const r=await sb.functions.invoke('discord-notify',{body:{type:'login',id:session.user.id}});if(r.error)console.log('Discord login notification error:',r.error);else console.log('Discord login notification sent:',r.data)}catch(e){console.log('Discord login notification:',e)}}
-async function auth(signup){el('msg').textContent='جارٍ التنفيذ...';const email=emailInput(),password=el('pass').value;if(password.length<6)return el('msg').textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';const r=signup?await sb.auth.signUp({email,password}):await sb.auth.signInWithPassword({email,password});if(r.error)return el('msg').textContent=r.error.message;if(signup&&!r.data.session)return el('msg').textContent='تم إنشاء الحساب. تحقق من بريدك ثم سجّل الدخول.';session=r.data.session;if(!signup)await notifyLoginToDiscord();await loadStore()}
+async function auth(signup){
+ if(authBusy)return;
+ const msg=el('msg'),button=signup?el('signup'):el('login');
+ const email=emailInput(),password=el('pass').value.trim();
+ if(!email)return msg.textContent='اكتب البريد الإلكتروني أولاً';
+ if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return msg.textContent='البريد الإلكتروني غير صحيح';
+ if(password.length<6)return msg.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+ authBusy=true;msg.textContent=signup?'جارٍ إنشاء الحساب...':'جارٍ تسجيل الدخول...';if(button)button.disabled=true;
+ try{
+  const r=signup?await sb.auth.signUp({email,password}):await sb.auth.signInWithPassword({email,password});
+  if(r.error){msg.textContent=humanAuthError(r.error);return;}
+  if(signup&&!r.data.session){msg.textContent='تم إنشاء الحساب. افتح بريدك الإلكتروني لتأكيد الحساب، ثم سجّل الدخول.';return;}
+  session=r.data.session;
+  if(!session){msg.textContent='تعذر إنشاء جلسة تسجيل الدخول. حاول مرة أخرى.';return;}
+  if(!signup)notifyLoginToDiscord();
+  await loadStore();
+ }catch(e){msg.textContent=humanAuthError(e)}finally{authBusy=false;if(button)button.disabled=false}
+}
+function humanAuthError(e){
+ const m=String(e?.message||e||'تعذر تنفيذ العملية');
+ if(/invalid login credentials/i.test(m))return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+ if(/email not confirmed/i.test(m))return 'الحساب غير مؤكد. افتح رسالة التأكيد في بريدك الإلكتروني ثم حاول تسجيل الدخول.';
+ if(/user already registered/i.test(m))return 'هذا البريد مسجل بالفعل. استخدم تسجيل الدخول بدل إنشاء حساب.';
+ if(/password.*(weak|at least)/i.test(m))return 'كلمة المرور ضعيفة. استخدم 6 أحرف على الأقل.';
+ if(/rate limit|too many requests/i.test(m))return 'تم تجاوز عدد المحاولات مؤقتًا. انتظر قليلًا ثم حاول مرة أخرى.';
+ return m;
+}
 function emailInput(){return el('email').value.trim()}
 async function loadStore(){const uid=session.user.id;const [p,w,pr]=await Promise.all([sb.from('profiles').select('full_name,phone,role').eq('id',uid).single(),sb.from('wallets').select('balance').eq('user_id',uid).single(),sb.from('products').select('id,name,description,category,price,currency,product_codes(status)').eq('active',true).order('created_at')]);profile=p.data;wallet=w.data;products=(pr.data||[]).map(p=>({...p,stock_count:(p.product_codes||[]).filter(c=>c.status==='available').length}));renderStore();startAdminTopupRealtime()}
 function startAdminTopupRealtime(){if(profile?.role!=='admin'||!sb)return;if(adminTopupChannel){sb.removeChannel(adminTopupChannel);adminTopupChannel=null}adminTopupChannel=sb.channel('admin-wallet-topups').on('postgres_changes',{event:'INSERT',schema:'public',table:'wallet_topups'},payload=>{const row=payload.new;if(row?.status==='pending')showTopupNotification(row)}).subscribe(status=>{if(status!=='SUBSCRIBED')console.log('Topup realtime status:',status)})}
