@@ -24,7 +24,6 @@ async function auth(signup){
  const msg=el('msg'),button=signup?el('signup'):el('login');
  const email=emailInput(),password=el('pass').value.trim();
  if(!email)return msg.textContent='اكتب البريد الإلكتروني أولاً';
- if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return msg.textContent='البريد الإلكتروني غير صحيح';
  if(password.length<6)return msg.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';
  authBusy=true;msg.textContent=signup?'جارٍ إنشاء الحساب...':'جارٍ تسجيل الدخول...';if(button)button.disabled=true;
  try{
