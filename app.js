@@ -56,7 +56,17 @@ function renderCart(){
   document.querySelectorAll('[data-minus]').forEach(btn=>btn.onclick=()=>{const id=btn.dataset.minus;if((cart[id]||0)>1)cart[id]--;else delete cart[id];renderCart()});
   document.querySelectorAll('[data-remove]').forEach(btn=>btn.onclick=()=>{delete cart[btn.dataset.remove];renderCart()});
   el('buy').onclick=checkout;
-}async function checkout(){const name=prompt('اسم العميل')||profile?.full_name||'';const phone=prompt('رقم الهاتف')||profile?.phone||'';if(!name||!phone)return;const items=Object.entries(cart).map(([product_id,quantity])=>({product_id,quantity}));const r=await sb.rpc('create_wallet_order',{p_items:items,p_customer_name:name,p_customer_phone:phone});if(r.error)return alert(r.error.message);cart={};await loadStore();const ordersBtn=document.querySelector('[data-view="orders"]');if(ordersBtn){document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));ordersBtn.classList.add('active');}await renderOrders();alert('تم الشراء بنجاح 🎉 أكوادك جاهزة الآن للتسليم الفوري.')}
+}async function checkout(){
+ const name=prompt('اسم العميل')||profile?.full_name||'';const phone=prompt('رقم الهاتف')||profile?.phone||'';if(!name||!phone)return;
+ const items=Object.entries(cart).map(([product_id,quantity])=>({product_id,quantity}));
+ const r=await sb.rpc('create_wallet_order',{p_items:items,p_customer_name:name,p_customer_phone:phone});if(r.error)return alert(r.error.message);
+ const orderId=r.data;cart={};await loadStore();
+ const codesResult=await sb.rpc('get_my_order_codes',{p_order_id:orderId});if(codesResult.error)return alert(codesResult.error.message);
+ const codes=codesResult.data||[],grouped={};codes.forEach(x=>{(grouped[x.product_id]??=[]).push(x.code)});
+ let sections='';Object.entries(grouped).forEach(([productId,productCodes])=>{const p=products.find(x=>x.id===productId);sections+='<div style="margin-top:14px"><div style="font-weight:800;font-size:16px">📦 '+esc(p?.name||'المنتج')+'</div>';productCodes.forEach(code=>{sections+='<div style="margin-top:8px;padding:13px;background:#0a1017;border:1px solid #263345;border-radius:10px;font-family:monospace;word-break:break-all;direction:ltr;text-align:left;user-select:text">'+esc(code)+'</div>'});sections+='</div>';});
+ el('view').innerHTML='<div class="card" style="border-color:#2f6b45;background:#101c16"><div style="font-size:24px">🎉</div><h2 style="margin:6px 0">تم الشراء بنجاح</h2><p class="muted">بيانات منتجاتك جاهزة الآن وتظهر أمامك مباشرة.</p>'+ (sections||'<p class="muted">تم الشراء، لكن لم يتم العثور على بيانات المنتج.</p>') +'<button class="btn primary" id="ordersAfterBuy" style="width:100%;margin-top:16px">📦 عرض طلباتي</button></div>';
+ el('ordersAfterBuy').onclick=()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));const b=document.querySelector('[data-view="orders"]');if(b)b.classList.add('active');renderOrders()};
+}
 async function renderAccount(){
   const current=profile||{};
   el('view').innerHTML=`<div class="card"><h2>👤 حسابي</h2><label>الاسم الكامل</label><input id="accountName" class="field" style="margin-top:6px" value="${esc(current.full_name||'')}" placeholder="الاسم الكامل"><label style="display:block;margin-top:10px">رقم الهاتف</label><input id="accountPhone" class="field" style="margin-top:6px" value="${esc(current.phone||session.user.phone||'')}" placeholder="رقم الهاتف"><p class="muted" style="margin-top:10px">البريد: ${esc(session.user.email||'غير مرتبط')}</p><button class="btn primary" id="saveAccount" style="width:100%;margin-top:10px">حفظ البيانات</button><small id="accountMsg" class="muted" style="display:block;margin-top:8px"></small></div>`;
