@@ -1,4 +1,5 @@
 (function(){
+  window.__LIBYAN_RECOVERY_ACTIVE=location.hash.includes('type=recovery')||location.search.includes('type=recovery');
   const CONFIG_URL='https://aybsettkyxfugntizfqq.supabase.co/functions/v1/public-config';
   let client=null;
   const app=()=>document.getElementById('app');
