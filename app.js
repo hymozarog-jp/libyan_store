@@ -166,13 +166,32 @@ function renderProducts(){
   renderCart();
 }
 function showProduct(p){
+  const view=el('view');if(!view)return;
   const img=typeof productImage==='function'?productImage(p.name):'';
-  const old=el('lcProductModal');if(old)old.remove();
-  const modal=document.createElement('div');modal.id='lcProductModal';modal.className='lc-modal show';modal.dir='rtl';
-  modal.innerHTML=`<div class="lc-modal-card"><button class="lc-modal-close" id="lcProductClose">×</button><div class="lc-modal-img">${img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>'}</div><div class="lc-modal-body"><div class="muted">${esc(p.category||'منتج رقمي')}</div><h2 style="margin:5px 0 4px">${esc(p.name)}</h2><p class="muted">${esc(p.description||'بطاقة رقمية يتم تسليمها مباشرة بعد إتمام الشراء.')}</p><div class="lc-product-price" style="font-size:30px">${money(p.price)}</div><label class="lc-check"><input type="checkbox" id="lcTerms"><span>أوافق على الشروط والأحكام</span></label><div class="lc-modal-actions"><button class="btn" id="lcCloseBottom">إغلاق</button><button class="btn primary" id="lcBuyNow">اشترِ الآن</button></div></div></div>`;
-  document.body.appendChild(modal);
-  el('lcProductClose').onclick=()=>modal.remove();el('lcCloseBottom').onclick=()=>modal.remove();modal.onclick=e=>{if(e.target===modal)modal.remove()};
-  el('lcBuyNow').onclick=async()=>{if(!el('lcTerms').checked)return alert('وافق على الشروط والأحكام أولاً');cart[p.id]=Math.min((cart[p.id]||0)+1,p.stock_count||1);modal.remove();await checkout()};
+  view.innerHTML=`<section class="lc-product-page">
+    <button type="button" class="lc-back-btn" id="lcBackToProducts">← العودة للمنتجات</button>
+    <article class="lc-detail-card">
+      <div class="lc-detail-image">${img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>'}</div>
+      <div class="lc-detail-content">
+        <h1>${esc(p.name)}</h1>
+        <div class="lc-detail-price">${money(p.price)} <span>⌄</span></div>
+        <label class="lc-detail-terms">
+          <input type="checkbox" id="lcTerms">
+          <span>أوافق على <b>الشروط والأحكام</b></span>
+        </label>
+        <div class="lc-detail-divider"></div>
+        <div class="lc-detail-total"><span>الإجمالي:</span><strong>${money(p.price)}</strong></div>
+        <button class="btn primary lc-detail-buy" id="lcBuyNow" type="button" ${p.stock_count>0?'':'disabled'}>${p.stock_count>0?'اشترِ الآن':'نفد المخزون'}</button>
+      </div>
+    </article>
+  </section>`;
+  el('lcBackToProducts').onclick=()=>renderProducts();
+  const buy=el('lcBuyNow');
+  if(buy)buy.onclick=async()=>{
+    if(!el('lcTerms').checked)return alert('وافق على الشروط والأحكام أولاً');
+    cart[p.id]=Math.min((cart[p.id]||0)+1,p.stock_count||1);
+    await checkout();
+  };
 }
 function renderCart(){
   const entries=Object.entries(cart).filter(([id,q])=>Number(q)>0&&products.some(p=>p.id===id));
