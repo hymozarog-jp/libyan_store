@@ -57,7 +57,7 @@ function renderCart(){
   document.querySelectorAll('[data-remove]').forEach(btn=>btn.onclick=()=>{delete cart[btn.dataset.remove];renderCart()});
   el('buy').onclick=checkout;
 }async function checkout(){
- const name=prompt('اسم العميل')||profile?.full_name||'';const phone=prompt('رقم الهاتف')||profile?.phone||'';if(!name||!phone)return;
+ const name=(profile?.full_name||session.user.email||'عميل').trim();const phone=(profile?.phone||session.user.phone||'').trim();
  const items=Object.entries(cart).map(([product_id,quantity])=>({product_id,quantity}));
  const r=await sb.rpc('create_wallet_order',{p_items:items,p_customer_name:name,p_customer_phone:phone});if(r.error)return alert(r.error.message);
  const orderId=r.data;cart={};await loadStore();
