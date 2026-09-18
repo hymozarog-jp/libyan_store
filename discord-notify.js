@@ -21,11 +21,11 @@
           });
         }
 
-        if (!result.error && fn === 'create_wallet_topup' && result.data?.id) {
+        if (!result.error && fn === 'create_wallet_topup' && result.data) {
           await sb.functions.invoke('discord-notify', {
             body: {
               type: 'topup',
-              id: result.data.id
+              id: result.data
             }
           });
         }
