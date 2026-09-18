@@ -9,13 +9,18 @@ async function boot(){
   sb=await loadSupabase();
   if(window.__LIBYAN_RECOVERY_ACTIVE)return;
   const r=await sb.auth.getSession();
+  if(r.error)throw r.error;
   session=r.data.session||null;
   if(session){
    await loadStore();
    if(localStorage.getItem('__libyan_social_login_pending')==='1'){localStorage.removeItem('__libyan_social_login_pending');notifyLoginToDiscord()}
   } else renderLogin();
-  sb.auth.onAuthStateChange(async(event,nextSession)=>{
-   if(event==='SIGNED_OUT'){session=null;cart={};if(adminTopupChannel){await sb.removeChannel(adminTopupChannel);adminTopupChannel=null}renderLogin();}
+  sb.auth.onAuthStateChange((event,nextSession)=>{
+   if(event==='SIGNED_OUT'){
+    session=null;cart={};
+    if(adminTopupChannel){sb.removeChannel(adminTopupChannel);adminTopupChannel=null}
+    renderLogin();
+   }
   });
  }catch(e){app.innerHTML=`<div class="card" style="text-align:center;margin-top:30px"><h1>⚡ Libyan Store</h1><p class="muted">${esc(e.message||'تعذر تشغيل تسجيل الدخول')}</p><button class="btn primary" onclick="location.reload()">إعادة المحاولة</button></div>`}
 }
@@ -54,7 +59,29 @@ function humanAuthError(e){
  return m;
 }
 function emailInput(){return el('email').value.trim()}
-async function loadStore(){const uid=session.user.id;const [p,w,pr]=await Promise.all([sb.from('profiles').select('full_name,phone,role').eq('id',uid).single(),sb.from('wallets').select('balance').eq('user_id',uid).single(),sb.from('products').select('id,name,description,category,price,currency,product_codes(status)').eq('active',true).order('created_at')]);profile=p.data;wallet=w.data;products=(pr.data||[]).map(p=>({...p,stock_count:(p.product_codes||[]).filter(c=>c.status==='available').length}));renderStore();startAdminTopupRealtime()}
+async function loadStore(){
+ const uid=session?.user?.id;
+ if(!uid)throw new Error('جلسة تسجيل الدخول غير موجودة');
+ app.innerHTML='<div class="card" style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:42px">⏳</div><h2>تم تسجيل الدخول</h2><p class="muted">جارٍ فتح المتجر...</p></div>';
+ try{
+  const [p,w,pr]=await Promise.all([
+   sb.from('profiles').select('full_name,phone,role').eq('id',uid).maybeSingle(),
+   sb.from('wallets').select('balance').eq('user_id',uid).maybeSingle(),
+   sb.from('products').select('id,name,description,category,price,currency,product_codes(status)').eq('active',true).order('created_at')
+  ]);
+  if(p.error)console.warn('profiles load:',p.error);
+  if(w.error)console.warn('wallet load:',w.error);
+  if(pr.error)throw pr.error;
+  profile=p.data||{full_name:'',phone:'',role:'customer'};
+  wallet=w.data||{balance:0};
+  products=(pr.data||[]).map(p=>({...p,stock_count:(p.product_codes||[]).filter(c=>c.status==='available').length}));
+  renderStore();
+  startAdminTopupRealtime();
+ }catch(e){
+  console.error('loadStore failed:',e);
+  app.innerHTML='<div class="card" style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:42px">⚠️</div><h2>تم تسجيل الدخول بنجاح</h2><p class="muted">لكن تعذر فتح بيانات المتجر.</p><small class="muted">'+esc(e.message||'خطأ غير معروف')+'</small><button class="btn primary" style="width:100%;margin-top:14px" onclick="location.reload()">إعادة المحاولة</button></div>';
+ }
+}
 function startAdminTopupRealtime(){if(profile?.role!=='admin'||!sb)return;if(adminTopupChannel){sb.removeChannel(adminTopupChannel);adminTopupChannel=null}adminTopupChannel=sb.channel('admin-wallet-topups').on('postgres_changes',{event:'INSERT',schema:'public',table:'wallet_topups'},payload=>{const row=payload.new;if(row?.status==='pending')showTopupNotification(row)}).subscribe(status=>{if(status!=='SUBSCRIBED')console.log('Topup realtime status:',status)})}
 function showTopupNotification(row){const old=document.getElementById('topupToast');if(old)old.remove();const toast=document.createElement('div');toast.id='topupToast';toast.dir='rtl';toast.style.cssText='position:fixed;top:18px;right:18px;z-index:99999;max-width:360px;background:#17100c;border:1px solid #ff7a18;box-shadow:0 12px 35px rgba(0,0,0,.45);border-radius:16px;padding:15px;color:#fff;font-family:inherit';toast.innerHTML=`<div style="font-size:18px;font-weight:800">🔔 طلب تعبئة رصيد جديد</div><div style="margin-top:8px;color:#ffd9bd">المبلغ: <b>${money(row.amount)}</b></div><div style="margin-top:3px;color:#ffd9bd">الطريقة: <b>${esc(row.method)}</b></div><div style="margin-top:3px;color:#ffd9bd">رقم المحوّل: <b>${esc(row.sender_phone||'غير متوفر')}</b></div><button class="btn primary" id="closeTopupToast" style="width:100%;margin-top:12px">فتح طلبات الشحن</button>`;document.body.appendChild(toast);el('closeTopupToast').onclick=()=>{toast.remove();const adminBtn=document.querySelector('[data-view="admin"]');if(adminBtn)adminBtn.click()};try{const Ctx=window.AudioContext||window.webkitAudioContext;if(Ctx){const ctx=new Ctx(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.frequency.value=880;gain.gain.value=.05;osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.18);setTimeout(()=>ctx.close(),300)}}catch(e){}if('Notification'in window&&Notification.permission==='granted'){try{new Notification('طلب تعبئة رصيد جديد',{body:`${money(row.amount)} — ${row.method}`})}catch(e){}}}
 function renderStore(){
