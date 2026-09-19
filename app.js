@@ -32,7 +32,7 @@ async function boot(){
   else renderLogin();
  }catch(e){app.innerHTML='<div class="card" style="text-align:center;margin-top:30px"><h1>⚡ Libyan Store</h1><p class="muted">'+esc(e.message||'تعذر تشغيل تسجيل الدخول')+'</p><button class="btn primary" onclick="location.reload()">إعادة المحاولة</button></div>'}
 }
-function renderLogin(msg=''){app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">⚡</div><h1>Libyan Store</h1><p class="muted">اشتراكات رقمية ومحفظة وتسليم أكواد</p><div class="card" style="display:grid;gap:10px;text-align:right"><button class="btn" id="googleLogin" style="width:100%;font-weight:800">🔵 المتابعة باستخدام Google</button><div style="display:flex;align-items:center;gap:8px;margin:4px 0;color:#8f9baa"><span style="height:1px;background:#263345;flex:1"></span><small>أو بالبريد الإلكتروني</small><span style="height:1px;background:#263345;flex:1"></span></div><input id="email" class="field" type="email" placeholder="البريد الإلكتروني"><input id="pass" class="field" type="password" placeholder="كلمة المرور"><button class="btn primary" id="login">دخول</button><button class="btn" id="signup">إنشاء حساب</button><small id="msg" class="muted">${esc(msg)}</small></div></div>`;el('login').onclick=()=>auth(false);el('signup').onclick=()=>auth(true);el('forgot').onclick=resetPassword;el('googleLogin').onclick=()=>socialLogin('google')}
+function renderLogin(msg=''){app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">⚡</div><h1>Libyan Store</h1><p class="muted">اشتراكات رقمية ومحفظة وتسليم أكواد</p><div class="card" style="display:grid;gap:10px;text-align:right"><button class="btn" id="googleLogin" style="width:100%;font-weight:800">🔵 المتابعة باستخدام Google</button><div style="display:flex;align-items:center;gap:8px;margin:4px 0;color:#8f9baa"><span style="height:1px;background:#263345;flex:1"></span><small>أو بالبريد الإلكتروني</small><span style="height:1px;background:#263345;flex:1"></span></div><input id="email" class="field" type="email" placeholder="البريد الإلكتروني"><input id="pass" class="field" type="password" placeholder="كلمة المرور"><button class="btn primary" id="login">دخول</button><button class="btn" id="signup">إنشاء حساب</button><small id="msg" class="muted">${esc(msg)}</small></div></div>`;el('login').onclick=()=>auth(false);el('signup').onclick=()=>auth(true);el('googleLogin').onclick=()=>socialLogin('google')}
 async function socialLogin(provider){
  if(authBusy)return;
  const msg=el('msg');authBusy=true;if(msg)msg.textContent=provider==='google'?'جارٍ فتح Google...':'جارٍ فتح تسجيل الدخول...';
@@ -176,6 +176,7 @@ function renderProducts(){
 function showProduct(p){
   const view=el('view');if(!view)return;
   const img=typeof productImage==='function'?productImage(p.name):'';
+  const available=Number(p.stock_count||0)>0;
   view.innerHTML=`<section class="lc-product-page">
     <button type="button" class="lc-back-btn" id="lcBackToProducts">← العودة للمنتجات</button>
     <article class="lc-detail-card">
@@ -189,16 +190,24 @@ function showProduct(p){
         </label>
         <div class="lc-detail-divider"></div>
         <div class="lc-detail-total"><span>الإجمالي:</span><strong>${money(p.price)}</strong></div>
-        <button class="btn primary lc-detail-buy" id="lcBuyNow" type="button" ${p.stock_count>0?'':'disabled'}>${p.stock_count>0?'اشترِ الآن':'نفد المخزون'}</button>
+        <button class="btn primary lc-detail-buy" id="lcBuyNow" type="button">${available?'اشترِ الآن':'نفد المخزون'}</button>
       </div>
     </article>
   </section>`;
   el('lcBackToProducts').onclick=()=>renderProducts();
   const buy=el('lcBuyNow');
   if(buy)buy.onclick=async()=>{
+    if(!available)return alert('❌ هذا المنتج غير متوفر حاليًا. أضف المخزون من البوت ثم حاول الشراء مرة أخرى.');
     if(!el('lcTerms').checked)return alert('وافق على الشروط والأحكام أولاً');
-    cart[p.id]=Math.min((cart[p.id]||0)+1,p.stock_count||1);
-    await checkout();
+    buy.disabled=true;buy.textContent='جارٍ تنفيذ الشراء...';
+    try{
+      cart[p.id]=Math.min((cart[p.id]||0)+1,Number(p.stock_count||1));
+      await checkout();
+    }catch(e){
+      console.error('purchase failed:',e);
+      alert(humanOrderError(e));
+      buy.disabled=false;buy.textContent='اشترِ الآن';
+    }
   };
 }
 function renderCart(){
