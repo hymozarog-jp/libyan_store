@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="Robux">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#171717"/><stop offset="1" stop-color="#343434"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff09a"/><stop offset=".35" stop-color="#ffd43b"/><stop offset="1" stop-color="#c78b00"/></linearGradient>
+</defs>
+<rect width="800" height="500" rx="36" fill="url(#bg)"/>
+<circle cx="400" cy="225" r="150" fill="#111" stroke="url(#gold)" stroke-width="18"/>
+<path d="M330 135h92l48 48v92l-48 48h-92l-48-48v-92z" fill="url(#gold)"/>
+<path d="M362 166h50l25 25v56l-25 25h-50l-25-25v-56z" fill="#222"/>
+<path d="M385 183h17v72h-17z" fill="#fff4b0"/>
+<path d="M362 210h63v17h-63z" fill="#fff4b0"/>
+<text x="400" y="430" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="42" font-weight="700">ROBLOX • ROBUX</text>
+</svg>
