@@ -31,3 +31,14 @@ body:before{display:none!important}.shell{width:min(1180px,100%);padding:0 14px 
 @media(max-width:460px){.lc-purchase-product h2{font-size:20px}.lc-purchase-meta{grid-template-columns:1fr}.lc-purchase-actions{padding-bottom:14px}}
 
 .lc-product-page{padding:18px 0 100px}.lc-back-btn{display:inline-flex;align-items:center;gap:8px;border:0;background:transparent;color:#fff;font-size:17px;font-weight:800;padding:8px 4px;margin-bottom:10px;cursor:pointer}.lc-detail-card{background:#17113a;border:1px solid rgba(255,255,255,.12);border-radius:28px;overflow:hidden;box-shadow:0 12px 35px rgba(0,0,0,.18)}.lc-detail-image{width:100%;aspect-ratio:1.55/1;background:#0b0821;overflow:hidden}.lc-detail-image img{width:100%;height:100%;object-fit:cover;display:block}.lc-detail-content{padding:26px 22px 24px}.lc-detail-content h1{font-size:28px;line-height:1.45;text-align:center;margin:0 0 12px;color:#fff;font-weight:900}.lc-detail-price{font-size:31px;line-height:1.2;text-align:center;color:#ffb20f;font-weight:950;margin:4px 0 25px}.lc-detail-price span{font-size:22px;margin-right:6px}.lc-detail-terms{min-height:62px;border:1px solid #47506a;border-radius:17px;display:flex;align-items:center;justify-content:center;gap:10px;color:#c8c3d4;font-size:17px;padding:8px 14px;cursor:pointer}.lc-detail-terms input{width:27px;height:27px;accent-color:#ff9d00}.lc-detail-terms b{color:#ffad10;font-weight:800}.lc-detail-divider{height:1px;background:rgba(255,255,255,.09);margin:28px 0 20px}.lc-detail-total{display:flex;align-items:center;justify-content:space-between;font-size:21px;color:#d4cfdd;margin-bottom:18px}.lc-detail-total strong{font-size:28px;color:#ffad10}.lc-detail-buy{width:100%;min-height:62px;border-radius:18px!important;font-size:21px!important;font-weight:950!important;background:linear-gradient(90deg,#ff9400,#ffad12)!important;color:#23153f!important}.lc-detail-buy:disabled{opacity:.55;cursor:not-allowed}@media(max-width:520px){.lc-product-page{padding-top:10px}.lc-detail-content{padding:24px 18px 20px}.lc-detail-content h1{font-size:24px}.lc-detail-price{font-size:29px}.lc-detail-terms{font-size:16px}.lc-detail-total{font-size:20px}}
+
+/* Performance mode: minimize compositor work and frame drops */
+.lc-header,.lc-bottom{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#17133f!important}
+.lc-product,.lc-product:hover{transform:none!important;box-shadow:none!important}
+.lc-buy:hover{box-shadow:none!important}
+.lc-product:hover .lc-product-img img{transform:none!important;filter:none!important}
+.lc-detail-card{box-shadow:none!important}
+.lc-drawer-backdrop{transition:none!important}
+.lc-drawer-panel{transition:none!important}
+button{transition:none!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
