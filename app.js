@@ -77,6 +77,14 @@ function humanAuthError(e){
  if(/rate limit|too many requests/i.test(m))return 'تم تجاوز عدد المحاولات مؤقتًا. انتظر قليلًا ثم حاول مرة أخرى.';
  return m;
 }
+function humanOrderError(e){
+ const m=String(e?.message||e||'تعذر تنفيذ العملية');
+ if(/insufficient_stock/i.test(m))return '❌ المنتج غير متوفر حاليًا. أضف المخزون من البوت أولًا ثم حاول الشراء مرة أخرى.';
+ if(/insufficient_balance/i.test(m))return '❌ رصيد المحفظة غير كافٍ لإتمام الشراء.';
+ if(/product_not_found/i.test(m))return '❌ المنتج غير موجود.';
+ if(/not_authenticated|auth/i.test(m))return '❌ يجب تسجيل الدخول أولًا.';
+ return m;
+}
 function emailInput(){return el('email').value.trim()}
 async function loadStore(){
  const uid=session?.user?.id;
