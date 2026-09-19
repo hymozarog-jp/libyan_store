@@ -81,7 +81,7 @@ function humanOrderError(e){
  const m=String(e?.message||e||'تعذر تنفيذ العملية');
  if(/insufficient_stock/i.test(m))return '❌ المنتج غير متوفر حاليًا. أضف المخزون من البوت أولًا ثم حاول الشراء مرة أخرى.';
  if(/insufficient_balance/i.test(m))return '❌ رصيد المحفظة غير كافٍ لإتمام الشراء.';
- if(/product_not_found/i.test(m))return '❌ المنتج غير موجود.';
+ if(/product_not_found|product_unavailable/i.test(m))return '❌ المنتج غير متوفر حاليًا. تأكد من وجود مخزون لهذا المنتج ثم حاول الشراء مرة أخرى.';
  if(/not_authenticated|auth/i.test(m))return '❌ يجب تسجيل الدخول أولًا.';
  return m;
 }
