@@ -1,9 +1,9 @@
-const CACHE_NAME='libyan-store-shell-v3';
+const CACHE_NAME='libyan-store-shell-v4';
 const SHELL=[
   './',
   './index.html',
   './styles.css?v=20260919-2',
-  './theme.css?v=20260919-6',
+  './theme.css?v=20260919-7',
   './assets/icon.svg'
 ];
 
