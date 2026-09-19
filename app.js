@@ -307,7 +307,130 @@ async function renderAccount(){
   el('saveAccount').onclick=async()=>{const full_name=el('accountName').value.trim(),phone=el('accountPhone').value.trim();if(!full_name)return el('accountMsg').textContent='أدخل الاسم';const r=await sb.from('profiles').update({full_name,phone}).eq('id',session.user.id);if(r.error)return el('accountMsg').textContent=r.error.message;profile={...profile,full_name,phone};el('accountMsg').textContent='تم حفظ البيانات بنجاح.';};
 }
 async function renderWallet(){const r=await sb.from('wallet_topups').select('id,amount,method,status,created_at').eq('user_id',session.user.id).order('created_at',{ascending:false}).limit(20);const settings=await sb.from('store_settings').select('key,value').in('key',['libyana_number','almadar_number']);const nums=Object.fromEntries((settings.data||[]).map(x=>[x.key,x.value]));el('view').innerHTML=`<div class="card"><h2>💰 شحن المحفظة</h2><p class="muted">حوّل المبلغ إلى الرقم الظاهر ثم أرسل الطلب للمراجعة.</p><p>ليبيانا: <b>${esc(nums.libyana_number||'غير محدد')}</b><br>المدار: <b>${esc(nums.almadar_number||'غير محدد')}</b></p><select id="tm" class="field"><option value="libyana">ليبيانا</option><option value="almadar">المدار</option></select><input id="ta" class="field" style="margin-top:8px" type="number" min="1" placeholder="المبلغ بالدينار"><input id="tp" class="field" style="margin-top:8px" placeholder="رقم الهاتف المحوّل منه"><button class="btn primary" id="sendTop" style="width:100%;margin-top:10px">إرسال طلب الشحن</button></div><div class="card" style="margin-top:12px"><h3>طلبات الشحن</h3>${(r.data||[]).map(x=>`<div style="padding:9px 0;border-bottom:1px solid #202b3a">${money(x.amount)} — ${esc(x.method)} — <span class="pill">${esc(x.status)}</span></div>`).join('')||'<span class="muted">لا توجد طلبات</span>'}</div>`;el('sendTop').onclick=async()=>{const amount=Number(el('ta').value);if(!(amount>0)||!el('tp').value.trim())return alert('أكمل البيانات');const x=await sb.rpc('create_wallet_topup',{p_amount:amount,p_method:el('tm').value,p_sender_phone:el('tp').value.trim()});if(x.error)return alert(x.error.message);let notifyFailed=false;try{const n=await sb.functions.invoke('discord-notify',{body:{type:'topup',id:x.data.id}});if(n.error){notifyFailed=true;console.warn('Discord topup notification error:',n.error);let detail=n.error.message||String(n.error);try{if(n.error.context){const rr=await n.error.context.clone().text();if(rr)detail+=' | '+rr}}catch{}alert('تم إرسال طلب الشحن، لكن تعذر إرسال إشعار Discord: '+detail)}else console.log('Discord topup notification sent:',n.data)}catch(e){notifyFailed=true;console.warn('Discord topup notification failed:',e);alert('تم إرسال طلب الشحن، لكن تعذر إرسال إشعار Discord')}if(!notifyFailed)alert('تم إرسال طلب الشحن');renderWallet()}}
-async function renderOrders(){const r=await sb.from('orders').select('id,total,status,created_at').eq('user_id',session.user.id).order('created_at',{ascending:false}).limit(30);let html='';for(const o of r.data||[]){const c=await sb.rpc('get_my_order_codes',{p_order_id:o.id});const codes=c.data||[];const grouped={};codes.forEach(x=>{(grouped[x.product_id]??=[]).push(x.code)});const productSections=Object.entries(grouped).map(([productId,codesForProduct])=>{const p=products.find(x=>x.id===productId);return `<div style="margin-top:10px"><b>📦 ${esc(p?.name||'المنتج')}</b>${codesForProduct.map(code=>`<div style="margin-top:7px;padding:11px;background:#0a1017;border-radius:9px;font-family:monospace;word-break:break-all;direction:ltr;text-align:left">${esc(code)}</div>`).join('')}</div>`}).join('');html+=`<article class="card" style="margin-bottom:10px"><div class="topbar"><b>${money(o.total)}</b><span class="pill">${esc(o.status)}</span></div><div class="muted">${new Date(o.created_at).toLocaleString('ar-LY')}</div>${productSections||'<div class="muted" style="margin-top:10px">لا توجد أكواد مرتبطة بهذا الطلب.</div>'}</article>`}el('view').innerHTML=`<h2>📦 طلباتي</h2>${html||'<div class="card muted">لا توجد طلبات بعد.</div>'}`}
+async async function renderOrders(){
+  const view=el('view');
+  view.innerHTML='<div class="lc-orders-page"><div class="lc-orders-loading"><div>⏳</div><b>جارٍ تحميل طلباتك...</b><span>نسترجع آخر مشترياتك وأكوادك بأمان.</span></div></div>';
+  try{
+    const r=await sb.from('orders')
+      .select('id,total,status,payment_method,customer_name,customer_phone,created_at,updated_at,order_items(id,product_id,quantity,unit_price,products(name,category))')
+      .eq('user_id',session.user.id)
+      .order('created_at',{ascending:false})
+      .limit(50);
+    if(r.error)throw r.error;
+    const orders=r.data||[];
+    const codeResults=await Promise.all(orders.map(o=>sb.rpc('get_my_order_codes',{p_order_id:o.id})));
+    const codeMap=new Map();
+    orders.forEach((o,i)=>codeMap.set(o.id,codeResults[i]?.data||[]));
+    window.__LIBYAN_ORDERS=orders;
+    window.__LIBYAN_ORDER_CODES=codeMap;
+
+    const counts={all:orders.length,paid:0,processing:0,completed:0,pending:0,cancelled:0,refunded:0};
+    orders.forEach(o=>{if(counts[o.status]!==undefined)counts[o.status]++});
+    const totalSpent=orders.filter(o=>['paid','processing','completed'].includes(o.status)).reduce((s,o)=>s+Number(o.total||0),0);
+    const statusLabel={pending:'قيد الانتظار',paid:'مدفوع',processing:'جارٍ التجهيز',completed:'مكتمل',cancelled:'ملغى',refunded:'مسترجع'};
+    const statusClass={pending:'pending',paid:'paid',processing:'processing',completed:'completed',cancelled:'cancelled',refunded:'refunded'};
+
+    const filterButtons=[
+      ['all','الكل',counts.all],
+      ['paid','مدفوعة',counts.paid],
+      ['processing','قيد التجهيز',counts.processing],
+      ['completed','مكتملة',counts.completed],
+      ['cancelled','ملغاة',counts.cancelled]
+    ];
+    view.innerHTML=`
+      <div class="lc-orders-page">
+        <div class="lc-orders-hero">
+          <div><span class="lc-orders-kicker">سجل المشتريات</span><h1>📦 طلباتي</h1><p>تابع طلباتك، تفاصيل المنتجات، والأكواد التي اشتريتها.</p></div>
+          <div class="lc-orders-total"><span>إجمالي المشتريات</span><b>${money(totalSpent)}</b></div>
+        </div>
+        <div class="lc-orders-summary">
+          <div><b>${counts.all}</b><span>كل الطلبات</span></div>
+          <div><b>${counts.completed}</b><span>مكتملة</span></div>
+          <div><b>${counts.processing+counts.paid}</b><span>قيد المعالجة</span></div>
+        </div>
+        <div class="lc-orders-filters" id="orderFilters">
+          ${filterButtons.map(([key,label,count])=>`<button class="${key==='all'?'active':''}" data-order-filter="${key}">${label}<span>${count}</span></button>`).join('')}
+        </div>
+        <div id="ordersList"></div>
+      </div>`;
+
+    const renderList=(filter='all')=>{
+      const list=orders.filter(o=>filter==='all'||o.status===filter);
+      const listEl=el('ordersList');
+      if(!list.length){
+        listEl.innerHTML=`<div class="lc-orders-empty"><div>🧾</div><h3>لا توجد طلبات هنا</h3><p>عندما تقوم بشراء منتج سيظهر طلبك هنا مع تفاصيله.</p><button class="btn primary" id="goStoreFromOrders">تصفح المنتجات</button></div>`;
+        el('goStoreFromOrders')?.addEventListener('click',()=>renderProducts());
+        return;
+      }
+      listEl.innerHTML=list.map(o=>{
+        const items=o.order_items||[];
+        const codes=codeMap.get(o.id)||[];
+        const codeCount=codes.length;
+        const itemCount=items.reduce((n,x)=>n+Number(x.quantity||0),0);
+        const names=items.map(x=>x.products?.name).filter(Boolean);
+        const title=names.length===1?names[0]:(names.length>1?`${names[0]} + ${names.length-1} منتجات أخرى`:'طلب رقمي');
+        return `
+          <article class="lc-order-card">
+            <div class="lc-order-head">
+              <div><span class="lc-order-id">طلب #${esc(o.id.slice(0,8).toUpperCase())}</span><div class="lc-order-date">${new Date(o.created_at).toLocaleString('ar-LY')}</div></div>
+              <span class="lc-order-status ${statusClass[o.status]||''}">${statusLabel[o.status]||esc(o.status)}</span>
+            </div>
+            <div class="lc-order-main">
+              <div class="lc-order-icon">⚡</div>
+              <div class="lc-order-info"><h3>${esc(title)}</h3><p>${itemCount} منتج • ${codeCount} كود • الدفع بالمحفظة</p></div>
+              <strong class="lc-order-price">${money(o.total)}</strong>
+            </div>
+            <div class="lc-order-footer">
+              <span>${o.status==='completed'?'✅ تم التسليم':o.status==='cancelled'?'↩️ تم الإلغاء':o.status==='refunded'?'💸 تم الاسترجاع':codeCount?'🔑 الأكواد متاحة':'⏳ بانتظار التسليم'}</span>
+              <button class="btn" data-order-details="${o.id}">عرض التفاصيل</button>
+            </div>
+          </article>`;
+      }).join('');
+      listEl.querySelectorAll('[data-order-details]').forEach(b=>b.onclick=()=>showOrderDetails(b.dataset.orderDetails));
+    };
+    renderList();
+    document.querySelectorAll('[data-order-filter]').forEach(b=>b.onclick=()=>{
+      document.querySelectorAll('[data-order-filter]').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');renderList(b.dataset.orderFilter);
+    });
+  }catch(e){
+    console.error('renderOrders failed:',e);
+    view.innerHTML=`<div class="lc-orders-empty"><div>⚠️</div><h3>تعذر تحميل الطلبات</h3><p class="muted">${esc(e.message||'حدث خطأ غير متوقع')}</p><button class="btn primary" id="retryOrders">إعادة المحاولة</button></div>`;
+    el('retryOrders')?.addEventListener('click',renderOrders);
+  }
+}
+function showOrderDetails(orderId){
+  const orders=window.__LIBYAN_ORDERS||[];
+  const codeMap=window.__LIBYAN_ORDER_CODES||new Map();
+  const o=orders.find(x=>x.id===orderId);if(!o)return;
+  const statusLabel={pending:'قيد الانتظار',paid:'مدفوع',processing:'جارٍ التجهيز',completed:'مكتمل',cancelled:'ملغى',refunded:'مسترجع'};
+  const statusClass={pending:'pending',paid:'paid',processing:'processing',completed:'completed',cancelled:'cancelled',refunded:'refunded'};
+  const codes=codeMap.get(o.id)||[];
+  const items=o.order_items||[];
+  const grouped={};
+  codes.forEach(x=>(grouped[x.product_id]??=[]).push(x.code));
+  const itemRows=items.map(item=>{
+    const name=item.products?.name||'منتج رقمي';
+    const productCodes=grouped[item.product_id]||[];
+    return `<div class="lc-detail-order-item"><div><b>${esc(name)}</b><span>${Number(item.quantity)} × ${money(item.unit_price)}</span></div><strong>${money(Number(item.unit_price)*Number(item.quantity))}</strong>${productCodes.length?`<div class="lc-detail-order-codes">${productCodes.map(code=>`<div class="lc-order-code"><span>🔑</span><code>${esc(code)}</code><button type="button" data-copy-code="${esc(code)}">نسخ</button></div>`).join('')}`:'<small class="muted">سيظهر الكود هنا عند تسليم الطلب.</small>'}</div>`;
+  }).join('');
+  const modal=document.createElement('div');
+  modal.className='lc-order-modal';
+  modal.innerHTML=`<div class="lc-order-modal-backdrop"></div><section class="lc-order-modal-card" role="dialog" aria-modal="true" aria-label="تفاصيل الطلب">
+    <button type="button" class="lc-order-modal-close" aria-label="إغلاق">×</button>
+    <div class="lc-order-modal-head"><div><span class="lc-order-kicker">تفاصيل الطلب</span><h2>طلب #${esc(o.id.slice(0,8).toUpperCase())}</h2><p>${new Date(o.created_at).toLocaleString('ar-LY')}</p></div><span class="lc-order-status ${statusClass[o.status]||''}">${statusLabel[o.status]||esc(o.status)}</span></div>
+    <div class="lc-detail-order-items">${itemRows||'<div class="muted">لا توجد تفاصيل منتجات.</div>'}</div>
+    <div class="lc-order-detail-total"><span>الإجمالي</span><strong>${money(o.total)}</strong></div>
+    <div class="lc-order-detail-meta"><div><span>طريقة الدفع</span><b>المحفظة</b></div><div><span>عدد المنتجات</span><b>${items.reduce((n,x)=>n+Number(x.quantity||0),0)}</b></div></div>
+  </section>`;
+  document.body.appendChild(modal);
+  const close=()=>{if(modal.isConnected)modal.remove()};
+  modal.querySelector('.lc-order-modal-backdrop').onclick=close;
+  modal.querySelector('.lc-order-modal-close').onclick=close;
+  modal.querySelectorAll('[data-copy-code]').forEach(btn=>btn.onclick=async()=>{try{await navigator.clipboard.writeText(btn.dataset.copyCode);btn.textContent='تم النسخ ✓';setTimeout(()=>{if(btn.isConnected)btn.textContent='نسخ'},1200)}catch(e){alert('تعذر نسخ الكود تلقائيًا')}})
+  const onKey=e=>{if(e.key==='Escape'){close();document.removeEventListener('keydown',onKey)}};
+  document.addEventListener('keydown',onKey);
+}
 async function renderAdmin(){if(profile?.role!=='admin')return;const [pr,top,orders,codes,settings]=await Promise.all([sb.from('products').select('*').order('created_at',{ascending:false}),sb.from('wallet_topups').select('*').order('created_at',{ascending:false}).limit(50),sb.from('orders').select('*').order('created_at',{ascending:false}).limit(50),sb.from('product_codes').select('id,product_id,code,status,order_id').order('created_at',{ascending:false}).limit(200),sb.from('store_settings').select('key,value').in('key',['libyana_number','almadar_number'])]);
  const plist=pr.data||[]; const clist=codes.data||[]; const counts={};clist.forEach(c=>counts[c.product_id]=(counts[c.product_id]||0)+1);
  el('view').innerHTML=`<div class="topbar"><h2>⚙️ لوحة الإدارة</h2><span class="pill">مدير</span></div><div class="grid">
