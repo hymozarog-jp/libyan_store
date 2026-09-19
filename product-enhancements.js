@@ -66,18 +66,5 @@ async function addSalesStats(){
   const grid=document.querySelector(".grid");
   if(grid)grid.parentElement.insertBefore(card,grid);
 }
-function installAlwaysAvailableLabel(){
-  const observer=new MutationObserver(function(){
-    document.querySelectorAll(".lc-product").forEach(card=>{
-      const pill=[...card.querySelectorAll(".pill")].find(x=>x.textContent.includes("نفد المخزون"));
-      if(pill){pill.textContent="متاح دائمًا";pill.style.textAlign="center";pill.style.display="block"}
-      const buy=card.querySelector("[data-product-buy]");
-      if(buy){buy.disabled=false;buy.textContent="اشترِ الآن"}
-    });
-    const detail=document.getElementById("lcBuyNow");
-    if(detail&&detail.disabled){detail.disabled=false;detail.textContent="اشترِ الآن"}
-  });
-  observer.observe(document.body,{childList:true,subtree:true});
-}
 wait();
 })();
