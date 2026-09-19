@@ -91,12 +91,13 @@ async function loadStore(){
  const uid=session?.user?.id;
  if(!uid)throw new Error('جلسة تسجيل الدخول غير موجودة');
  app.innerHTML='<div class="card" style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:42px">⏳</div><h2>تم تسجيل الدخول</h2><p class="muted">جارٍ فتح المتجر...</p></div>';
+ const withTimeout=(promise,label,ms=12000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('انتهت مهلة تحميل '+label+'، تحقق من اتصال الإنترنت ثم أعد المحاولة.')),ms))]);
  try{
   const [p,w,pr,stock]=await Promise.all([
-   sb.from('profiles').select('full_name,phone,role').eq('id',uid).maybeSingle(),
-   sb.from('wallets').select('balance').eq('user_id',uid).maybeSingle(),
-   sb.from('products').select('id,name,description,category,price,currency').eq('active',true).order('created_at'),
-   sb.rpc('get_active_product_stock')
+   withTimeout(sb.from('profiles').select('full_name,phone,role').eq('id',uid).maybeSingle(),'بيانات الحساب'),
+   withTimeout(sb.from('wallets').select('balance').eq('user_id',uid).maybeSingle(),'المحفظة'),
+   withTimeout(sb.from('products').select('id,name,description,category,price,currency').eq('active',true).order('created_at'),'المنتجات'),
+   withTimeout(sb.rpc('get_active_product_stock'),'المخزون')
   ]);
   if(p.error)console.warn('profiles load:',p.error);
   if(w.error)console.warn('wallet load:',w.error);
