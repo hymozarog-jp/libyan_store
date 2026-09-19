@@ -1,9 +1,9 @@
-<!doctype html><!-- deploy-check: 2026-09-19-loader-fix --><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#17133f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="manifest" href="manifest.webmanifest"><meta name="description" content="Libyan Store - متجر البطاقات والاشتراكات الرقمية"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Libyan Store</title><script src="supabase-config.js?v=20260916-2"></script><link rel="stylesheet" href="styles.css?v=20260919-2"><link rel="stylesheet" href="theme.css?v=20260919-7"></head><body><main id="app"><div class="shell"><div class="card" style="text-align:center">جارٍ تحميل المتجر…</div></div></main><script>
+<!doctype html><!-- deploy-check: 2026-09-20-hard-cache-bust --><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#17133f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="manifest" href="manifest.webmanifest"><meta name="description" content="Libyan Store - متجر البطاقات والاشتراكات الرقمية"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Libyan Store</title><script src="supabase-config.js?v=20260916-2"></script><link rel="stylesheet" href="styles.css?v=20260919-2"><link rel="stylesheet" href="theme.css?v=20260919-7"></head><body><main id="app"><div class="shell"><div class="card" style="text-align:center">جارٍ تحميل المتجر…</div></div></main><script>
 (function(){
   var app=document.getElementById('app');
   var files=[
-    {src:'supabase.js?v=20260919-1',core:true},
-    {src:'app.js?v=20260919-13',core:true},
+    {src:'supabase.js?v=20260920-1',core:true},
+    {src:'app.js?v=20260920-1',core:true},
     {src:'topup-status.js?v=20260919-1'},
     {src:'product-enhancements.js?v=20260919-2'},
     {src:'product-images.js?v=20260919-2'},
@@ -29,7 +29,7 @@
     for(var j=2;j<files.length;j++){
       try{await loadScript(files[j].src,8000)}catch(e){console.warn('Optional storefront script failed:',e.message||e)}
     }
-    if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js?v=20260919-4').catch(function(){})}
+    if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js?v=20260920-1').catch(function(){})}
   }
   start();
 })();
