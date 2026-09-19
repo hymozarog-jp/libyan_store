@@ -50,3 +50,16 @@ button{transition:none!important}
 .lc-product{position:relative}.lc-product-open{display:block;width:100%;padding:0;border:0;background:none;color:inherit;text-align:inherit;cursor:pointer}.lc-product-img{position:relative}.lc-stock{position:absolute;top:10px;right:10px;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:900;background:rgba(17,12,40,.9);border:1px solid rgba(255,255,255,.1)}.lc-stock.ok{color:#79e0a4}.lc-stock.out{color:#ff9292}.lc-product-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}.lc-arrow{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:#302354;color:#ffb13a;font-size:18px}.lc-product-action{padding:0 15px 15px}.lc-buy:disabled{opacity:.45;cursor:not-allowed}.lc-product-desc{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 @media(max-width:760px){.lc-shop-hero{padding:20px;gap:12px}.lc-shop-hero h1{font-size:25px}.lc-hero-stats{display:none}.lc-shop-tools{margin-top:10px}.lc-categories{margin-inline:-2px;padding-inline:2px}.lc-product-action{padding-inline:12px}}
 @media(max-width:460px){.lc-shop-hero{border-radius:20px}.lc-shop-hero h1{font-size:23px}.lc-search-box .field{height:48px}.lc-section-title h2{font-size:21px}}
+
+
+/* Service groups */
+.lc-service-groups{display:grid;gap:18px;margin-top:12px;padding-bottom:18px}
+.lc-service-group{padding:16px;border:1px solid rgba(255,255,255,.09);border-radius:24px;background:linear-gradient(180deg,#1b143e,#15112f)}
+.lc-service-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;padding:4px 4px 12px;border-bottom:1px solid rgba(255,255,255,.07)}
+.lc-service-head h2{margin:3px 0 2px;font-size:22px;color:#fff}
+.lc-service-head p{margin:0;color:#918aa8;font-size:11px}
+.lc-service-kicker{font-size:10px;color:#ffad2d;font-weight:900}
+.lc-service-icon{width:48px;height:48px;display:grid;place-items:center;border-radius:15px;background:#2a1d52;color:#ffae2d;font-size:24px;font-weight:1000;border:1px solid rgba(255,174,45,.16)}
+.lc-service-products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.lc-service-products .lc-product{min-width:0}
+@media(max-width:620px){.lc-service-group{padding:12px;border-radius:20px}.lc-service-products{grid-template-columns:1fr}.lc-service-head h2{font-size:20px}.lc-service-icon{width:42px;height:42px}}
