@@ -363,6 +363,7 @@ function renderCart(){
    modal.innerHTML='<div class="lc-modal-card lc-purchase-modal">'+
      '<button class="lc-modal-close" id="lcPurchaseClose" aria-label="إغلاق">×</button>'+
      '<div class="lc-purchase-success"><span class="lc-purchase-ok">✓</span><div><b>تمت عملية الشراء بنجاح</b><span>تم خصم '+money(order.total)+' من محفظتك</span></div></div>'+
+     (isRobloxOrder ? '<section class="lc-purchase-no-codes" style="text-align:center"><div style="font-size:28px">📱</div><b>رقم التواصل لاستلام الروبلوكس</b><p style="font-size:24px;font-weight:900;direction:ltr;margin:10px 0">0910005566</p><p>تواصل معنا على هذا الرقم بعد إتمام الشراء.</p></section>' : '')+
      '<div class="lc-purchase-summary"><div><span>رقم الطلب</span><b>#'+String(order.id).slice(-8).toUpperCase()+'</b></div><div><span>الأكواد</span><b>'+codes.length+' كود</b></div><div><span>الرصيد المتبقي</span><b>'+money(wallet?.balance)+'</b></div></div>'+
      (productsHtml||'<section class="lc-purchase-no-codes"><div>✅</div><b>تم الدفع بنجاح</b><p>تم إنشاء الطلب، لكن الأكواد لم تظهر الآن. ستجدها محفوظة داخل «طلباتي» ويمكنك فتح الطلب لاحقًا.</p></section>')+
      (noCodes?'':'<div class="lc-purchase-tip">💡 اضغط على زر النسخ بجانب أي كود لنسخه مباشرة.</div>')+
