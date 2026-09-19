@@ -81,7 +81,10 @@
         const slug='service-'+g.name.replace(/[^a-zA-Z0-9\u0600-\u06ff]+/g,'-');
         return '<section class="lc-service-group" id="'+esc(slug)+'">'+
           '<div class="lc-service-head"><div><span class="lc-service-kicker">خدمة رقمية</span><h2>'+esc(g.name)+'</h2><p>'+g.items.length+' باقة متاحة'+(gStock?' • '+gStock+' متوفر':'')+'</p></div><span class="lc-service-icon">'+(g.name==='Netflix'?'N':g.name==='Spotify'?'♫':g.name==='Shahid'?'S':g.name==='Roblox'?'R':'⚡')+'</span></div>'+
-          '<div class="lc-service-products">'+g.items.map(p=>{
+          '<div class="lc-service-subcats">'+
+            '<button type="button" class="lc-subcat active" data-subcat="all">كل الباقات</button>'+
+            [...new Set(g.items.map(p=>{const n=String(p.name||'').toLowerCase();if(/3\\s*months|3\\s*month|3\\s*أشهر|ثلاثة\\s*أشهر/.test(n))return '3 أشهر';if(/1\\s*month|1\\s*months|شهر/.test(n))return 'شهر';return 'أخرى';}))].map(cat=>'<button type="button" class="lc-subcat" data-subcat="'+esc(cat)+'">'+esc(cat)+'</button>').join('')+
+          '</div><div class="lc-service-products">'+g.items.map(p=>{
             const img=pImage(p),stock=Number(p.stock_count||0),inStock=stock>0;
             return '<article class="card lc-product">'+
               '<button type="button" data-product-open="'+p.id+'" class="lc-product-open">'+
@@ -95,6 +98,19 @@
           }).join('')+'</div></section>';
       }).join('');
       el('lcNoResults').style.display=grouped.length?'none':'block';
+      grid.querySelectorAll('.lc-subcat').forEach(btn=>btn.onclick=()=>{
+        const section=btn.closest('.lc-service-group');
+        section.querySelectorAll('.lc-subcat').forEach(x=>x.classList.toggle('active',x===btn));
+        const cat=btn.dataset.subcat;
+        section.querySelectorAll('.lc-product').forEach(card=>{
+          const title=card.querySelector('h3')?.textContent||'';
+          let show=cat==='all';
+          if(cat==='شهر') show=/1\\s*month|1\\s*months|شهر/i.test(title);
+          else if(cat==='3 أشهر') show=/3\\s*months|3\\s*month|3\\s*أشهر|ثلاثة\\s*أشهر/i.test(title);
+          else if(cat==='أخرى') show=!/month|شهر|أشهر/i.test(title);
+          card.style.display=show?'':'none';
+        });
+      });
       grid.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productOpen);if(p&&typeof showProduct==='function')showProduct(p);});
       grid.querySelectorAll('[data-product-buy]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productBuy);if(p&&!b.disabled&&typeof showProduct==='function')showProduct(p);});
       renderCart();
