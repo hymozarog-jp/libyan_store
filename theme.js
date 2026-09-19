@@ -35,6 +35,7 @@
     };
   }
   window.renderProducts=function(){
+    const packageCategory=p=>{const n=String(p.name||'').toLowerCase();if(/3\s*months|3\s*month|3\s*أشهر|ثلاثة\s*أشهر/.test(n))return '3 أشهر';if(/1\s*month|1\s*months|شهر/.test(n))return 'شهر';return 'أخرى';};
     const view=el('view');if(!view)return;
     const brandFromName=p=>{
       const n=String(p.name||'').toLowerCase();
