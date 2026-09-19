@@ -19,7 +19,7 @@
     const modal=document.createElement('div');
     modal.className='lc-modal show';modal.dir='rtl';
     modal.innerHTML='<div class="lc-modal-card"><div class="lc-modal-img">'+
-      (img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>')+
+      (img?'<img src="'+img+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<div class="lc-product-placeholder">⚡</div>')+
       '</div><div class="lc-modal-body"><div class="muted">'+esc(p.category||'منتج رقمي')+'</div>'+
       '<h2 style="margin:5px 0">'+esc(p.name)+'</h2><p class="muted">'+esc(p.description||'بطاقة رقمية يتم تسليمها مباشرة بعد إتمام الشراء.')+'</p>'+
       '<div style="font-size:27px;font-weight:1000;color:var(--lc-orange);margin-top:8px">'+money(p.price)+'</div>'+
