@@ -363,6 +363,29 @@ function renderCart(){
      '<div class="lc-purchase-actions"><button class="btn" id="lcPurchaseOrders">طلباتي</button><button class="btn primary" id="lcPurchaseClose2">إغلاق</button></div>'+
    '</div>';
    document.body.appendChild(modal);
+   const isRobloxPurchase=items.length>0&&items.every(([productId])=>{
+     const p=products.find(x=>x.id===productId);
+     const text=String(p?.category||'')+' '+String(p?.name||'');
+     return /روبلوكس|roblox|robux/i.test(text);
+   });
+   if(isRobloxPurchase){
+     const purchasedNames=items.map(([productId,quantity])=>{
+       const p=products.find(x=>x.id===productId);
+       return (p?.name||'روبلوكس')+' × '+quantity;
+     }).join('، ');
+     const waText='السلام عليكم، تم شراء طلب روبلوكس من Libyan Store. رقم الطلب #'+String(order.id).slice(-8).toUpperCase()+' — '+purchasedNames+' — الإجمالي '+money(order.total)+' د.ل. أريد إكمال استلام الطلب.';
+     const waUrl='https://wa.me/218910005566?text='+encodeURIComponent(waText);
+     const waButton=document.createElement('a');
+     waButton.href=waUrl;
+     waButton.target='_blank';
+     waButton.rel='noopener noreferrer';
+     waButton.className='btn primary';
+     waButton.style.cssText='width:100%;margin-top:10px;text-decoration:none;text-align:center';
+     waButton.textContent='💬 التواصل عبر واتساب لاستلام الروبلوكس';
+     const actions=modal.querySelector('.lc-purchase-actions');
+     if(actions)actions.before(waButton);
+     setTimeout(()=>{try{window.open(waUrl,'_blank','noopener,noreferrer')}catch(e){}},150);
+   }
    const close=()=>{if(modal.isConnected)modal.remove();refreshProductStock();renderCart()};
    const closeBtn=el('lcPurchaseClose'),closeBtn2=el('lcPurchaseClose2');
    [closeBtn,closeBtn2].forEach(btn=>{if(btn){btn.type='button';btn.onclick=e=>{e.preventDefault();e.stopPropagation();close()}}});
