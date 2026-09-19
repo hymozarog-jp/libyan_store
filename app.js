@@ -87,33 +87,54 @@ function humanOrderError(e){
  return m;
 }
 function emailInput(){return el('email').value.trim()}
+let storeLoading=null;
 async function loadStore(){
- const uid=session?.user?.id;
- if(!uid)throw new Error('جلسة تسجيل الدخول غير موجودة');
- app.innerHTML='<div class="card" style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:42px">⏳</div><h2>تم تسجيل الدخول</h2><p class="muted">جارٍ فتح المتجر...</p></div>';
- const withTimeout=(promise,label,ms=12000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('انتهت مهلة تحميل '+label+'، تحقق من اتصال الإنترنت ثم أعد المحاولة.')),ms))]);
- try{
-  const [p,w,pr,stock]=await Promise.all([
-   withTimeout(sb.from('profiles').select('full_name,phone,role').eq('id',uid).maybeSingle(),'بيانات الحساب'),
-   withTimeout(sb.from('wallets').select('balance').eq('user_id',uid).maybeSingle(),'المحفظة'),
-   withTimeout(sb.from('products').select('id,name,description,category,price,currency').eq('active',true).order('created_at'),'المنتجات'),
-   withTimeout(sb.rpc('get_active_product_stock'),'المخزون')
-  ]);
-  if(p.error)console.warn('profiles load:',p.error);
-  if(w.error)console.warn('wallet load:',w.error);
-  if(stock.error)console.warn('stock load:',stock.error);
-  if(pr.error)throw pr.error;
-  profile=p.data||{full_name:'',phone:'',role:'customer'};
-  wallet=w.data||{balance:0};
-  const stockMap=new Map((stock.data||[]).map(x=>[String(x.product_id),Number(x.available_stock||0)]));
-  products=(pr.data||[]).map(p=>({...p,stock_count:stockMap.get(String(p.id))||0}));
-  renderStore();
-  startStockRefresh();
-  startAdminTopupRealtime();
- }catch(e){
-  console.error('loadStore failed:',e);
-  app.innerHTML='<div class="card" style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:42px">⚠️</div><h2>تم تسجيل الدخول بنجاح</h2><p class="muted">لكن تعذر فتح بيانات المتجر.</p><small class="muted">'+esc(e.message||'خطأ غير معروف')+'</small><button class="btn primary" style="width:100%;margin-top:14px" onclick="location.reload()">إعادة المحاولة</button></div>';
- }
+ if(storeLoading)return storeLoading;
+ storeLoading=(async()=>{
+  const uid=session?.user?.id;
+  if(!uid)throw new Error('جلسة تسجيل الدخول غير موجودة');
+  app.innerHTML='<div class="card" style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:42px">⏳</div><h2>تم تسجيل الدخول</h2><p class="muted">جارٍ فتح المتجر...</p></div>';
+  const withTimeout=(promise,label,ms=12000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('انتهت مهلة تحميل '+label+'، تحقق من اتصال الإنترنت ثم أعد المحاولة.')),ms))]);
+  try{
+   const pr=await withTimeout(
+    sb.from('products').select('id,name,description,category,price,currency').eq('active',true).order('created_at'),
+    'المنتجات'
+   );
+   if(pr.error)throw pr.error;
+
+   const [p,w,stock]=await Promise.allSettled([
+    withTimeout(sb.from('profiles').select('full_name,phone,role').eq('id',uid).maybeSingle(),'بيانات الحساب'),
+    withTimeout(sb.from('wallets').select('balance').eq('user_id',uid).maybeSingle(),'المحفظة'),
+    withTimeout(sb.rpc('get_active_product_stock'),'المخزون')
+   ]);
+
+   if(p.status==='fulfilled'){
+    if(p.value.error)console.warn('profiles load:',p.value.error);
+    else profile=p.value.data||{full_name:'',phone:'',role:'customer'};
+   }else console.warn('profiles load failed:',p.reason);
+
+   if(w.status==='fulfilled'){
+    if(w.value.error)console.warn('wallet load:',w.value.error);
+    else wallet=w.value.data||{balance:0};
+   }else console.warn('wallet load failed:',w.reason);
+
+   const stockMap=new Map();
+   if(stock.status==='fulfilled' && !stock.value.error){
+    (stock.value.data||[]).forEach(x=>stockMap.set(String(x.product_id),Number(x.available_stock||0)));
+   }else{
+    console.warn('stock load failed:',stock.status==='fulfilled'?stock.value.error:stock.reason);
+   }
+
+   products=(pr.data||[]).map(p=>({...p,stock_count:stockMap.get(String(p.id))||0}));
+   renderStore();
+   startStockRefresh();
+   startAdminTopupRealtime();
+  }catch(e){
+   console.error('loadStore failed:',e);
+   app.innerHTML='<div class="card" style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:42px">⚠️</div><h2>تم تسجيل الدخول بنجاح</h2><p class="muted">لكن تعذر فتح المنتجات.</p><small class="muted">'+esc(e.message||'خطأ غير معروف')+'</small><button class="btn primary" style="width:100%;margin-top:14px" onclick="location.reload()">إعادة المحاولة</button></div>';
+  }
+ })().finally(()=>{storeLoading=null});
+ return storeLoading;
 }
 async function refreshProductStock(){
   if(!sb||!session)return;
