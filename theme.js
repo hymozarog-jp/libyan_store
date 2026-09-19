@@ -80,36 +80,39 @@
       grid.innerHTML=grouped.map(g=>{
         const gStock=g.items.reduce((s,p)=>s+Number(p.stock_count||0),0);
         const slug='service-'+g.name.replace(/[^a-zA-Z0-9\u0600-\u06ff]+/g,'-');
+        const cats=['شهر','3 أشهر','أخرى'].filter(c=>g.items.some(p=>packageCategory(p)===c));
+        const categorySections=cats.map(cat=>{
+          const items=g.items.filter(p=>packageCategory(p)===cat);
+          return '<section class="lc-package-panel" data-package-panel="'+esc(cat)+'">'+
+            '<div class="lc-package-panel-head"><div><span>فئة الباقة</span><h3>'+esc(cat)+'</h3></div><b>'+items.length+' باقة</b></div>'+
+            '<div class="lc-service-products">'+items.map(p=>{
+              const img=pImage(p),stock=Number(p.stock_count||0),inStock=stock>0;
+              return '<article class="card lc-product" data-package-category="'+esc(cat)+'">'+
+                '<button type="button" data-product-open="'+p.id+'" class="lc-product-open">'+
+                  '<div class="lc-product-img">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<div class="lc-product-placeholder">⚡</div>')+
+                  '<span class="lc-stock '+(inStock?'ok':'out')+'">'+(inStock?'متوفر':'نفد المخزون')+'</span></div>'+
+                  '<div class="lc-product-body"><span class="pill">'+esc(g.name)+'</span><h3>'+esc(p.name)+'</h3>'+
+                  '<div class="lc-product-desc">'+esc(p.description||'اشتراك رقمي يتم تسليمه بعد إتمام الدفع.')+'</div>'+
+                  '<div class="lc-product-footer"><div class="lc-product-price">'+money(p.price)+'</div><span class="lc-arrow">←</span></div></div>'+
+                '</button><div class="lc-product-action"><button class="btn lc-buy" type="button" data-product-buy="'+p.id+'" '+(inStock?'':'disabled')+'>'+(inStock?'اشترِ الآن':'غير متوفر حالياً')+'</button></div>'+
+              '</article>';
+            }).join('')+'</div></section>';
+        }).join('');
         return '<section class="lc-service-group" id="'+esc(slug)+'">'+
           '<div class="lc-service-head"><div><span class="lc-service-kicker">خدمة رقمية</span><h2>'+esc(g.name)+'</h2><p>'+g.items.length+' باقة متاحة'+(gStock?' • '+gStock+' متوفر':'')+'</p></div><span class="lc-service-icon">'+(g.name==='Netflix'?'N':g.name==='Spotify'?'♫':g.name==='Shahid'?'S':g.name==='Roblox'?'R':'⚡')+'</span></div>'+
-          '<div class="lc-service-subcats">'+
-            '<button type="button" class="lc-subcat active" data-subcat="all">كل الباقات</button>'+
-            [...new Set(g.items.map(p=>{const n=String(p.name||'').toLowerCase();if(/3\\s*months|3\\s*month|3\\s*أشهر|ثلاثة\\s*أشهر/.test(n))return '3 أشهر';if(/1\\s*month|1\\s*months|شهر/.test(n))return 'شهر';return 'أخرى';}))].map(cat=>'<button type="button" class="lc-subcat" data-subcat="'+esc(cat)+'">'+esc(cat)+'</button>').join('')+
-          '</div><div class="lc-service-products">'+g.items.map(p=>{
-            const img=pImage(p),stock=Number(p.stock_count||0),inStock=stock>0;
-            return '<article class="card lc-product">'+
-              '<button type="button" data-product-open="'+p.id+'" class="lc-product-open">'+
-                '<div class="lc-product-img">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<div class="lc-product-placeholder">⚡</div>')+
-                '<span class="lc-stock '+(inStock?'ok':'out')+'">'+(inStock?'متوفر':'نفد المخزون')+'</span></div>'+
-                '<div class="lc-product-body"><span class="pill">'+esc(g.name)+'</span><h3>'+esc(p.name)+'</h3>'+
-                '<div class="lc-product-desc">'+esc(p.description||'اشتراك رقمي يتم تسليمه بعد إتمام الدفع.')+'</div>'+
-                '<div class="lc-product-footer"><div class="lc-product-price">'+money(p.price)+'</div><span class="lc-arrow">←</span></div></div>'+
-              '</button><div class="lc-product-action"><button class="btn lc-buy" type="button" data-product-buy="'+p.id+'" '+(inStock?'':'disabled')+'>'+(inStock?'اشترِ الآن':'غير متوفر حالياً')+'</button></div>'+
-            '</article>';
-          }).join('')+'</div></section>';
+          '<div class="lc-package-tabs"><div class="lc-package-tabs-title">اختر الفئة</div>'+
+            '<div class="lc-package-tab-list"><button type="button" class="lc-package-tab active" data-package-tab="all"><strong>كل الفئات</strong><span>'+g.items.length+' باقة</span></button>'+
+            cats.map(cat=>{const count=g.items.filter(p=>packageCategory(p)===cat).length;return '<button type="button" class="lc-package-tab" data-package-tab="'+esc(cat)+'"><strong>'+esc(cat)+'</strong><span>'+count+' باقة</span></button>';}).join('')+
+            '</div></div>'+
+          '<div class="lc-package-panels">'+categorySections+'</div></section>';
       }).join('');
       el('lcNoResults').style.display=grouped.length?'none':'block';
-      grid.querySelectorAll('.lc-subcat').forEach(btn=>btn.onclick=()=>{
+      grid.querySelectorAll('.lc-package-tab').forEach(btn=>btn.onclick=()=>{
         const section=btn.closest('.lc-service-group');
-        section.querySelectorAll('.lc-subcat').forEach(x=>x.classList.toggle('active',x===btn));
-        const cat=btn.dataset.subcat;
-        section.querySelectorAll('.lc-product').forEach(card=>{
-          const title=card.querySelector('h3')?.textContent||'';
-          let show=cat==='all';
-          if(cat==='شهر') show=/1\\s*month|1\\s*months|شهر/i.test(title);
-          else if(cat==='3 أشهر') show=/3\\s*months|3\\s*month|3\\s*أشهر|ثلاثة\\s*أشهر/i.test(title);
-          else if(cat==='أخرى') show=!/month|شهر|أشهر/i.test(title);
-          card.style.display=show?'':'none';
+        section.querySelectorAll('.lc-package-tab').forEach(x=>x.classList.toggle('active',x===btn));
+        const cat=btn.dataset.packageTab;
+        section.querySelectorAll('.lc-package-panel').forEach(panel=>{
+          panel.style.display=(cat==='all'||panel.dataset.packagePanel===cat)?'':'none';
         });
       });
       grid.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productOpen);if(p&&typeof showProduct==='function')showProduct(p);});
