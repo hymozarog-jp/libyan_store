@@ -65,3 +65,23 @@ button{transition:none!important}
 @media(max-width:620px){.lc-service-group{padding:12px;border-radius:20px}.lc-service-products{grid-template-columns:1fr}.lc-service-head h2{font-size:20px}.lc-service-icon{width:42px;height:42px}}
 
 .lc-service-subcats{display:flex;gap:7px;overflow:auto;padding:0 2px 12px;scrollbar-width:none}.lc-service-subcats::-webkit-scrollbar{display:none}.lc-subcat{flex:0 0 auto;border:1px solid rgba(255,255,255,.09);background:#24194a;color:#c9c2d8;border-radius:999px;padding:7px 13px;font-size:11px;font-weight:900}.lc-subcat.active{background:#ff9f24;color:#2a1740;border-color:#ff9f24}
+
+
+/* Service package category navigation */
+.lc-package-tabs{margin:4px 0 16px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:18px;background:rgba(20,12,48,.72)}
+.lc-package-tabs-title{font-size:12px;font-weight:900;color:#a99fbc;margin:0 0 9px}
+.lc-package-tab-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px}
+.lc-package-tab{min-height:62px;border:1px solid rgba(255,255,255,.1);border-radius:15px;background:#24194a;color:#eee5fa;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:right;cursor:pointer;font-weight:900}
+.lc-package-tab strong{font-size:14px}
+.lc-package-tab span{font-size:10px;color:#a99fbc;font-weight:800}
+.lc-package-tab.active{background:#ff9f24;color:#2a1740;border-color:#ff9f24}
+.lc-package-tab.active span{color:#5a3a13}
+.lc-package-panel{margin:0 0 13px;padding:13px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:rgba(255,255,255,.025)}
+.lc-package-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
+.lc-package-panel-head span{font-size:10px;color:#9f96ae;font-weight:800}
+.lc-package-panel-head h3{margin:2px 0 0;font-size:17px;color:#fff}
+.lc-package-panel-head>b{font-size:10px;color:#c9c0d5;background:#2b2052;border-radius:999px;padding:6px 9px}
+@media(max-width:560px){
+  .lc-package-tab-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lc-package-tab{min-height:58px}
+}
