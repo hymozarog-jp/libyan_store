@@ -6,7 +6,6 @@ function wait(){
   window.__productEnhancementsInstalled=true;
   installRpcNotify();
   installAdminStats();
-  installAlwaysAvailableLabel();
 }
 function installRpcNotify(){
   if(!sb.rpc||sb.rpc.__libyanWrapped)return;
