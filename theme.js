@@ -36,46 +36,67 @@
   }
   window.renderProducts=function(){
     const view=el('view');if(!view)return;
-    const cats=[...new Set(products.map(p=>String(p.category||'رقمي').trim()).filter(Boolean))];
+    const brandFromName=p=>{
+      const n=String(p.name||'').toLowerCase();
+      if(n.includes('netflix')||n.includes('نتف'))return 'Netflix';
+      if(n.includes('shahid')||n.includes('شاهد'))return 'Shahid';
+      if(n.includes('spotify')||n.includes('سبوت'))return 'Spotify';
+      if(n.includes('roblox')||n.includes('روبلوكس'))return 'Roblox';
+      return '';
+    };
+    const groupName=p=>{
+      const cat=String(p.category||'').trim();
+      const generic=['','رقمي','منتج رقمي','اشتراكات','بطاقات'];
+      return cat&&!generic.includes(cat)?cat:(brandFromName(p)||'منتجات أخرى');
+    };
+    const groups=[...new Set(products.map(groupName))];
     const available=products.filter(p=>Number(p.stock_count||0)>0).length;
     view.innerHTML=
       '<section class="lc-shop-hero">'+
-        '<div class="lc-hero-copy"><span class="lc-hero-badge">⚡ متجر رقمي ليبي</span><h1>اشتراكاتك وبطاقاتك<br><strong>بسرعة وأمان</strong></h1><p>اختر منتجك، ادفع من المحفظة واستلم بياناتك مباشرة بعد إتمام الشراء.</p></div>'+
+        '<div class="lc-hero-copy"><span class="lc-hero-badge">⚡ متجر رقمي ليبي</span><h1>اشتراكاتك وبطاقاتك<br><strong>بسرعة وأمان</strong></h1><p>اختر خدمتك ثم اختر الباقة المناسبة لك.</p></div>'+
         '<div class="lc-hero-stats"><div><b>'+products.length+'</b><span>منتجات</span></div><div><b>'+available+'</b><span>متوفر الآن</span></div></div>'+
       '</section>'+
       '<section class="lc-shop-tools">'+
         '<div class="lc-search-box"><span>⌕</span><input id="lcProductSearch" class="field" placeholder="ابحث عن Netflix أو Spotify أو شاهد..."></div>'+
-        '<div class="lc-categories" id="lcCategories"><button type="button" class="active" data-cat="all">الكل</button>'+cats.map(x=>'<button type="button" data-cat="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>'+
+        '<div class="lc-categories" id="lcCategories"><button type="button" class="active" data-cat="all">الكل</button>'+groups.map(x=>'<button type="button" data-cat="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>'+
       '</section>'+
-      '<div class="lc-section-title"><div><h2>المنتجات</h2><span class="lc-results-note" id="lcResultsNote">'+products.length+' منتج</span></div></div>'+
-      '<div class="lc-products" id="lcProductGrid"></div>'+
+      '<div class="lc-section-title"><div><h2>الخدمات والمنتجات</h2><span class="lc-results-note" id="lcResultsNote">'+groups.length+' خدمات</span></div></div>'+
+      '<div id="lcGroupGrid" class="lc-service-groups"></div>'+
       '<div id="lcNoResults" class="lc-empty" style="display:none">لا توجد منتجات تطابق بحثك.</div>'+
       '<div id="cartBox" style="margin-top:15px"></div>';
 
-    const grid=el('lcProductGrid'),input=el('lcProductSearch'),note=el('lcResultsNote');
+    const grid=el('lcGroupGrid'),input=el('lcProductSearch'),note=el('lcResultsNote');
     let activeCat='all';
     function draw(){
       const q=String(input?.value||'').trim().toLowerCase();
-      const list=products.filter(p=>{
-        const name=String(p.name||'').toLowerCase(),desc=String(p.description||'').toLowerCase(),cat=String(p.category||'رقمي');
-        return (activeCat==='all'||cat===activeCat)&&(!q||name.includes(q)||desc.includes(q)||cat.toLowerCase().includes(q));
+      const filtered=products.filter(p=>{
+        const group=groupName(p);
+        const hay=[p.name,p.description,p.category,group].map(v=>String(v||'').toLowerCase()).join(' ');
+        return (activeCat==='all'||group===activeCat)&&(!q||hay.includes(q));
       });
-      note.textContent=list.length+' منتج';
-      grid.innerHTML=list.map(p=>{
-        const img=pImage(p),stock=Number(p.stock_count||0),inStock=stock>0;
-        return '<article class="card lc-product">'+
-          '<button type="button" data-product-open="'+p.id+'" class="lc-product-open">'+
-            '<div class="lc-product-img">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<div class="lc-product-placeholder">⚡</div>')+
-            '<span class="lc-stock '+(inStock?'ok':'out')+'">'+(inStock?'متوفر':'نفد المخزون')+'</span></div>'+
-            '<div class="lc-product-body"><span class="pill">'+esc(p.category||'رقمي')+'</span><h3>'+esc(p.name)+'</h3>'+
-            '<div class="lc-product-desc">'+esc(p.description||'اشتراك رقمي يتم تسليمه بعد إتمام الدفع.')+'</div>'+
-            '<div class="lc-product-footer"><div class="lc-product-price">'+money(p.price)+'</div><span class="lc-arrow">←</span></div></div>'+
-          '</button><div class="lc-product-action"><button class="btn lc-buy" type="button" data-product-buy="'+p.id+'" '+(inStock?'':'disabled')+'>'+(inStock?'اشترِ الآن':'غير متوفر حالياً')+'</button></div>'+
-        '</article>';
+      const grouped=groups.map(g=>({name:g,items:filtered.filter(p=>groupName(p)===g)})).filter(g=>g.items.length);
+      note.textContent=grouped.length+' خدمات';
+      grid.innerHTML=grouped.map(g=>{
+        const gStock=g.items.reduce((s,p)=>s+Number(p.stock_count||0),0);
+        const slug='service-'+g.name.replace(/[^a-zA-Z0-9\u0600-\u06ff]+/g,'-');
+        return '<section class="lc-service-group" id="'+esc(slug)+'">'+
+          '<div class="lc-service-head"><div><span class="lc-service-kicker">خدمة رقمية</span><h2>'+esc(g.name)+'</h2><p>'+g.items.length+' باقة متاحة'+(gStock?' • '+gStock+' متوفر':'')+'</p></div><span class="lc-service-icon">'+(g.name==='Netflix'?'N':g.name==='Spotify'?'♫':g.name==='Shahid'?'S':g.name==='Roblox'?'R':'⚡')+'</span></div>'+
+          '<div class="lc-service-products">'+g.items.map(p=>{
+            const img=pImage(p),stock=Number(p.stock_count||0),inStock=stock>0;
+            return '<article class="card lc-product">'+
+              '<button type="button" data-product-open="'+p.id+'" class="lc-product-open">'+
+                '<div class="lc-product-img">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<div class="lc-product-placeholder">⚡</div>')+
+                '<span class="lc-stock '+(inStock?'ok':'out')+'">'+(inStock?'متوفر':'نفد المخزون')+'</span></div>'+
+                '<div class="lc-product-body"><span class="pill">'+esc(g.name)+'</span><h3>'+esc(p.name)+'</h3>'+
+                '<div class="lc-product-desc">'+esc(p.description||'اشتراك رقمي يتم تسليمه بعد إتمام الدفع.')+'</div>'+
+                '<div class="lc-product-footer"><div class="lc-product-price">'+money(p.price)+'</div><span class="lc-arrow">←</span></div></div>'+
+              '</button><div class="lc-product-action"><button class="btn lc-buy" type="button" data-product-buy="'+p.id+'" '+(inStock?'':'disabled')+'>'+(inStock?'اشترِ الآن':'غير متوفر حالياً')+'</button></div>'+
+            '</article>';
+          }).join('')+'</div></section>';
       }).join('');
-      el('lcNoResults').style.display=list.length?'none':'block';
-      grid.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>openProduct(b.dataset.productOpen));
-      grid.querySelectorAll('[data-product-buy]').forEach(b=>b.onclick=()=>{if(!b.disabled)openProduct(b.dataset.productBuy)});
+      el('lcNoResults').style.display=grouped.length?'none':'block';
+      grid.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productOpen);if(p&&typeof showProduct==='function')showProduct(p);});
+      grid.querySelectorAll('[data-product-buy]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productBuy);if(p&&!b.disabled&&typeof showProduct==='function')showProduct(p);});
       renderCart();
     }
     input.oninput=draw;
