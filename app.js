@@ -338,7 +338,9 @@ function renderCart(){
    const order=orderRes.data||{id:orderId,total:total,status:'paid',created_at:new Date().toISOString()};
    const grouped={};
    codes.forEach(x=>(grouped[x.product_id]??=[]).push(x.code));
-   const isRobloxOrder=items.length>0&&items.every(([productId])=>{
+   const isRobloxOrder=items.length>0&&items.every(item=>{
+     const productId=Array.isArray(item)?item[0]:item?.product_id;
+
      const p=products.find(x=>x.id===productId);
      return /روبلوكس|roblox|robux/i.test(String(p?.category||'')+' '+String(p?.name||''));
    });
@@ -367,7 +369,9 @@ function renderCart(){
      '<div class="lc-purchase-actions"><button class="btn" id="lcPurchaseOrders">طلباتي</button><button class="btn primary" id="lcPurchaseClose2">إغلاق</button></div>'+
    '</div>';
    document.body.appendChild(modal);
-   const isRobloxPurchase=items.length>0&&items.every(([productId])=>{
+   const isRobloxPurchase=items.length>0&&items.every(item=>{
+     const productId=Array.isArray(item)?item[0]:item?.product_id;
+
      const p=products.find(x=>x.id===productId);
      const text=String(p?.category||'')+' '+String(p?.name||'');
      return /روبلوكس|roblox|robux/i.test(text);
