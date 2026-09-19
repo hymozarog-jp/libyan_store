@@ -32,7 +32,7 @@ async function boot(){
   else renderLogin();
  }catch(e){app.innerHTML='<div class="card" style="text-align:center;margin-top:30px"><h1>⚡ Libyan Store</h1><p class="muted">'+esc(e.message||'تعذر تشغيل تسجيل الدخول')+'</p><button class="btn primary" onclick="location.reload()">إعادة المحاولة</button></div>'}
 }
-function renderLogin(msg=''){app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">⚡</div><h1>Libyan Store</h1><p class="muted">اشتراكات رقمية ومحفظة وتسليم أكواد</p><div class="card" style="display:grid;gap:10px;text-align:right"><button class="btn" id="googleLogin" style="width:100%;font-weight:800">🔵 المتابعة باستخدام Google</button><div style="display:flex;align-items:center;gap:8px;margin:4px 0;color:#8f9baa"><span style="height:1px;background:#263345;flex:1"></span><small>أو بالبريد الإلكتروني</small><span style="height:1px;background:#263345;flex:1"></span></div><input id="email" class="field" type="email" placeholder="البريد الإلكتروني"><input id="pass" class="field" type="password" placeholder="كلمة المرور"><button class="btn primary" id="login">دخول</button><button class="btn" id="signup">إنشاء حساب</button><small id="msg" class="muted">${esc(msg)}</small></div></div>`;el('login').onclick=()=>auth(false);el('signup').onclick=()=>auth(true);el('googleLogin').onclick=()=>socialLogin('google')}
+function renderLogin(msg='',signupMode=false){app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">⚡</div><h1>Libyan Store</h1><p class="muted">اشتراكات رقمية ومحفظة وتسليم أكواد</p><div class="card" style="display:grid;gap:10px;text-align:right"><button class="btn" id="googleLogin" style="width:100%;font-weight:800">🔵 المتابعة باستخدام Google</button><div style="display:flex;align-items:center;gap:8px;margin:4px 0;color:#8f9baa"><span style="height:1px;background:#263345;flex:1"></span><small>أو بالبريد الإلكتروني</small><span style="height:1px;background:#263345;flex:1"></span></div><div id="signupFields" style="display:${signupMode?'grid':'none'};gap:10px"><input id="fullName" class="field" autocomplete="name" placeholder="الاسم الكامل"><input id="phone" class="field" type="tel" inputmode="tel" autocomplete="tel" placeholder="رقم الهاتف"></div><input id="email" class="field" type="email" autocomplete="email" placeholder="البريد الإلكتروني"><input id="pass" class="field" type="password" autocomplete="${signupMode?'new-password':'current-password'}" placeholder="كلمة المرور"><button class="btn primary" id="login">${signupMode?'تسجيل الدخول':'دخول'}</button><button class="btn" id="signup">${signupMode?'إنشاء الحساب':'إنشاء حساب جديد'}</button><small id="msg" class="muted">${esc(msg)}</small></div></div>`;el('login').onclick=()=>signupMode?renderLogin('',false):auth(false);el('signup').onclick=()=>signupMode?auth(true):renderLogin('',true);el('googleLogin').onclick=()=>socialLogin('google')}
 async function socialLogin(provider){
  if(authBusy)return;
  const msg=el('msg');authBusy=true;if(msg)msg.textContent=provider==='google'?'جارٍ فتح Google...':'جارٍ فتح تسجيل الدخول...';
@@ -57,13 +57,14 @@ async function auth(signup){
  const email=emailInput(),password=el('pass').value.trim();
  if(!email)return msg.textContent='اكتب البريد الإلكتروني أولاً';
  if(password.length<6)return msg.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+ let fullName='',phone='';
+ if(signup){fullName=el('fullName')?.value.trim()||'';phone=el('phone')?.value.trim()||'';if(fullName.length<2)return msg.textContent='اكتب الاسم الكامل';if(!phone)return msg.textContent='اكتب رقم الهاتف';}
  authBusy=true;msg.textContent=signup?'جارٍ إنشاء الحساب...':'جارٍ تسجيل الدخول...';if(button)button.disabled=true;
  try{
-  const r=signup?await sb.auth.signUp({email,password}):await sb.auth.signInWithPassword({email,password});
+  const r=signup?await sb.auth.signUp({email,password,options:{data:{full_name:fullName,phone}}}):await sb.auth.signInWithPassword({email,password});
   if(r.error){msg.textContent=humanAuthError(r.error);return;}
   if(signup&&!r.data.session){msg.textContent='تم إنشاء الحساب. افتح بريدك الإلكتروني لتأكيد الحساب، ثم سجّل الدخول.';return;}
-  session=r.data.session;
-  if(!session){msg.textContent='تعذر إنشاء جلسة تسجيل الدخول. حاول مرة أخرى.';return;}
+  session=r.data.session;if(!session){msg.textContent='تعذر إنشاء جلسة تسجيل الدخول. حاول مرة أخرى.';return;}
   if(!signup)notifyLoginToDiscord();
   await loadStore();
  }catch(e){msg.textContent=humanAuthError(e)}finally{authBusy=false;if(button)button.disabled=false}
