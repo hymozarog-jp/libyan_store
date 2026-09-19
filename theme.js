@@ -148,7 +148,7 @@
       '<button class="lc-drawer-btn" id="lcLogout" style="color:#ff776f;margin-top:18px">⇥ &nbsp; تسجيل الخروج</button></aside></div></div>';
     document.getElementById('lcMenu').onclick=()=>document.getElementById('lcDrawer').classList.add('open');
     document.getElementById('lcBackdrop').onclick=closeDrawer;document.getElementById('lcDrawerClose').onclick=closeDrawer;
-    document.getElementById('lcSearch').onclick=()=>{const q=prompt('ابحث عن منتج');if(q){const found=products.find(p=>String(p.name).toLowerCase().includes(q.toLowerCase()));if(found)openProduct(found.id);else alert('لم يتم العثور على المنتج')}}};
+    document.getElementById('lcSearch').onclick=()=>{const q=prompt('ابحث عن منتج');if(q){const found=products.find(p=>String(p.name).toLowerCase().includes(q.toLowerCase()));if(found)openProduct(found.id);else alert('لم يتم العثور على المنتج')}};
     document.getElementById('lcBell').onclick=()=>alert('لا توجد إشعارات جديدة حالياً.');
     document.getElementById('lcLogout').onclick=async()=>{if(adminTopupChannel){await sb.removeChannel(adminTopupChannel);adminTopupChannel=null}await sb.auth.signOut();session=null;cart={};renderLogin()};
     document.querySelectorAll('[data-lc-view]').forEach(b=>b.onclick=()=>{nav(b.dataset.lcView);closeDrawer()});
