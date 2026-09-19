@@ -229,17 +229,17 @@ function renderCategory(category){
   const view=el('view');if(!view)return;
   const list=products.filter(p=>String(p.category||'رقمي').trim()===String(category).trim());
   const imageFor=p=>typeof productImage==='function'?productImage(p.name):'';
-  const cards=list.map(p=>{const img=imageFor(p);return '<article class="card lc-product">'+
-    '<button type="button" class="lc-product-open" data-product-open="'+p.id+'">'+
-      '<div class="lc-product-img">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>')+'</div>'+
-      '<div class="lc-product-body"><h3>'+esc(p.name)+'</h3><div class="lc-product-desc">'+esc(p.description||'بطاقة رقمية')+'</div><div class="lc-product-price">'+money(p.price)+'</div></div>'+
-    '</button>'+ (p.stock_count>0?'<div style="padding:0 15px 15px"><button class="btn lc-buy" type="button" data-product-buy="'+p.id+'">اشترِ الآن</button></div>':'<div style="padding:0 15px 15px"><div class="pill" style="text-align:center">نفد المخزون</div></div>')+
-  '</article>';}).join('');
-  view.innerHTML='<div class="lc-section-title"><button type="button" class="lc-back-btn" id="lcBackCategories">→ الفئات</button><h2>'+esc(category)+'</h2><span class="pill">'+list.length+' منتجات</span></div>'+
-    (cards?'<div class="lc-products">'+cards+'</div>':'<div class="lc-empty">لا توجد منتجات في هذه الفئة.</div>')+'<div id="cartBox" style="margin-top:15px"></div>';
+  const cards=list.map(p=>{
+    const img=imageFor(p);
+    return '<button type="button" class="card lc-category-card" data-product-open="'+p.id+'">'+
+      '<div class="lc-category-image">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>')+'</div>'+
+      '<div class="lc-category-body"><h3>'+esc(p.name)+'</h3><span class="pill">'+money(p.price)+'</span><span class="lc-category-arrow">←</span></div>'+
+    '</button>';
+  }).join('');
+  view.innerHTML='<div class="lc-section-title"><button type="button" class="lc-back-btn" id="lcBackCategories">→ الفئات الرئيسية</button><h2>فئات '+esc(category)+'</h2><span class="pill">'+list.length+' فئات</span></div>'+
+    (cards?'<div class="lc-products lc-categories">'+cards+'</div>':'<div class="lc-empty">لا توجد فئات في هذه المجموعة.</div>')+'<div id="cartBox" style="margin-top:15px"></div>';
   el('lcBackCategories').onclick=renderProducts;
   document.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productOpen);if(p)showProduct(p)});
-  document.querySelectorAll('[data-product-buy]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productBuy);if(p)showProduct(p)});
   renderCart();
 }
 
