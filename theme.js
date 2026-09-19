@@ -36,23 +36,59 @@
   }
   window.renderProducts=function(){
     const view=el('view');if(!view)return;
-    view.innerHTML='<div class="lc-section-title"><h2>المنتجات</h2><span class="pill">'+products.length+' منتج</span></div>'+
-      (products.length?'<div class="lc-products">'+products.map(p=>{
-        const img=pImage(p);
-        return '<article class="card lc-product"><button type="button" data-product-open="'+p.id+'" style="display:block;width:100%;padding:0;border:0;background:none;color:inherit;text-align:inherit">'+
-          '<div class="lc-product-img">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>')+'</div>'+
-          '<div class="lc-product-body"><span class="pill">'+esc(p.category||'رقمي')+'</span><h3>'+esc(p.name)+'</h3>'+
-          '<div class="lc-product-desc">'+esc(p.description||'')+'</div><div class="lc-product-price">'+money(p.price)+'</div></div></button>'+
-          '<div style="padding:0 15px 15px"><button class="btn lc-buy" type="button" data-product-buy="'+p.id+'">اشترِ الآن</button></div></article>';
-      }).join('')+'</div>':'<div class="lc-empty">لا توجد منتجات متاحة حالياً.</div>')+
+    const cats=[...new Set(products.map(p=>String(p.category||'رقمي').trim()).filter(Boolean))];
+    const available=products.filter(p=>Number(p.stock_count||0)>0).length;
+    view.innerHTML=
+      '<section class="lc-shop-hero">'+
+        '<div class="lc-hero-copy"><span class="lc-hero-badge">⚡ متجر رقمي ليبي</span><h1>اشتراكاتك وبطاقاتك<br><strong>بسرعة وأمان</strong></h1><p>اختر منتجك، ادفع من المحفظة واستلم بياناتك مباشرة بعد إتمام الشراء.</p></div>'+
+        '<div class="lc-hero-stats"><div><b>'+products.length+'</b><span>منتجات</span></div><div><b>'+available+'</b><span>متوفر الآن</span></div></div>'+
+      '</section>'+
+      '<section class="lc-shop-tools">'+
+        '<div class="lc-search-box"><span>⌕</span><input id="lcProductSearch" class="field" placeholder="ابحث عن Netflix أو Spotify أو شاهد..."></div>'+
+        '<div class="lc-categories" id="lcCategories"><button type="button" class="active" data-cat="all">الكل</button>'+cats.map(x=>'<button type="button" data-cat="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>'+
+      '</section>'+
+      '<div class="lc-section-title"><div><h2>المنتجات</h2><span class="lc-results-note" id="lcResultsNote">'+products.length+' منتج</span></div></div>'+
+      '<div class="lc-products" id="lcProductGrid"></div>'+
+      '<div id="lcNoResults" class="lc-empty" style="display:none">لا توجد منتجات تطابق بحثك.</div>'+
       '<div id="cartBox" style="margin-top:15px"></div>';
-    document.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>openProduct(b.dataset.productOpen));
-    document.querySelectorAll('[data-product-buy]').forEach(b=>b.onclick=()=>openProduct(b.dataset.productBuy));
-    renderCart();
+
+    const grid=el('lcProductGrid'),input=el('lcProductSearch'),note=el('lcResultsNote');
+    let activeCat='all';
+    function draw(){
+      const q=String(input?.value||'').trim().toLowerCase();
+      const list=products.filter(p=>{
+        const name=String(p.name||'').toLowerCase(),desc=String(p.description||'').toLowerCase(),cat=String(p.category||'رقمي');
+        return (activeCat==='all'||cat===activeCat)&&(!q||name.includes(q)||desc.includes(q)||cat.toLowerCase().includes(q));
+      });
+      note.textContent=list.length+' منتج';
+      grid.innerHTML=list.map(p=>{
+        const img=pImage(p),stock=Number(p.stock_count||0),inStock=stock>0;
+        return '<article class="card lc-product">'+
+          '<button type="button" data-product-open="'+p.id+'" class="lc-product-open">'+
+            '<div class="lc-product-img">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<div class="lc-product-placeholder">⚡</div>')+
+            '<span class="lc-stock '+(inStock?'ok':'out')+'">'+(inStock?'متوفر':'نفد المخزون')+'</span></div>'+
+            '<div class="lc-product-body"><span class="pill">'+esc(p.category||'رقمي')+'</span><h3>'+esc(p.name)+'</h3>'+
+            '<div class="lc-product-desc">'+esc(p.description||'اشتراك رقمي يتم تسليمه بعد إتمام الدفع.')+'</div>'+
+            '<div class="lc-product-footer"><div class="lc-product-price">'+money(p.price)+'</div><span class="lc-arrow">←</span></div></div>'+
+          '</button><div class="lc-product-action"><button class="btn lc-buy" type="button" data-product-buy="'+p.id+'" '+(inStock?'':'disabled')+'>'+(inStock?'اشترِ الآن':'غير متوفر حالياً')+'</button></div>'+
+        '</article>';
+      }).join('');
+      el('lcNoResults').style.display=list.length?'none':'block';
+      grid.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>openProduct(b.dataset.productOpen));
+      grid.querySelectorAll('[data-product-buy]').forEach(b=>b.onclick=()=>{if(!b.disabled)openProduct(b.dataset.productBuy)});
+      renderCart();
+    }
+    input.oninput=draw;
+    document.querySelectorAll('#lcCategories button').forEach(b=>b.onclick=()=>{
+      activeCat=b.dataset.cat;
+      document.querySelectorAll('#lcCategories button').forEach(x=>x.classList.toggle('active',x===b));
+      draw();
+    });
+    draw();
   };
   window.renderStore=function(){
     app.innerHTML='<div class="shell"><header class="lc-header">'+
-      '<button class="lc-icon" id="lcMenu">☰</button><button class="lc-icon" id="lcSearch">⌕</button><button class="lc-icon" id="lcBell">♟</button>'+
+      '<button class="lc-icon" id="lcMenu">☰</button><button class="lc-icon" id="lcSearch">⌕</button><button class="lc-icon" id="lcBell" aria-label="الإشعارات">🔔</button>'+
       '<div class="lc-wallet">💳 <b>'+money(wallet?.balance)+'</b><span class="wallet-text">المحفظة</span></div>'+
       '<div class="lc-logo"><span>Libyan Store</span><span class="lc-logo-mark">LS</span></div></header>'+
       '<section class="lc-hero"><h1>بطاقات واشتراكات رقمية</h1><p>اشترِ بطاقاتك المفضلة واستلم الأكواد مباشرة بعد الدفع.</p></section>'+
