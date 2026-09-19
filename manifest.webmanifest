@@ -1,0 +1,16 @@
+{
+  "name": "Libyan Store",
+  "short_name": "Libyan Store",
+  "description": "متجر ليبي للبطاقات والاشتراكات الرقمية",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f0b2e",
+  "theme_color": "#17133f",
+  "icons": [
+    {"src":"assets/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
