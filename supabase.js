@@ -7,5 +7,5 @@ async function loadSupabase(){
     const remote=await r.json(); Object.assign(cfg,remote);
   }
   if(!cfg.url||!cfg.publishableKey) throw new Error('إعدادات Supabase غير مكتملة');
-  return supabase.createClient(cfg.url,cfg.publishableKey,{auth:{flowType:'pkce',detectSessionInUrl:false,persistSession:true,autoRefreshToken:true}});
+  return supabase.createClient(cfg.url,cfg.publishableKey,{auth:{flowType:'implicit',detectSessionInUrl:true,persistSession:true,autoRefreshToken:true}});
 }
