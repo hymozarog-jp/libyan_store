@@ -15,16 +15,6 @@ async function boot(){
    renderLogin('تعذر تسجيل الدخول باستخدام Google: '+decodeURIComponent(oauthMessage.replace(/\+/g,' ')));
    return;
   }
-  const oauthCode=oauthParams.get('code');
-  if(oauthCode){
-   const exchanged=await sb.auth.exchangeCodeForSession(oauthCode);
-   if(exchanged.error){
-    history.replaceState({},document.title,location.pathname+location.hash);
-    renderLogin('تعذر إكمال تسجيل الدخول باستخدام Google: '+humanAuthError(exchanged.error));
-    return;
-   }
-   history.replaceState({},document.title,location.pathname+location.hash);
-  }
   sb.auth.onAuthStateChange((event,nextSession)=>{
    if(event==='SIGNED_IN'||event==='INITIAL_SESSION'){
     session=nextSession||null;
