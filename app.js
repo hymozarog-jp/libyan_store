@@ -1,4 +1,4 @@
-let sb,session,products=[],cart={},profile,wallet,adminTopupChannel;
+let sb,session,products=[],cart={},profile,wallet,adminTopupChannel,stockRefreshTimer;
 const app=document.getElementById('app');
 const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>`${Number(v||0).toFixed(2)} د.ل`;
@@ -108,11 +108,33 @@ async function loadStore(){
   const stockMap=new Map((stock.data||[]).map(x=>[String(x.product_id),Number(x.available_stock||0)]));
   products=(pr.data||[]).map(p=>({...p,stock_count:stockMap.get(String(p.id))||0}));
   renderStore();
+  startStockRefresh();
   startAdminTopupRealtime();
  }catch(e){
   console.error('loadStore failed:',e);
   app.innerHTML='<div class="card" style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:42px">⚠️</div><h2>تم تسجيل الدخول بنجاح</h2><p class="muted">لكن تعذر فتح بيانات المتجر.</p><small class="muted">'+esc(e.message||'خطأ غير معروف')+'</small><button class="btn primary" style="width:100%;margin-top:14px" onclick="location.reload()">إعادة المحاولة</button></div>';
  }
+}
+async function refreshProductStock(){
+  if(!sb||!session)return;
+  try{
+    const r=await sb.rpc('get_active_product_stock');
+    if(r.error){console.warn('stock refresh:',r.error);return}
+    const stockMap=new Map((r.data||[]).map(x=>[String(x.product_id),Number(x.available_stock||0)]));
+    let changed=false;
+    products=products.map(p=>{
+      const nextStock=stockMap.get(String(p.id))||0;
+      if(Number(p.stock_count||0)!==nextStock)changed=true;
+      return {...p,stock_count:nextStock};
+    });
+    if(changed&&el('view')&&document.querySelector('.lc-products'))renderProducts();
+  }catch(e){console.warn('stock refresh failed:',e)}
+}
+function startStockRefresh(){
+  if(stockRefreshTimer)clearInterval(stockRefreshTimer);
+  stockRefreshTimer=setInterval(refreshProductStock,30000);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshProductStock()},{once:false});
+  window.addEventListener('focus',refreshProductStock,{once:false});
 }
 function startAdminTopupRealtime(){if(profile?.role!=='admin'||!sb)return;if(adminTopupChannel){sb.removeChannel(adminTopupChannel);adminTopupChannel=null}adminTopupChannel=sb.channel('admin-wallet-topups').on('postgres_changes',{event:'INSERT',schema:'public',table:'wallet_topups'},payload=>{const row=payload.new;if(row?.status==='pending')showTopupNotification(row)}).subscribe(status=>{if(status!=='SUBSCRIBED')console.log('Topup realtime status:',status)})}
 function showTopupNotification(row){const old=document.getElementById('topupToast');if(old)old.remove();const toast=document.createElement('div');toast.id='topupToast';toast.dir='rtl';toast.style.cssText='position:fixed;top:18px;right:18px;z-index:99999;max-width:360px;background:#17100c;border:1px solid #ff7a18;box-shadow:0 12px 35px rgba(0,0,0,.45);border-radius:16px;padding:15px;color:#fff;font-family:inherit';toast.innerHTML=`<div style="font-size:18px;font-weight:800">🔔 طلب تعبئة رصيد جديد</div><div style="margin-top:8px;color:#ffd9bd">المبلغ: <b>${money(row.amount)}</b></div><div style="margin-top:3px;color:#ffd9bd">الطريقة: <b>${esc(row.method)}</b></div><div style="margin-top:3px;color:#ffd9bd">رقم المحوّل: <b>${esc(row.sender_phone||'غير متوفر')}</b></div><button class="btn primary" id="closeTopupToast" style="width:100%;margin-top:12px">فتح طلبات الشحن</button>`;document.body.appendChild(toast);el('closeTopupToast').onclick=()=>{toast.remove();const adminBtn=document.querySelector('[data-view="admin"]');if(adminBtn)adminBtn.click()};try{const Ctx=window.AudioContext||window.webkitAudioContext;if(Ctx){const ctx=new Ctx(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.frequency.value=880;gain.gain.value=.05;osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.18);setTimeout(()=>ctx.close(),300)}}catch(e){}if('Notification'in window&&Notification.permission==='granted'){try{new Notification('طلب تعبئة رصيد جديد',{body:`${money(row.amount)} — ${row.method}`})}catch(e){}}}
