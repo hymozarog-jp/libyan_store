@@ -276,9 +276,12 @@ function renderCart(){
    <div class="lc-purchase-actions"><button class="btn" id="lcPurchaseOrders">طلباتي</button><button class="btn primary" id="lcPurchaseClose2">إغلاق</button></div>
  </div>`;
  document.body.appendChild(modal);
- const close=()=>modal.remove();
- el('lcPurchaseClose').onclick=close;el('lcPurchaseClose2').onclick=close;
- modal.onclick=e=>{if(e.target===modal)close()};
+ const close=()=>{if(!modal.isConnected)return;modal.classList.remove('show');modal.remove()};
+ const closeBtn=el('lcPurchaseClose'),closeBtn2=el('lcPurchaseClose2');
+ if(closeBtn){closeBtn.type='button';closeBtn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();close()},{once:true})}
+ if(closeBtn2){closeBtn2.type='button';closeBtn2.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();close()},{once:true})}
+ modal.addEventListener('click',e=>{if(e.target===modal)close()});
+ document.addEventListener('keydown',function escPurchase(e){if(e.key==='Escape'){close();document.removeEventListener('keydown',escPurchase)}});
  document.querySelectorAll('[data-toggle-code]').forEach(btn=>btn.onclick=()=>{
    const value=btn.parentElement.querySelector('.lc-secret-value');
    const shown=value.dataset.shown==='1';
