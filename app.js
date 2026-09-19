@@ -91,17 +91,20 @@ async function loadStore(){
  if(!uid)throw new Error('جلسة تسجيل الدخول غير موجودة');
  app.innerHTML='<div class="card" style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:42px">⏳</div><h2>تم تسجيل الدخول</h2><p class="muted">جارٍ فتح المتجر...</p></div>';
  try{
-  const [p,w,pr]=await Promise.all([
+  const [p,w,pr,stock]=await Promise.all([
    sb.from('profiles').select('full_name,phone,role').eq('id',uid).maybeSingle(),
    sb.from('wallets').select('balance').eq('user_id',uid).maybeSingle(),
-   sb.from('products').select('id,name,description,category,price,currency,product_codes(status)').eq('active',true).order('created_at')
+   sb.from('products').select('id,name,description,category,price,currency').eq('active',true).order('created_at'),
+   sb.rpc('get_active_product_stock')
   ]);
   if(p.error)console.warn('profiles load:',p.error);
   if(w.error)console.warn('wallet load:',w.error);
   if(pr.error)throw pr.error;
+  if(stock.error)throw stock.error;
   profile=p.data||{full_name:'',phone:'',role:'customer'};
   wallet=w.data||{balance:0};
-  products=(pr.data||[]).map(p=>({...p,stock_count:(p.product_codes||[]).filter(c=>c.status==='available').length}));
+  const stockMap=new Map((stock.data||[]).map(x=>[String(x.product_id),Number(x.available_stock||0)]));
+  products=(pr.data||[]).map(p=>({...p,stock_count:stockMap.get(String(p.id))||0}));
   renderStore();
   startAdminTopupRealtime();
  }catch(e){
