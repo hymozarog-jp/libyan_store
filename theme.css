@@ -63,3 +63,5 @@ button{transition:none!important}
 .lc-service-products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .lc-service-products .lc-product{min-width:0}
 @media(max-width:620px){.lc-service-group{padding:12px;border-radius:20px}.lc-service-products{grid-template-columns:1fr}.lc-service-head h2{font-size:20px}.lc-service-icon{width:42px;height:42px}}
+
+.lc-service-subcats{display:flex;gap:7px;overflow:auto;padding:0 2px 12px;scrollbar-width:none}.lc-service-subcats::-webkit-scrollbar{display:none}.lc-subcat{flex:0 0 auto;border:1px solid rgba(255,255,255,.09);background:#24194a;color:#c9c2d8;border-radius:999px;padding:7px 13px;font-size:11px;font-weight:900}.lc-subcat.active{background:#ff9f24;color:#2a1740;border-color:#ff9f24}
