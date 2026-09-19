@@ -1,0 +1,9 @@
+.git/**
+.github/**
+.wrangler/**
+wrangler.json
+wrangler.jsonc
+wrangler.toml
+.assetsignore
+README.md
+MOBILE_APP.md
