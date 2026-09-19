@@ -320,12 +320,12 @@ function renderCart(){
      const p=products.find(x=>x.id===productId);
      const img=typeof productImage==='function'?productImage(p?.name):'';
      return '<section class="lc-purchase-product">'+
-       '<div class="lc-purchase-cover">'+(img?'<img src="'+img+'" alt="'+esc(p?.name||'المنتج')+'">':'<div class="lc-product-placeholder">⚡</div>')+'</div>'+\
-       '<div class="lc-purchase-product-title"><h2>'+esc(p?.name||'المنتج')+'</h2><span>'+productCodes.length+' كود</span></div>'+\
-       productCodes.map((code,index)=>'<div class="lc-secret-row">'+\
-         '<div class="lc-secret-label"><span>الكود '+(index+1)+'</span><span>🔐 تسليم رقمي</span></div>'+\
-         '<div class="lc-secret-box"><button type="button" class="lc-secret-action" data-copy-code="'+esc(code)+'" aria-label="نسخ الكود">▣</button><button type="button" class="lc-secret-action" data-toggle-code aria-label="إظهار الكود">◉</button><span class="lc-secret-value" data-code-value="'+esc(code)+'">'+('•'.repeat(Math.min(14,Math.max(8,code.length))))+'</span></div>'+\
-       '</div>').join('')+\
+       '<div class="lc-purchase-cover">'+(img?'<img src="'+img+'" alt="'+esc(p?.name||'المنتج')+'">':'<div class="lc-product-placeholder">⚡</div>')+'</div>'+
+       '<div class="lc-purchase-product-title"><h2>'+esc(p?.name||'المنتج')+'</h2><span>'+productCodes.length+' كود</span></div>'+
+       productCodes.map((code,index)=>'<div class="lc-secret-row">'+
+         '<div class="lc-secret-label"><span>الكود '+(index+1)+'</span><span>🔐 تسليم رقمي</span></div>'+
+         '<div class="lc-secret-box"><button type="button" class="lc-secret-action" data-copy-code="'+esc(code)+'" aria-label="نسخ الكود">▣</button><button type="button" class="lc-secret-action" data-toggle-code aria-label="إظهار الكود">◉</button><span class="lc-secret-value" data-code-value="'+esc(code)+'">'+('•'.repeat(Math.min(14,Math.max(8,code.length))))+'</span></div>'+
+       '</div>').join('')+
      '</section>';
    }).join('');
    const noCodes=!codes.length;
@@ -333,12 +333,12 @@ function renderCart(){
    const modal=document.createElement('div');
    modal.id='lcPurchaseModal';modal.className='lc-modal show';modal.dir='rtl';
    modal.innerHTML='<div class="lc-modal-card lc-purchase-modal">'+
-     '<button class="lc-modal-close" id="lcPurchaseClose" aria-label="إغلاق">×</button>'+\
-     '<div class="lc-purchase-success"><span class="lc-purchase-ok">✓</span><div><b>تمت عملية الشراء بنجاح</b><span>تم خصم '+money(order.total)+' من محفظتك</span></div></div>'+\
-     '<div class="lc-purchase-summary"><div><span>رقم الطلب</span><b>#'+String(order.id).slice(-8).toUpperCase()+'</b></div><div><span>الأكواد</span><b>'+codes.length+' كود</b></div><div><span>الرصيد المتبقي</span><b>'+money(wallet?.balance)+'</b></div></div>'+\
-     (productsHtml||'<section class="lc-purchase-no-codes"><div>✅</div><b>تم الدفع بنجاح</b><p>تم إنشاء الطلب، لكن الأكواد لم تظهر الآن. ستجدها محفوظة داخل «طلباتي» ويمكنك فتح الطلب لاحقًا.</p></section>')+\
-     (noCodes?'':'<div class="lc-purchase-tip">💡 اضغط على زر النسخ بجانب أي كود لنسخه مباشرة.</div>')+\
-     '<div class="lc-purchase-actions"><button class="btn" id="lcPurchaseOrders">طلباتي</button><button class="btn primary" id="lcPurchaseClose2">إغلاق</button></div>'+\
+     '<button class="lc-modal-close" id="lcPurchaseClose" aria-label="إغلاق">×</button>'+
+     '<div class="lc-purchase-success"><span class="lc-purchase-ok">✓</span><div><b>تمت عملية الشراء بنجاح</b><span>تم خصم '+money(order.total)+' من محفظتك</span></div></div>'+
+     '<div class="lc-purchase-summary"><div><span>رقم الطلب</span><b>#'+String(order.id).slice(-8).toUpperCase()+'</b></div><div><span>الأكواد</span><b>'+codes.length+' كود</b></div><div><span>الرصيد المتبقي</span><b>'+money(wallet?.balance)+'</b></div></div>'+
+     (productsHtml||'<section class="lc-purchase-no-codes"><div>✅</div><b>تم الدفع بنجاح</b><p>تم إنشاء الطلب، لكن الأكواد لم تظهر الآن. ستجدها محفوظة داخل «طلباتي» ويمكنك فتح الطلب لاحقًا.</p></section>')+
+     (noCodes?'':'<div class="lc-purchase-tip">💡 اضغط على زر النسخ بجانب أي كود لنسخه مباشرة.</div>')+
+     '<div class="lc-purchase-actions"><button class="btn" id="lcPurchaseOrders">طلباتي</button><button class="btn primary" id="lcPurchaseClose2">إغلاق</button></div>'+
    '</div>';
    document.body.appendChild(modal);
    const close=()=>{if(modal.isConnected)modal.remove();refreshProductStock();renderCart()};
