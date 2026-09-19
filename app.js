@@ -310,7 +310,7 @@ function renderCart(){
  const phone=(profile?.phone||session.user.phone||'').trim();
  const items=Object.entries(cart).filter(([id,q])=>Number(q)>0).map(([product_id,quantity])=>({product_id,quantity:Number(quantity)}));
  if(!items.length)return alert('السلة فارغة');
- const total=items.reduce((sum,[id,q])=>{const p=products.find(x=>x.id===id);return sum+(Number(p?.price||0)*Number(q))},0);
+ const total=items.reduce((sum,item)=>{const id=Array.isArray(item)?item[0]:item?.product_id;const q=Array.isArray(item)?item[1]:item?.quantity;const p=products.find(x=>x.id===id);return sum+(Number(p?.price||0)*Number(q||0))},0);
  const buyButtons=[...document.querySelectorAll('.lc-detail-buy,[id="pageBuy"],.lc-buy')];
  buyButtons.forEach(b=>{b.disabled=true;b.dataset.originalText=b.textContent;b.textContent='جارٍ تنفيذ الشراء...'});
  const processing=document.createElement('div');
@@ -377,7 +377,7 @@ function renderCart(){
      return /روبلوكس|roblox|robux/i.test(text);
    });
    if(isRobloxPurchase){
-     const purchasedNames=items.map(([productId,quantity])=>{
+     const purchasedNames=items.map(item=>{const productId=Array.isArray(item)?item[0]:item?.product_id;const quantity=Array.isArray(item)?item[1]:item?.quantity;
        const p=products.find(x=>x.id===productId);
        return (p?.name||'روبلوكس')+' × '+quantity;
      }).join('، ');
