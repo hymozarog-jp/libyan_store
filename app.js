@@ -101,8 +101,8 @@ async function loadStore(){
   ]);
   if(p.error)console.warn('profiles load:',p.error);
   if(w.error)console.warn('wallet load:',w.error);
+  if(stock.error)console.warn('stock load:',stock.error);
   if(pr.error)throw pr.error;
-  if(stock.error)throw stock.error;
   profile=p.data||{full_name:'',phone:'',role:'customer'};
   wallet=w.data||{balance:0};
   const stockMap=new Map((stock.data||[]).map(x=>[String(x.product_id),Number(x.available_stock||0)]));
