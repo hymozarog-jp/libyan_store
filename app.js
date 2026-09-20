@@ -428,7 +428,7 @@ async function renderWallet(){
   sb.from('wallet_transactions').select('id,type,amount,balance_after,note,created_at').eq('user_id',session.user.id).order('created_at',{ascending:false}).limit(30),
   sb.from('store_settings').select('key,value').in('key',['libyana_number','almadar_number'])
  ]);
- const topupTotal=(r.data||[]).filter(x=>x.status==='approved'||x.status==='pending').reduce((s,x)=>s+Number(x.amount||0),0);
+ const topupTotal=(r.data||[]).filter(x=>x.status==='approved').reduce((s,x)=>s+Number(x.amount||0),0);
  const nums=Object.fromEntries((settings.data||[]).map(x=>[x.key,x.value]));
  const txRows=(tx.data||[]).map(x=>{
    const positive=['topup','refund','adjustment'].includes(x.type);
