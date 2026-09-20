@@ -209,7 +209,7 @@ function renderCartPage(){
 function renderProducts(){
   const view=el('view');if(!view)return;
   const imageFor=p=>typeof productImage==='function'?productImage(p.name):'';
-  const groups=[...new Set(products.map(p=>String(p.category||'رقمي').trim()||'رقمي'))];
+  const groups=[...new Set(['ماب السرقه',...products.map(p=>String(p.category||'رقمي').trim()||'رقمي')])];
   const cards=groups.map(category=>{
     const sample=products.find(p=>String(p.category||'رقمي').trim()===category);
     const img=imageFor(sample);
