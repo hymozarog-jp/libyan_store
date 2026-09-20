@@ -197,8 +197,7 @@ function renderStore(){
   renderProducts();
 }
 function renderCartPage(){
-  const entries=Object.entries(cart).filter(([id,q])=>Number(q)>0&&products.some(p=>p.id===id));
-  let total=0;
+  const entries=Object.entries(cart).filter(([id,q])=>Number(q)>0&&products.some(p=>p.id===id));  let total=0;
   const rows=entries.map(([id,q])=>{const p=products.find(x=>x.id===id);const t=Number(p.price)*Number(q);total+=t;return `<div style="padding:12px 0;border-bottom:1px solid #202b3a"><div style="display:flex;justify-content:space-between"><div><b>${esc(p.name)}</b><div class="muted">${money(p.price)} × ${q}</div></div><b>${money(t)}</b></div><div style="display:flex;gap:7px;margin-top:8px"><button class="btn" data-minus="${p.id}">−</button><span class="pill">${q}</span><button class="btn" data-plus="${p.id}">+</button><button class="btn" data-remove="${p.id}" style="margin-right:auto">🗑️ إزالة</button></div></div>`}).join('');
   el('view').innerHTML=entries.length?`<h2>🛒 السلة</h2><div class="card">${rows}<hr style="border-color:#263345"><b>الإجمالي: ${money(total)}</b><button class="btn primary" id="pageBuy" style="width:100%;margin-top:12px">شراء من المحفظة</button></div>`:'<div class="card" style="text-align:center"><h2>🛒 السلة فارغة</h2><p class="muted">أضف منتجًا من المتجر ليظهر هنا.</p></div>';
   document.querySelectorAll('[data-plus]').forEach(b=>b.onclick=()=>{const id=b.dataset.plus;cart[id]=(cart[id]||0)+1;renderCartPage()});
@@ -250,6 +249,8 @@ function showProduct(p){
   const isDragon=String(p.name||'').trim()==='دراقون';
   const requiresWhatsapp=Boolean(p.requires_whatsapp);
   let selectedColor=isDragon?(cartOptions[p.id]?.color||''):'';
+  const dragonColors=['عادي','ذهبي','دايموند','كاندي','راديو اكتف','بلود روت','ينق يانق','ديفاين','سايبر','كورسد'];
+  const colorButtons=isDragon?dragonColors.map(color=>'<button type="button" class="btn" data-dragon-color="'+esc(color)+'">'+esc(color)+'</button>').join(''):'';
   view.innerHTML=`<section class="lc-product-page">
     <button type="button" class="lc-back-btn" id="lcBackToProducts">← العودة للمنتجات</button>
     <article class="lc-detail-card">
@@ -397,8 +398,7 @@ function renderCart(){
      const p=products.find(x=>x.id===productId);
      const text=String(p?.category||'')+' '+String(p?.name||'');
      return /روبلوكس|roblox|robux/i.test(text);
-   });
-   if(isRobloxPurchase){
+   });   if(isRobloxPurchase){
      const purchasedNames=items.map(item=>{const productId=Array.isArray(item)?item[0]:item?.product_id;const quantity=Array.isArray(item)?item[1]:item?.quantity;
        const p=products.find(x=>x.id===productId);
        return (p?.name||'روبلوكس')+' × '+quantity;
