@@ -446,8 +446,8 @@ function renderCart(){
        '<div class="lc-purchase-cover">'+(img?'<img src="'+img+'" alt="'+esc(p?.name||'المنتج')+'">':'<div class="lc-product-placeholder">⚡</div>')+'</div>'+
        '<div class="lc-purchase-product-title"><h2>'+esc(p?.name||'المنتج')+'</h2><span>'+productCodes.length+' كود</span></div>'+
        productCodes.map((code,index)=>'<div class="lc-secret-row">'+
-         '<div class="lc-secret-label"><span>الكود '+(index+1)+'</span><span>🔐 تسليم رقمي</span></div>'+
-         '<div class="lc-secret-box"><button type="button" class="lc-secret-action" data-copy-code="'+esc(code)+'" aria-label="نسخ الكود">▣</button><button type="button" class="lc-secret-action" data-toggle-code aria-label="إظهار الكود">◉</button><span class="lc-secret-value" data-code-value="'+esc(code)+'">'+('•'.repeat(Math.min(14,Math.max(8,code.length))))+'</span></div>'+
+         '<div class="lc-secret-label"><span>بيانات الدخول '+(index+1)+'</span><span>🔐 تسليم آمن</span></div>'+
+         credentialHtml(code)+
        '</div>').join('')+
      '</section>';
    }).join('');
@@ -499,11 +499,10 @@ function renderCart(){
      value.textContent=shown?'•'.repeat(Math.min(14,Math.max(8,value.dataset.codeValue.length))):value.dataset.codeValue;
      value.dataset.shown=shown?'0':'1';btn.textContent=shown?'◉':'◌';
    });
-   modal.querySelectorAll('[data-copy-code]').forEach(btn=>btn.onclick=async()=>{
-     const code=btn.dataset.copyCode;
-     try{await navigator.clipboard.writeText(code)}catch(e){const ta=document.createElement('textarea');ta.value=code;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
-     btn.textContent='✓ تم النسخ';setTimeout(()=>{if(btn.isConnected)btn.textContent='▣'},1200);
-   });
+   const copyText=async(value,btn)=>{try{await navigator.clipboard.writeText(value)}catch(e){const ta=document.createElement('textarea');ta.value=value;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}btn.textContent='✓ تم النسخ';setTimeout(()=>{if(btn.isConnected)btn.textContent='▣'},1200)};
+   modal.querySelectorAll('[data-copy-code]').forEach(btn=>btn.onclick=()=>copyText(btn.dataset.copyCode,btn));
+   modal.querySelectorAll('[data-copy-credential]').forEach(btn=>btn.onclick=()=>copyText(btn.dataset.copyCredential,btn));
+   modal.querySelectorAll('[data-toggle-credential]').forEach(btn=>btn.onclick=()=>{const value=btn.parentElement.querySelector('[data-credential-value]');const shown=value.dataset.shown==='1';value.textContent=shown?'•'.repeat(Math.min(18,Math.max(8,value.dataset.credentialValue.length))):value.dataset.credentialValue;value.dataset.shown=shown?'0':'1';btn.textContent=shown?'◉':'◌'});
    el('lcPurchaseOrders').onclick=()=>{close();document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));const btn=document.querySelector('[data-view="orders"]');if(btn)btn.classList.add('active');renderOrders()};
  }catch(e){
    processing.remove();
@@ -626,6 +625,30 @@ async function renderOrders(){
     el('retryOrders')?.addEventListener('click',renderOrders);
   }
 }
+function parseCredential(code){
+  const raw=String(code??'').trim();
+  const parts=raw.split(/\\s*\\|\\s*/).map(x=>x.trim()).filter(Boolean);
+  if(parts.length===2){
+    const clean=v=>v.replace(/^(email|e-mail|username|user|يوزر|الإيميل|البريد|password|pass|كلمة السر|كلمه السر)\\s*[:=]\\s*/i,'').trim();
+    const leftLabel=/^(email|e-mail|الإيميل|البريد)\\s*[:=]/i.test(parts[0])?'email':/^(username|user|يوزر)\\s*[:=]/i.test(parts[0])?'username':'';
+    const rightLabel=/^(email|e-mail|الإيميل|البريد)\\s*[:=]/i.test(parts[1])?'email':/^(username|user|يوزر)\\s*[:=]/i.test(parts[1])?'username':'';
+    const leftPass=/^(password|pass|كلمة السر|كلمه السر)\\s*[:=]/i.test(parts[0]);
+    const rightPass=/^(password|pass|كلمة السر|كلمه السر)\\s*[:=]/i.test(parts[1]);
+    if(leftPass||rightPass||leftLabel||rightLabel){
+      return {login:leftPass?clean(parts[1]):clean(parts[0]),loginLabel:leftLabel||rightLabel||'email',password:leftPass?clean(parts[0]):clean(parts[1])};
+    }
+    return {login:parts[0],loginLabel:'email',password:parts[1]};
+  }
+  const m=raw.match(/^(?:email|e-mail|الإيميل|البريد|username|user|يوزر)\\s*[:=]\\s*(.*?)\\s*[|,;]\\s*(?:password|pass|كلمة السر|كلمه السر)\\s*[:=]\\s*(.+)$/i);
+  if(m){const label=/^(?:username|user|يوزر)/i.test(raw)?'username':'email';return {login:m[1].trim(),loginLabel:label,password:m[2].trim()}}
+  return null;
+}
+function credentialHtml(code){
+  const parsed=parseCredential(code);
+  if(!parsed)return '<div class="lc-secret-box"><button type="button" class="lc-secret-action" data-copy-code="'+esc(code)+'" aria-label="نسخ">▣</button><button type="button" class="lc-secret-action" data-toggle-code aria-label="إظهار">◉</button><span class="lc-secret-value" data-code-value="'+esc(code)+'">'+('•'.repeat(Math.min(14,Math.max(8,String(code).length))))+'</span></div>';
+  const rows=[{label:parsed.loginLabel==='username'?'اليوزر':'الإيميل',value:parsed.login},{label:'كلمة السر',value:parsed.password}];
+  return '<div class="lc-credential-grid">'+rows.map((row,i)=>'<div class="lc-credential-row"><span>'+row.label+'</span><div class="lc-credential-value"><button type="button" class="lc-secret-action" data-copy-credential="'+esc(row.value)+'">▣</button><button type="button" class="lc-secret-action" data-toggle-credential>◉</button><code data-credential-value="'+esc(row.value)+'">'+('•'.repeat(Math.min(18,Math.max(8,String(row.value).length))))+'</code></div></div>').join('')+'</div>';
+}
 function showOrderDetails(orderId){
   const orders=window.__LIBYAN_ORDERS||[];
   const codeMap=window.__LIBYAN_ORDER_CODES||new Map();
@@ -664,7 +687,7 @@ async function renderAdmin(){if(profile?.role!=='admin')return;const [pr,top,ord
  <div class="card"><h3>➕ إضافة منتج</h3><input id="pn" class="field" placeholder="اسم المنتج"><input id="pc" class="field" style="margin-top:8px" placeholder="التصنيف"><input id="pp" class="field" style="margin-top:8px" type="number" min="0" step="0.01" placeholder="السعر بالدينار"><textarea id="pd" class="field" style="margin-top:8px;min-height:80px" placeholder="وصف المنتج"></textarea><button class="btn primary" id="addProduct" style="width:100%;margin-top:10px">إضافة المنتج</button></div>
  <div class="card"><h3>📦 المنتجات</h3>${plist.map(p=>`<div style="padding:10px 0;border-bottom:1px solid #202b3a"><b>${esc(p.name)}</b><div class="muted">${money(p.price)} — ${esc(p.category||'رقمي')} — ${counts[p.id]||0} كود</div><div style="margin-top:7px"><button class="btn" data-edit-product="${p.id}">تعديل</button> <button class="btn" data-toggle-product="${p.id}" data-active="${p.active}">${p.active?'إيقاف':'تفعيل'}</button></div></div>`).join('')||'<span class="muted">لا توجد منتجات</span>'}</div>
   <div class="card"><h3>🎨 ألوان دراقون</h3>${dragonProduct ? colorOpts.filter(o=>o.product_id===dragonProduct.id).map(o=>'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #202b3a"><b>'+esc(o.option_name)+'</b><button class="btn '+(o.active?'primary':'')+'" data-toggle-dragon-color="'+o.id+'" data-active="'+o.active+'">'+(o.active?'متوفر':'غير متوفر')+'</button></div>').join('') : '<span class="muted">منتج دراقون غير موجود</span>'}<small class="muted" style="display:block;margin-top:8px">اضغط على الزر لتحديد الألوان التي تظهر للزبون ويمكن شراؤها.</small></div>
- <div class="card"><h3>🔑 إضافة أكواد</h3><select id="codeProduct" class="field">${plist.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select><textarea id="codesText" class="field" style="margin-top:8px;min-height:150px" placeholder="ضع كل كود في سطر مستقل"></textarea><button class="btn primary" id="addCodes" style="width:100%;margin-top:10px">حفظ الأكواد</button><small id="codeMsg" class="muted" style="display:block;margin-top:8px"></small></div>
+ <div class="card"><h3>🔑 إضافة أكواد</h3><select id="codeProduct" class="field">${plist.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select><textarea id="codesText" class="field" style="margin-top:8px;min-height:150px" placeholder="ضع بيانات الدخول في كل سطر: email@example.com|password أو username|password"></textarea><button class="btn primary" id="addCodes" style="width:100%;margin-top:10px">حفظ الأكواد</button><small id="codeMsg" class="muted" style="display:block;margin-top:8px"></small></div>
  <div class="card"><h3>🧾 مخزون الأكواد</h3>${clist.slice(0,100).map(c=>{const p=plist.find(x=>x.id===c.product_id);return `<div style="padding:7px 0;border-bottom:1px solid #202b3a"><div style="font-family:monospace">${esc(c.code)}</div><span class="muted">${esc(p?.name||'منتج محذوف')} — ${esc(c.status)}</span>${c.status==='available'?` <button class="btn" data-delete-code="${c.id}" style="float:left">حذف</button>`:''}</div>`}).join('')||'<span class="muted">لا توجد أكواد. أضف أكواد من البطاقة السابقة.</span>'}</div>
  <div class="card"><h3>📲 أرقام الشحن</h3><input id="libyanaNum" class="field" value="${esc((settings.data||[]).find(x=>x.key==='libyana_number')?.value||'')}" placeholder="رقم ليبيانا"><input id="almadarNum" class="field" style="margin-top:8px" value="${esc((settings.data||[]).find(x=>x.key==='almadar_number')?.value||'')}" placeholder="رقم المدار"><button class="btn primary" id="saveNumbers" style="width:100%;margin-top:10px">حفظ أرقام الشحن</button></div>
  <div class="card"><h3>💳 طلبات الشحن</h3>${(top.data||[]).map(t=>`<div style="padding:8px 0;border-bottom:1px solid #202b3a">${money(t.amount)} — ${esc(t.method)} — ${esc(t.sender_phone||'')}<br><span class="pill">${esc(t.status)}</span>${t.status==='pending'?`<div style="margin-top:7px"><button class="btn primary" data-approve="${t.id}">اعتماد</button> <button class="btn" data-reject="${t.id}">رفض</button></div>`:''}</div>`).join('')||'<span class="muted">لا توجد طلبات</span>'}</div>
