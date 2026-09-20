@@ -362,6 +362,17 @@ function renderCart(){
    const r=await sb.rpc('create_wallet_order',{p_items:items,p_customer_name:name,p_customer_phone:phone});
    if(r.error)throw r.error;
    const orderId=r.data;
+   const isDragonOrder=items.length>0&&items.some(item=>{
+     const p=products.find(x=>x.id===item.product_id);
+     return /دراقون|dragon/i.test(String(p?.name||'')+' '+String(p?.category||''));
+   });
+   if(isDragonOrder){
+     try{
+       const n=await sb.functions.invoke('discord-notify',{body:{type:'order',id:orderId}});
+       if(n.error)console.warn('order notification error:',n.error);
+       else console.log('order notification sent:',n.data);
+     }catch(e){console.warn('order notification failed:',e)}
+   }
    cart={};
    cartOptions={};
    let codes=[];
