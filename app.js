@@ -1,4 +1,4 @@
-let sb,session,products=[],cart={},cartOptions={},profile,wallet,adminTopupChannel,stockRefreshTimer;
+let sb,session,products=[],cart={},cartOptions={},profile,wallet,productOptions=[],adminTopupChannel,stockRefreshTimer;
 const app=document.getElementById('app');
 const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>`${Number(v||0).toFixed(2)} د.ل`;
@@ -96,11 +96,12 @@ async function loadStore(){
   app.innerHTML='<div class="card" style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:42px">⏳</div><h2>تم تسجيل الدخول</h2><p class="muted">جارٍ فتح المتجر...</p></div>';
   const withTimeout=(promise,label,ms=12000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('انتهت مهلة تحميل '+label+'، تحقق من اتصال الإنترنت ثم أعد المحاولة.')),ms))]);
   try{
-   const pr=await withTimeout(
-    sb.from('products').select('id,name,description,category,price,currency,always_available,requires_whatsapp').eq('active',true).order('created_at'),
-    'المنتجات'
-   );
+   const [pr,opts]=await Promise.all([
+    withTimeout(sb.from('products').select('id,name,description,category,price,currency,always_available,requires_whatsapp').eq('active',true).order('created_at'),'المنتجات'),
+    withTimeout(sb.from('product_options').select('id,product_id,option_type,option_name,active').eq('active',true).order('created_at'),'خيارات المنتجات')
+   ]);
    if(pr.error)throw pr.error;
+   productOptions=opts.error?[]:(opts.data||[]);
 
    const [p,w,stock]=await Promise.allSettled([
     withTimeout(sb.from('profiles').select('full_name,phone,role').eq('id',uid).maybeSingle(),'بيانات الحساب'),
@@ -249,8 +250,9 @@ function showProduct(p){
   const isDragon=String(p.name||'').trim()==='دراقون';
   const requiresWhatsapp=Boolean(p.requires_whatsapp);
   let selectedColor=isDragon?(cartOptions[p.id]?.color||''):'';
-  const dragonColors=['عادي','ذهبي','دايموند','كاندي','راديو اكتف','بلود روت','ينق يانق','ديفاين','سايبر','كورسد'];
-  const colorButtons=isDragon?dragonColors.map(color=>'<button type="button" class="btn" data-dragon-color="'+esc(color)+'">'+esc(color)+'</button>').join(''):'';
+  const dragonColors=isDragon?productOptions.filter(o=>String(o.product_id)===String(p.id)&&o.option_type==='color'&&o.active).map(o=>o.option_name):[];
+  if(isDragon&&selectedColor&&!dragonColors.includes(selectedColor))selectedColor='';
+  const colorButtons=isDragon?(dragonColors.length?dragonColors.map(color=>'<button type="button" class="btn" data-dragon-color="'+esc(color)+'">'+esc(color)+'</button>').join(''):'<div class="lc-option-hint">⚠️ لا توجد ألوان متوفرة حاليًا.</div>'):'';
   view.innerHTML=`<section class="lc-product-page">
     <button type="button" class="lc-back-btn" id="lcBackToProducts">← العودة للمنتجات</button>
     <article class="lc-detail-card">
@@ -274,7 +276,7 @@ function showProduct(p){
   const buy=el('lcBuyNow');
   const updateBuyState=()=>{
     const whatsapp=requiresWhatsapp?(el('productWhatsapp')?.value.trim()||''):'';
-    const ready=available&&(!isDragon||!!selectedColor)&&(!requiresWhatsapp||!!whatsapp);
+    const ready=available&&(!isDragon||dragonColors.includes(selectedColor))&&(!requiresWhatsapp||!!whatsapp);
     if(buy){
       buy.disabled=!ready;
       if(ready)buy.textContent='اشترِ الآن';
@@ -616,20 +618,22 @@ function showOrderDetails(orderId){
   const onKey=e=>{if(e.key==='Escape'){close();document.removeEventListener('keydown',onKey)}};
   document.addEventListener('keydown',onKey);
 }
-async function renderAdmin(){if(profile?.role!=='admin')return;const [pr,top,orders,codes,settings]=await Promise.all([sb.from('products').select('*').order('created_at',{ascending:false}),sb.from('wallet_topups').select('*').order('created_at',{ascending:false}).limit(50),sb.from('orders').select('*').order('created_at',{ascending:false}).limit(50),sb.from('product_codes').select('id,product_id,code,status,order_id').order('created_at',{ascending:false}).limit(200),sb.from('store_settings').select('key,value').in('key',['libyana_number','almadar_number'])]);
- const plist=pr.data||[]; const clist=codes.data||[]; const counts={};clist.forEach(c=>counts[c.product_id]=(counts[c.product_id]||0)+1);
+async function renderAdmin(){if(profile?.role!=='admin')return;const [pr,top,orders,codes,settings,opts]=await Promise.all([sb.from('products').select('*').order('created_at',{ascending:false}),sb.from('wallet_topups').select('*').order('created_at',{ascending:false}).limit(50),sb.from('orders').select('*').order('created_at',{ascending:false}).limit(50),sb.from('product_codes').select('id,product_id,code,status,order_id').order('created_at',{ascending:false}).limit(200),sb.from('store_settings').select('key,value').in('key',['libyana_number','almadar_number']),sb.from('product_options').select('id,product_id,option_type,option_name,active').eq('option_type','color').order('created_at')]);
+ const plist=pr.data||[]; const clist=codes.data||[]; const colorOpts=opts.data||[]; const dragonProduct=plist.find(p=>String(p.name||'').trim()==='دراقون'); const counts={};clist.forEach(c=>counts[c.product_id]=(counts[c.product_id]||0)+1);
  el('view').innerHTML=`<div class="topbar"><h2>⚙️ لوحة الإدارة</h2><span class="pill">مدير</span></div><div class="grid">
  <div class="card"><h3>➕ إضافة منتج</h3><input id="pn" class="field" placeholder="اسم المنتج"><input id="pc" class="field" style="margin-top:8px" placeholder="التصنيف"><input id="pp" class="field" style="margin-top:8px" type="number" min="0" step="0.01" placeholder="السعر بالدينار"><textarea id="pd" class="field" style="margin-top:8px;min-height:80px" placeholder="وصف المنتج"></textarea><button class="btn primary" id="addProduct" style="width:100%;margin-top:10px">إضافة المنتج</button></div>
  <div class="card"><h3>📦 المنتجات</h3>${plist.map(p=>`<div style="padding:10px 0;border-bottom:1px solid #202b3a"><b>${esc(p.name)}</b><div class="muted">${money(p.price)} — ${esc(p.category||'رقمي')} — ${counts[p.id]||0} كود</div><div style="margin-top:7px"><button class="btn" data-edit-product="${p.id}">تعديل</button> <button class="btn" data-toggle-product="${p.id}" data-active="${p.active}">${p.active?'إيقاف':'تفعيل'}</button></div></div>`).join('')||'<span class="muted">لا توجد منتجات</span>'}</div>
+ <div class="card"><h3>🎨 ألوان دراقون</h3>${dragonProduct?colorOpts.filter(o=>o.product_id===dragonProduct.id).map(o=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #202b3a"><b>${esc(o.option_name)}</b><button class="btn ${o.active?"primary":""}" data-toggle-dragon-color="${o.id}" data-active="${o.active}">${o.active?"متوفر":"غير متوفر"}</button></div>`).join(""):"<span class="muted">منتج دراقون غير موجود</span>"}<small class="muted" style="display:block;margin-top:8px">اضغط على الزر لتحديد الألوان التي تظهر للزبون ويمكن شراؤها.</small></div>
  <div class="card"><h3>🔑 إضافة أكواد</h3><select id="codeProduct" class="field">${plist.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select><textarea id="codesText" class="field" style="margin-top:8px;min-height:150px" placeholder="ضع كل كود في سطر مستقل"></textarea><button class="btn primary" id="addCodes" style="width:100%;margin-top:10px">حفظ الأكواد</button><small id="codeMsg" class="muted" style="display:block;margin-top:8px"></small></div>
  <div class="card"><h3>🧾 مخزون الأكواد</h3>${clist.slice(0,100).map(c=>{const p=plist.find(x=>x.id===c.product_id);return `<div style="padding:7px 0;border-bottom:1px solid #202b3a"><div style="font-family:monospace">${esc(c.code)}</div><span class="muted">${esc(p?.name||'منتج محذوف')} — ${esc(c.status)}</span>${c.status==='available'?` <button class="btn" data-delete-code="${c.id}" style="float:left">حذف</button>`:''}</div>`}).join('')||'<span class="muted">لا توجد أكواد. أضف أكواد من البطاقة السابقة.</span>'}</div>
  <div class="card"><h3>📲 أرقام الشحن</h3><input id="libyanaNum" class="field" value="${esc((settings.data||[]).find(x=>x.key==='libyana_number')?.value||'')}" placeholder="رقم ليبيانا"><input id="almadarNum" class="field" style="margin-top:8px" value="${esc((settings.data||[]).find(x=>x.key==='almadar_number')?.value||'')}" placeholder="رقم المدار"><button class="btn primary" id="saveNumbers" style="width:100%;margin-top:10px">حفظ أرقام الشحن</button></div>
  <div class="card"><h3>💳 طلبات الشحن</h3>${(top.data||[]).map(t=>`<div style="padding:8px 0;border-bottom:1px solid #202b3a">${money(t.amount)} — ${esc(t.method)} — ${esc(t.sender_phone||'')}<br><span class="pill">${esc(t.status)}</span>${t.status==='pending'?`<div style="margin-top:7px"><button class="btn primary" data-approve="${t.id}">اعتماد</button> <button class="btn" data-reject="${t.id}">رفض</button></div>`:''}</div>`).join('')||'<span class="muted">لا توجد طلبات</span>'}</div>
  <div class="card"><h3>🛒 الطلبات</h3>${(orders.data||[]).map(o=>`<div style="padding:8px 0;border-bottom:1px solid #202b3a">${money(o.total)} — <span class="pill">${esc(o.status)}</span><br><span class="muted">${esc(o.customer_name||'')} — ${esc(o.customer_phone||'')}</span></div>`).join('')||'<span class="muted">لا توجد طلبات</span>'}</div></div>`;
- el('addProduct').onclick=addProduct;el('addCodes').onclick=addCodes;el('saveNumbers').onclick=saveNumbers;document.querySelectorAll('[data-edit-product]').forEach(b=>b.onclick=()=>editProduct(b.dataset.editProduct,plist));document.querySelectorAll('[data-toggle-product]').forEach(b=>b.onclick=()=>toggleProduct(b.dataset.toggleProduct,b.dataset.active==='true'));document.querySelectorAll('[data-delete-code]').forEach(b=>b.onclick=()=>deleteCode(b.dataset.deleteCode));document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>reviewTopup(b.dataset.approve,true));document.querySelectorAll('[data-reject]').forEach(b=>b.onclick=()=>reviewTopup(b.dataset.reject,false));}
+ el('addProduct').onclick=addProduct;el('addCodes').onclick=addCodes;el('saveNumbers').onclick=saveNumbers;document.querySelectorAll('[data-edit-product]').forEach(b=>b.onclick=()=>editProduct(b.dataset.editProduct,plist));document.querySelectorAll('[data-toggle-product]').forEach(b=>b.onclick=()=>toggleProduct(b.dataset.toggleProduct,b.dataset.active==='true'));document.querySelectorAll('[data-toggle-dragon-color]').forEach(b=>b.onclick=()=>toggleDragonColor(b.dataset.toggleDragonColor,b.dataset.active==='true'));document.querySelectorAll('[data-delete-code]').forEach(b=>b.onclick=()=>deleteCode(b.dataset.deleteCode));document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>reviewTopup(b.dataset.approve,true));document.querySelectorAll('[data-reject]').forEach(b=>b.onclick=()=>reviewTopup(b.dataset.reject,false));}
 async function addProduct(){const name=el('pn').value.trim(),category=el('pc').value.trim()||'رقمي',price=Number(el('pp').value),description=el('pd').value.trim();if(!name||!(price>=0))return alert('أدخل اسم المنتج والسعر');const r=await sb.from('products').insert({name,category,price,description,active:true}).select().single();if(r.error)return alert(r.error.message);alert('تمت إضافة المنتج');renderAdmin()}
 async function editProduct(id,list){const p=list.find(x=>x.id===id);if(!p)return;const name=prompt('اسم المنتج',p.name);if(name===null)return;const priceText=prompt('السعر بالدينار',p.price);if(priceText===null)return;const price=Number(priceText);if(!name.trim()||!(price>=0))return alert('بيانات غير صحيحة');const category=prompt('التصنيف',p.category||'رقمي');if(category===null)return;const description=prompt('الوصف',p.description||'');if(description===null)return;const r=await sb.from('products').update({name:name.trim(),price,category:category.trim()||'رقمي',description:description.trim()}).eq('id',id);if(r.error)return alert(r.error.message);renderAdmin()}
 async function toggleProduct(id,active){const r=await sb.from('products').update({active:!active}).eq('id',id);if(r.error)return alert(r.error.message);renderAdmin()}
+async function toggleDragonColor(id,active){const r=await sb.from('product_options').update({active:!active,updated_at:new Date().toISOString()}).eq('id',id).eq('option_type','color');if(r.error)return alert(r.error.message);renderAdmin()}
 async function addCodes(){const productId=el('codeProduct').value;const raw=el('codesText').value;const codes=[...new Set(raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];if(!productId||!codes.length)return alert('اختر المنتج وأدخل كودًا واحدًا على الأقل');el('codeMsg').textContent=`جارٍ حفظ ${codes.length} كود...`;let ok=0,fail=0;for(const code of codes){const r=await sb.rpc('admin_upsert_product_code',{p_product_id:productId,p_code:code});if(r.error)fail++;else ok++}el('codeMsg').textContent=`تم حفظ ${ok} كود${fail?`، وتعذر حفظ ${fail}`:''}.`;if(ok)el('codesText').value='';renderAdmin()}
 async function deleteCode(id){if(!confirm('حذف هذا الكود من المخزون؟'))return;const r=await sb.rpc('admin_delete_product_code',{p_code_id:id});if(r.error)return alert(r.error.message);renderAdmin()}
 async function saveNumbers(){const a=el('libyanaNum').value.trim(),b=el('almadarNum').value.trim();const r1=await sb.rpc('admin_set_setting',{p_key:'libyana_number',p_value:a}),r2=await sb.rpc('admin_set_setting',{p_key:'almadar_number',p_value:b});if(r1.error||r2.error)return alert((r1.error||r2.error).message);alert('تم حفظ أرقام الشحن');renderAdmin()}
