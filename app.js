@@ -217,13 +217,14 @@ function renderProducts(){
   const view=el('view');if(!view)return;
   const imageFor=p=>typeof productImage==='function'?productImage(p.name):'';
   const groups=[...new Set(['ماب السرقه',...products.map(p=>String(p.category||'رقمي').trim()||'رقمي')])];
+  const categoryTitle=category=>category==='Netflix'?'اشتراكات نتفلكس':category;
   const cards=groups.map(category=>{
     const sample=products.find(p=>String(p.category||'رقمي').trim()===category);
     const img=imageFor(sample);
     const count=products.filter(p=>String(p.category||'رقمي').trim()===category).length;
     return '<button type="button" class="card lc-category-card" data-category-open="'+esc(category)+'">'+
-      '<div class="lc-category-image">'+(img?'<img src="'+img+'" alt="'+esc(category)+'">':'<div class="lc-product-placeholder">⚡</div>')+'</div>'+
-      '<div class="lc-category-body"><h3>'+esc(category)+'</h3><span class="pill">'+count+' '+(count===1?'منتج':'منتجات')+'</span><span class="lc-category-arrow">←</span></div>'+
+      '<div class="lc-category-image">'+(img?'<img src="'+img+'" alt="'+esc(categoryTitle(category))+'">':'<div class="lc-product-placeholder">⚡</div>')+'</div>'+
+      '<div class="lc-category-body"><h3>'+esc(categoryTitle(category))+'</h3><span class="pill">'+count+' '+(count===1?'فئة':'فئات')+'</span><span class="lc-category-arrow">←</span></div>'+
     '</button>';
   }).join('');
   view.innerHTML='<div class="lc-category-heading"><div><span class="lc-category-kicker">استكشف المتجر</span><h2>الفئات</h2></div><span class="lc-category-grid-icon">▦</span></div>'+
@@ -243,7 +244,7 @@ function renderCategory(category){
       '<div class="lc-category-body"><h3>'+esc(p.name)+'</h3><span class="pill">'+money(p.price)+'</span><span class="lc-category-arrow">←</span></div>'+
     '</button>';
   }).join('');
-  view.innerHTML='<div class="lc-section-title"><button type="button" class="lc-back-btn" id="lcBackCategories">→ الفئات الرئيسية</button><h2>فئات '+esc(category)+'</h2><span class="pill">'+list.length+' فئات</span></div>'+
+  view.innerHTML='<div class="lc-section-title"><button type="button" class="lc-back-btn" id="lcBackCategories">→ الفئات الرئيسية</button><h2>فئات '+esc(categoryTitle(category))+'</h2><span class="pill">'+list.length+' فئات</span></div>'+
     (cards?'<div class="lc-products lc-categories">'+cards+'</div>':'<div class="lc-empty">لا توجد فئات في هذه المجموعة.</div>')+'<div id="cartBox" style="margin-top:15px"></div>';
   el('lcBackCategories').onclick=renderProducts;
   document.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productOpen);if(p)showProduct(p)});
