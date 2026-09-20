@@ -176,21 +176,12 @@ function renderStore(){
       <div class="lc-wallet">💳 <b>${money(wallet?.balance)}</b><span class="wallet-text">المحفظة</span></div>
       <div class="lc-logo"><span>Libyan Store</span><span class="lc-logo-mark">LS</span></div>
     </header>
-    <section class="lc-home-hero">
-  <div class="lc-home-hero-copy">
-    <span class="lc-home-kicker">⚡ LIBYAN STORE</span>
-    <h1>كل بطاقاتك الرقمية<br><strong>في مكان واحد</strong></h1>
-    <p>بطاقات ألعاب • اشتراكات • روبلوكس • منتجات رقمية</p>
-    <button class="lc-home-hero-btn" id="heroBrowse">تصفح الفئات ←</button>
-  </div>
-  <div class="lc-home-hero-art" aria-hidden="true"><span class="hero-orb orb-one"></span><span class="hero-orb orb-two"></span><span class="hero-controller">🎮</span><span class="hero-card hero-card-ps">PS</span><span class="hero-card hero-card-rb">◈</span></div>
-</section>
     <div id="view"></div>
     <nav class="lc-bottom">
       <button class="active" data-view="store">⌂<br>الرئيسية</button>
+      <button data-view="wallet">▱<br>الخدمات</button>
       <button data-view="cart">▣<span class="lc-badge" id="navCartCount">0</span><br>المشتريات</button>
-      <button data-view="orders">▤<br>طلباتي</button>
-      <button data-view="wallet">▱<br>المحفظة</button>
+      <button data-view="orders">▤<br>البطاقات</button>
       <button data-view="account">⚙<br>الإعدادات</button>
     </nav>
     <div class="lc-drawer" id="lcDrawer"><div class="lc-drawer-backdrop" id="lcBackdrop"></div><aside class="lc-drawer-panel">
