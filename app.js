@@ -83,6 +83,9 @@ function humanOrderError(e){
  if(/insufficient_stock/i.test(m))return '❌ المنتج غير متوفر حاليًا. أضف المخزون من البوت أولًا ثم حاول الشراء مرة أخرى.';
  if(/insufficient_balance/i.test(m))return '❌ رصيد المحفظة غير كافٍ لإتمام الشراء.';
  if(/product_not_found|product_unavailable/i.test(m))return '❌ المنتج غير متوفر حاليًا. تأكد من وجود مخزون لهذا المنتج ثم حاول الشراء مرة أخرى.';
+ if(/whatsapp_required/i.test(m))return '❌ رقم الواتساب مطلوب لهذا المنتج.';
+ if(/roblox_username_required/i.test(m))return '❌ يوزر Roblox مطلوب لهذا المنتج.';
+ if(/invalid_roblox_username/i.test(m))return '❌ يوزر Roblox غير صالح. استخدم 3-20 حرفًا/رقمًا، ويمكن استخدام _ مرة واحدة فقط.';
  if(/not_authenticated|auth/i.test(m))return '❌ يجب تسجيل الدخول أولًا.';
  return m;
 }
@@ -97,7 +100,7 @@ async function loadStore(){
   const withTimeout=(promise,label,ms=12000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('انتهت مهلة تحميل '+label+'، تحقق من اتصال الإنترنت ثم أعد المحاولة.')),ms))]);
   try{
    const [pr,opts]=await Promise.all([
-    withTimeout(sb.from('products').select('id,name,description,category,price,currency,always_available,requires_whatsapp').eq('active',true).order('created_at'),'المنتجات'),
+    withTimeout(sb.from('products').select('id,name,description,category,price,currency,always_available,requires_whatsapp,requires_roblox_username').eq('active',true).order('created_at'),'المنتجات'),
     withTimeout(sb.from('product_options').select('id,product_id,option_type,option_name,active').eq('active',true).order('created_at'),'خيارات المنتجات')
    ]);
    if(pr.error)throw pr.error;
@@ -249,7 +252,9 @@ function showProduct(p){
   const available=Boolean(p.always_available)||Number(p.stock_count||0)>0;
   const isDragon=String(p.name||'').trim()==='دراقون';
   const requiresWhatsapp=Boolean(p.requires_whatsapp);
+  const requiresRobloxUsername=Boolean(p.requires_roblox_username);
   let selectedColor=isDragon?(cartOptions[p.id]?.color||''):'';
+  let selectedRobloxUsername=requiresRobloxUsername?(cartOptions[p.id]?.roblox_username||''):'';
   const dragonColors=isDragon?productOptions.filter(o=>String(o.product_id)===String(p.id)&&o.option_type==='color'&&o.active).map(o=>o.option_name):[];
   if(isDragon&&selectedColor&&!dragonColors.includes(selectedColor))selectedColor='';
   const colorButtons=isDragon?(dragonColors.length?dragonColors.map(color=>'<button type="button" class="btn" data-dragon-color="'+esc(color)+'">'+esc(color)+'</button>').join(''):'<div class="lc-option-hint">⚠️ لا توجد ألوان متوفرة حاليًا.</div>'):'';
@@ -261,6 +266,7 @@ function showProduct(p){
         <h1>${esc(p.name)}</h1>
         <div class="lc-detail-price">${money(p.price)} <span>⌄</span></div>
         ${isDragon?`<div class="lc-required-box"><div class="lc-option-title">🎨 اختر اللون <span>مطلوب</span></div><div id="dragonColors" class="lc-color-grid">${colorButtons}</div><div id="dragonColorMsg" class="lc-option-hint">${selectedColor?'✓ اللون المختار: '+esc(selectedColor):'⚠️ لازم تختار لون قبل الشراء'}</div></div>`:''}
+        ${requiresRobloxUsername?`<div class="lc-required-box"><div class="lc-option-title">🎮 يوزر Roblox <span>مطلوب</span></div><input id="productRobloxUsername" class="field" type="text" inputmode="text" autocomplete="off" maxlength="20" placeholder="مثال: RobloxPlayer123"><div class="lc-option-hint">📌 اكتب اسم المستخدم في Roblox كما هو، وليس Display Name.</div></div>`:''}
         ${requiresWhatsapp?`<div class="lc-required-box lc-whatsapp-box"><div class="lc-option-title">📱 رقم الواتساب <span>مطلوب</span></div><input id="productWhatsapp" class="field" type="tel" inputmode="tel" autocomplete="tel" placeholder="مثال: 0912345678"><div class="lc-option-hint">📌 اكتب رقم واتساب صحيح حتى نقدر نتواصل معك.</div></div>`:''}
         <label class="lc-detail-terms">
           <input type="checkbox" id="lcTerms">
@@ -268,7 +274,7 @@ function showProduct(p){
         </label>
         <div class="lc-detail-divider"></div>
         <div class="lc-detail-total"><span>الإجمالي:</span><strong>${money(p.price)}</strong></div>
-        <button class="btn primary lc-detail-buy" id="lcBuyNow" type="button" ${(!available||((isDragon&&!selectedColor)||(requiresWhatsapp&&!String(cartOptions[p.id]?.whatsapp||'').trim())))?'disabled':''}>${available?'اشترِ الآن':'نفد المخزون'}</button>
+        <button class="btn primary lc-detail-buy" id="lcBuyNow" type="button" ${(!available||((isDragon&&!selectedColor)||(requiresWhatsapp&&!String(cartOptions[p.id]?.whatsapp||'').trim())||(requiresRobloxUsername&&!String(cartOptions[p.id]?.roblox_username||'').trim())))?'disabled':''}>${available?'اشترِ الآن':'نفد المخزون'}</button>
       </div>
     </article>
   </section>`;
@@ -276,7 +282,8 @@ function showProduct(p){
   const buy=el('lcBuyNow');
   const updateBuyState=()=>{
     const whatsapp=requiresWhatsapp?(el('productWhatsapp')?.value.trim()||''):'';
-    const ready=available&&(!isDragon||dragonColors.includes(selectedColor))&&(!requiresWhatsapp||!!whatsapp);
+    const robloxUsername=requiresRobloxUsername?(el('productRobloxUsername')?.value.trim()||''):'';
+    const ready=available&&(!isDragon||dragonColors.includes(selectedColor))&&(!requiresWhatsapp||!!whatsapp)&&(!requiresRobloxUsername||/^[A-Za-z0-9]+(_[A-Za-z0-9]+)?$/.test(robloxUsername)&&robloxUsername.length>=3&&robloxUsername.length<=20);
     if(buy){
       buy.disabled=!ready;
       if(ready)buy.textContent='اشترِ الآن';
@@ -295,6 +302,15 @@ function showProduct(p){
       };
     });
   }
+  const robloxInput=el('productRobloxUsername');
+  if(robloxInput){
+    robloxInput.value=selectedRobloxUsername;
+    robloxInput.addEventListener('input',()=>{
+      selectedRobloxUsername=robloxInput.value.trim();
+      cartOptions[p.id]={...(cartOptions[p.id]||{}),roblox_username:selectedRobloxUsername};
+      updateBuyState();
+    });
+  }
   const whatsappInput=el('productWhatsapp');
   if(whatsappInput){
     whatsappInput.value=cartOptions[p.id]?.whatsapp||'';
@@ -310,6 +326,7 @@ function showProduct(p){
     if(isDragon&&!selectedColor)return alert('⚠️ اختر اللون أولاً من الخيارات الظاهرة فوق زر الشراء.');
     const whatsapp=requiresWhatsapp?(el('productWhatsapp')?.value.trim()||''):'';
     if(requiresWhatsapp&&!whatsapp)return alert('⚠️ اكتب رقم الواتساب أولاً في الخانة الظاهرة فوق زر الشراء.');
+    if(requiresRobloxUsername&&(!/^[A-Za-z0-9]+(_[A-Za-z0-9]+)?$/.test(robloxUsername)||robloxUsername.length<3||robloxUsername.length>20))return alert('⚠️ اكتب يوزر Roblox صحيحًا (3-20 حرفًا/رقمًا، ويمكن استخدام _ مرة واحدة).');
     if(!el('lcTerms').checked)return alert('وافق على الشروط والأحكام أولاً');
     buy.disabled=true;buy.textContent='جارٍ تنفيذ الشراء...';
     try{
@@ -351,7 +368,7 @@ function renderCart(){
 }async function checkout(){
  const name=(profile?.full_name||session.user.email||'عميل').trim();
  const phone=(profile?.phone||session.user.phone||'').trim();
- const items=Object.entries(cart).filter(([id,q])=>Number(q)>0).map(([product_id,quantity])=>({product_id,quantity:Number(quantity),...(cartOptions[product_id]?.color?{color:cartOptions[product_id].color}:{}),...(cartOptions[product_id]?.whatsapp?{whatsapp:cartOptions[product_id].whatsapp}:{})}));
+ const items=Object.entries(cart).filter(([id,q])=>Number(q)>0).map(([product_id,quantity])=>({product_id,quantity:Number(quantity),...(cartOptions[product_id]?.color?{color:cartOptions[product_id].color}:{}),...(cartOptions[product_id]?.whatsapp?{whatsapp:cartOptions[product_id].whatsapp}:{}),...(cartOptions[product_id]?.roblox_username?{roblox_username:cartOptions[product_id].roblox_username}:{})}));
  if(!items.length)return alert('السلة فارغة');
  const total=items.reduce((sum,item)=>{const id=Array.isArray(item)?item[0]:item?.product_id;const q=Array.isArray(item)?item[1]:item?.quantity;const p=products.find(x=>x.id===id);return sum+(Number(p?.price||0)*Number(q||0))},0);
  const buyButtons=[...document.querySelectorAll('.lc-detail-buy,[id="pageBuy"],.lc-buy')];
@@ -499,7 +516,7 @@ async function renderOrders(){
   view.innerHTML='<div class="lc-orders-page"><div class="lc-orders-loading"><div>⏳</div><b>جارٍ تحميل طلباتك...</b><span>نسترجع آخر مشترياتك وأكوادك بأمان.</span></div></div>';
   try{
     const r=await sb.from('orders')
-      .select('id,total,status,payment_method,customer_name,customer_phone,created_at,updated_at,order_items(id,product_id,quantity,unit_price,color,products(name,category))')
+      .select('id,total,status,payment_method,customer_name,customer_phone,created_at,updated_at,order_items(id,product_id,quantity,unit_price,color,whatsapp,roblox_username,products(name,category))')
       .eq('user_id',session.user.id)
       .order('created_at',{ascending:false})
       .limit(50);
@@ -599,7 +616,7 @@ function showOrderDetails(orderId){
   const itemRows=items.map(item=>{
     const name=item.products?.name||'منتج رقمي';
     const productCodes=grouped[item.product_id]||[];
-    return `<div class="lc-detail-order-item"><div><b>${esc(name)}</b><span>${Number(item.quantity)} × ${money(item.unit_price)}${item.color?' • اللون: '+esc(item.color):''}</span></div><strong>${money(Number(item.unit_price)*Number(item.quantity))}</strong>${productCodes.length?`<div class="lc-detail-order-codes">${productCodes.map(code=>`<div class="lc-order-code"><span>🔑</span><code>${esc(code)}</code><button type="button" data-copy-code="${esc(code)}">نسخ</button></div>`).join('')}`:'<small class="muted">سيظهر الكود هنا عند تسليم الطلب.</small>'}</div>`;
+    return `<div class="lc-detail-order-item"><div><b>${esc(name)}</b><span>${Number(item.quantity)} × ${money(item.unit_price)}${item.color?' • اللون: '+esc(item.color):''}${item.roblox_username?' • يوزر Roblox: '+esc(item.roblox_username):''}</span></div><strong>${money(Number(item.unit_price)*Number(item.quantity))}</strong>${productCodes.length?`<div class="lc-detail-order-codes">${productCodes.map(code=>`<div class="lc-order-code"><span>🔑</span><code>${esc(code)}</code><button type="button" data-copy-code="${esc(code)}">نسخ</button></div>`).join('')}`:'<small class="muted">سيظهر الكود هنا عند تسليم الطلب.</small>'}</div>`;
   }).join('');
   const modal=document.createElement('div');
   modal.className='lc-order-modal';
