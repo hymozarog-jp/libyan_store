@@ -108,3 +108,16 @@ button{transition:none!important}
 /* Dragon color selector */
 .dragon-color-option{border:1px solid #2b3950;background:#141c29;color:inherit;border-radius:12px;padding:10px;font-weight:800;cursor:pointer}
 .dragon-color-option:hover,.dragon-color-option.active{border-color:#f39a22;background:rgba(243,154,34,.16);color:#ffd28d;box-shadow:0 0 0 1px rgba(243,154,34,.25)}
+
+/* Required purchase options */
+.lc-required-box{margin:16px 0;padding:15px;border:1px solid rgba(255,174,45,.35);border-radius:18px;background:rgba(243,154,34,.07)}
+.lc-option-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px;color:#fff;font-size:17px;font-weight:950}
+.lc-option-title span{font-size:10px;color:#2a1740;background:#ffad2d;border-radius:999px;padding:5px 8px}
+.lc-color-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.lc-color-grid [data-dragon-color]{min-height:48px;border:1px solid rgba(255,255,255,.12);border-radius:13px;background:#211943;color:#fff;font-weight:900;cursor:pointer}
+.lc-color-grid [data-dragon-color]:hover,.lc-color-grid [data-dragon-color].active{border-color:#ffad2d;background:rgba(255,173,45,.18);color:#ffd28d;box-shadow:0 0 0 2px rgba(255,173,45,.12)}
+.lc-option-hint{margin-top:9px;color:#aaa3bd;font-size:11px;font-weight:700}
+.lc-whatsapp-box .field{margin-top:2px;min-height:50px;border-color:rgba(255,255,255,.16);font-size:16px}
+.lc-whatsapp-box .field:focus{border-color:#ffad2d;box-shadow:0 0 0 3px rgba(255,173,45,.12)}
+.lc-detail-buy:disabled{opacity:.48!important;filter:grayscale(.15);cursor:not-allowed!important}
+@media(max-width:420px){.lc-color-grid{grid-template-columns:1fr}.lc-option-title{font-size:16px}}
