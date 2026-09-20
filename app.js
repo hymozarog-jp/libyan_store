@@ -1,4 +1,4 @@
-let sb,session,products=[],cart={},cartOptions={},profile,wallet,productOptions=[],adminTopupChannel,stockRefreshTimer,supportWhatsapp='supportWhatsapp';
+let sb,session,products=[],cart={},cartOptions={},profile,wallet,productOptions=[],adminTopupChannel,stockRefreshTimer,supportWhatsapp='0910005566';
 const app=document.getElementById('app');
 const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>`${Number(v||0).toFixed(2)} د.ل`;
