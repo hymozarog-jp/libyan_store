@@ -258,36 +258,56 @@ function showProduct(p){
       <div class="lc-detail-content">
         <h1>${esc(p.name)}</h1>
         <div class="lc-detail-price">${money(p.price)} <span>⌄</span></div>
-        ${isDragon?`<div style="margin:14px 0"><b>اختر اللون:</b><div id="dragonColors" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px">${colorButtons}</div><div id="dragonColorMsg" class="muted" style="margin-top:8px">${selectedColor?'اللون المختار: '+esc(selectedColor):'اختر لونًا للمنتج'}</div></div>`:''}
-        ${requiresWhatsapp?`<div style="margin:14px 0"><b>رقم الواتساب:</b><input id="productWhatsapp" class="field" type="tel" inputmode="tel" placeholder="أدخل رقم الواتساب" style="margin-top:8px"></div>`:''}
+        ${isDragon?`<div class="lc-required-box"><div class="lc-option-title">🎨 اختر اللون <span>مطلوب</span></div><div id="dragonColors" class="lc-color-grid">${colorButtons}</div><div id="dragonColorMsg" class="lc-option-hint">${selectedColor?'✓ اللون المختار: '+esc(selectedColor):'⚠️ لازم تختار لون قبل الشراء'}</div></div>`:''}
+        ${requiresWhatsapp?`<div class="lc-required-box lc-whatsapp-box"><div class="lc-option-title">📱 رقم الواتساب <span>مطلوب</span></div><input id="productWhatsapp" class="field" type="tel" inputmode="tel" autocomplete="tel" placeholder="مثال: 0912345678"><div class="lc-option-hint">📌 اكتب رقم واتساب صحيح حتى نقدر نتواصل معك.</div></div>`:''}
         <label class="lc-detail-terms">
           <input type="checkbox" id="lcTerms">
           <span>أوافق على <b>الشروط والأحكام</b></span>
         </label>
         <div class="lc-detail-divider"></div>
         <div class="lc-detail-total"><span>الإجمالي:</span><strong>${money(p.price)}</strong></div>
-        <button class="btn primary lc-detail-buy" id="lcBuyNow" type="button">${available?'اشترِ الآن':'نفد المخزون'}</button>
+        <button class="btn primary lc-detail-buy" id="lcBuyNow" type="button" ${(!available||((isDragon&&!selectedColor)||(requiresWhatsapp&&!String(cartOptions[p.id]?.whatsapp||'').trim())))?'disabled':''}>${available?'اشترِ الآن':'نفد المخزون'}</button>
       </div>
     </article>
   </section>`;
   el('lcBackToProducts').onclick=()=>renderProducts();
+  const updateBuyState=()=>{
+    const whatsapp=requiresWhatsapp?(el('productWhatsapp')?.value.trim()||''):'';
+    const ready=available&&(!isDragon||!!selectedColor)&&(!requiresWhatsapp||!!whatsapp);
+    if(buy){
+      buy.disabled=!ready;
+      if(ready)buy.textContent='اشترِ الآن';
+      else if(available)buy.textContent='أكمل البيانات المطلوبة';
+    }
+  };
   if(isDragon){
     document.querySelectorAll('[data-dragon-color]').forEach(btn=>{
       if(btn.dataset.dragonColor===selectedColor)btn.classList.add('active');
       btn.onclick=()=>{
         selectedColor=btn.dataset.dragonColor;
         document.querySelectorAll('[data-dragon-color]').forEach(x=>x.classList.toggle('active',x===btn));
-        const msg=el('dragonColorMsg');if(msg)msg.textContent='اللون المختار: '+selectedColor;
+        const msg=el('dragonColorMsg');if(msg)msg.textContent='✓ اللون المختار: '+selectedColor;
         cartOptions[p.id]={...(cartOptions[p.id]||{}),color:selectedColor};
+        updateBuyState();
       };
     });
   }
+  const whatsappInput=el('productWhatsapp');
+  if(whatsappInput){
+    whatsappInput.value=cartOptions[p.id]?.whatsapp||'';
+    whatsappInput.addEventListener('input',()=>{
+      const whatsapp=whatsappInput.value.trim();
+      cartOptions[p.id]={...(cartOptions[p.id]||{}),whatsapp};
+      updateBuyState();
+    });
+  }
   const buy=el('lcBuyNow');
+  updateBuyState();
   if(buy)buy.onclick=async()=>{
     if(!available)return alert('❌ هذا المنتج غير متوفر حاليًا. أضف المخزون من البوت ثم حاول الشراء مرة أخرى.');
-    if(isDragon&&!selectedColor)return alert('اختر لون دراقون أولاً');
+    if(isDragon&&!selectedColor)return alert('⚠️ اختر اللون أولاً من الخيارات الظاهرة فوق زر الشراء.');
     const whatsapp=requiresWhatsapp?(el('productWhatsapp')?.value.trim()||''):'';
-    if(requiresWhatsapp&&!whatsapp)return alert('أدخل رقم الواتساب أولاً');
+    if(requiresWhatsapp&&!whatsapp)return alert('⚠️ اكتب رقم الواتساب أولاً في الخانة الظاهرة فوق زر الشراء.');
     if(!el('lcTerms').checked)return alert('وافق على الشروط والأحكام أولاً');
     buy.disabled=true;buy.textContent='جارٍ تنفيذ الشراء...';
     try{
