@@ -153,3 +153,72 @@ button{transition:none!important}
   .lc-category-heading h2{font-size:21px}
   .lc-category-image{aspect-ratio:1/1.04}
 }
+
+
+/* Interactive motion polish */
+.lc-shop-hero,.lc-service-group,.lc-package-tabs,.lc-package-panel,.lc-orders-hero,.lc-order-card,.lc-detail-card,.lc-product,.lc-category-card{
+  animation:lcFadeUp .55s cubic-bezier(.2,.75,.25,1) both;
+}
+.lc-product:nth-child(2),.lc-category-card:nth-child(2){animation-delay:.04s}
+.lc-product:nth-child(3),.lc-category-card:nth-child(3){animation-delay:.08s}
+.lc-product:nth-child(4),.lc-category-card:nth-child(4){animation-delay:.12s}
+.lc-product:nth-child(5),.lc-category-card:nth-child(5){animation-delay:.16s}
+.lc-product:nth-child(6),.lc-category-card:nth-child(6){animation-delay:.20s}
+
+.lc-product,.lc-category-card,.lc-package-tab,.lc-service-group,.lc-order-card{
+  transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;
+}
+.lc-product:hover,.lc-category-card:hover,.lc-order-card:hover{
+  transform:translateY(-5px)!important;
+  box-shadow:0 16px 34px rgba(0,0,0,.25)!important;
+}
+.lc-product-img img,.lc-category-image img{
+  transition:transform .45s cubic-bezier(.2,.7,.2,1),filter .35s ease;
+}
+.lc-product:hover .lc-product-img img,.lc-category-card:hover .lc-category-image img{
+  transform:scale(1.045);
+}
+.lc-buy,.lc-detail-buy,.lc-icon,.lc-wallet,.lc-bottom button,.lc-categories button,.lc-subcat,.lc-package-tab,.lc-arrow{
+  transition:transform .18s ease,box-shadow .22s ease,background-color .18s ease,border-color .18s ease;
+}
+.lc-buy:hover,.lc-detail-buy:hover:not(:disabled){
+  transform:translateY(-2px);
+  box-shadow:0 12px 26px rgba(243,154,34,.25)!important;
+}
+.lc-buy:active,.lc-detail-buy:active:not(:disabled),.lc-icon:active,.lc-package-tab:active{
+  transform:scale(.97);
+}
+.lc-search-box .field{
+  transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease;
+}
+.lc-search-box .field:focus{
+  transform:translateY(-1px);
+  border-color:rgba(243,154,34,.65)!important;
+  box-shadow:0 0 0 4px rgba(243,154,34,.10);
+}
+.lc-categories button:hover,.lc-subcat:hover,.lc-package-tab:hover{
+  transform:translateY(-2px);
+  border-color:rgba(243,154,34,.45);
+}
+.lc-arrow{transition:transform .2s ease,background-color .2s ease}
+.lc-product:hover .lc-arrow,.lc-category-card:hover .lc-category-arrow{
+  transform:translateX(-3px);
+}
+.lc-service-icon{animation:lcSoftPop .7s ease both}
+@keyframes lcFadeUp{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes lcSoftPop{
+  0%{opacity:0;transform:scale(.82)}
+  70%{transform:scale(1.05)}
+  100%{opacity:1;transform:scale(1)}
+}
+@media (prefers-reduced-motion:reduce){
+  .lc-shop-hero,.lc-service-group,.lc-package-tabs,.lc-package-panel,.lc-orders-hero,.lc-order-card,.lc-detail-card,.lc-product,.lc-category-card,.lc-service-icon{
+    animation:none!important;
+  }
+  .lc-product,.lc-category-card,.lc-order-card,.lc-package-tab,.lc-search-box .field,.lc-buy,.lc-detail-buy,.lc-icon,.lc-wallet,.lc-bottom button,.lc-categories button,.lc-subcat,.lc-arrow,.lc-product-img img,.lc-category-image img{
+    transition:none!important;
+  }
+}
