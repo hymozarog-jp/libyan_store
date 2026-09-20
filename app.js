@@ -325,13 +325,14 @@ function showProduct(p){
     if(!available)return alert('❌ هذا المنتج غير متوفر حاليًا. أضف المخزون من البوت ثم حاول الشراء مرة أخرى.');
     if(isDragon&&!selectedColor)return alert('⚠️ اختر اللون أولاً من الخيارات الظاهرة فوق زر الشراء.');
     const whatsapp=requiresWhatsapp?(el('productWhatsapp')?.value.trim()||''):'';
+    const robloxUsername=requiresRobloxUsername?(el('productRobloxUsername')?.value.trim()||''):'';
     if(requiresWhatsapp&&!whatsapp)return alert('⚠️ اكتب رقم الواتساب أولاً في الخانة الظاهرة فوق زر الشراء.');
     if(requiresRobloxUsername&&(!/^[A-Za-z0-9]+(_[A-Za-z0-9]+)?$/.test(robloxUsername)||robloxUsername.length<3||robloxUsername.length>20))return alert('⚠️ اكتب يوزر Roblox صحيحًا (3-20 حرفًا/رقمًا، ويمكن استخدام _ مرة واحدة).');
     if(!el('lcTerms').checked)return alert('وافق على الشروط والأحكام أولاً');
     buy.disabled=true;buy.textContent='جارٍ تنفيذ الشراء...';
     try{
       cart[p.id]=Math.min((cart[p.id]||0)+1,Number(p.stock_count||1));
-      cartOptions[p.id]={...(cartOptions[p.id]||{}),...(isDragon?{color:selectedColor}:{}),...(requiresWhatsapp?{whatsapp}:{})};
+      cartOptions[p.id]={...(cartOptions[p.id]||{}),...(isDragon?{color:selectedColor}:{}),...(requiresWhatsapp?{whatsapp}:{}),...(requiresRobloxUsername?{roblox_username:robloxUsername}:{})};
       await checkout();
     }catch(e){
       console.error('purchase failed:',e);
