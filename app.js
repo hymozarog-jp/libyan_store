@@ -1,4 +1,4 @@
-let sb,session,products=[],cart={},profile,wallet,adminTopupChannel,stockRefreshTimer;
+let sb,session,products=[],cart={},cartOptions={},profile,wallet,adminTopupChannel,stockRefreshTimer;
 const app=document.getElementById('app');
 const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>`${Number(v||0).toFixed(2)} د.ل`;
@@ -247,6 +247,8 @@ function showProduct(p){
   const view=el('view');if(!view)return;
   const img=typeof productImage==='function'?productImage(p.name):'';
   const available=Number(p.stock_count||0)>0;
+  const isDragon=String(p.name||'').trim()==='دراقون';
+  let selectedColor=isDragon?(cartOptions[p.id]?.color||''):'';
   view.innerHTML=`<section class="lc-product-page">
     <button type="button" class="lc-back-btn" id="lcBackToProducts">← العودة للمنتجات</button>
     <article class="lc-detail-card">
@@ -254,6 +256,7 @@ function showProduct(p){
       <div class="lc-detail-content">
         <h1>${esc(p.name)}</h1>
         <div class="lc-detail-price">${money(p.price)} <span>⌄</span></div>
+        ${isDragon?`<div style="margin:14px 0"><b>اختر اللون:</b><div id="dragonColors" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px">${colorButtons}</div><div id="dragonColorMsg" class="muted" style="margin-top:8px">${selectedColor?'اللون المختار: '+esc(selectedColor):'اختر لونًا للمنتج'}</div></div>`:''}
         <label class="lc-detail-terms">
           <input type="checkbox" id="lcTerms">
           <span>أوافق على <b>الشروط والأحكام</b></span>
@@ -265,13 +268,26 @@ function showProduct(p){
     </article>
   </section>`;
   el('lcBackToProducts').onclick=()=>renderProducts();
+  if(isDragon){
+    document.querySelectorAll('[data-dragon-color]').forEach(btn=>{
+      if(btn.dataset.dragonColor===selectedColor)btn.classList.add('active');
+      btn.onclick=()=>{
+        selectedColor=btn.dataset.dragonColor;
+        document.querySelectorAll('[data-dragon-color]').forEach(x=>x.classList.toggle('active',x===btn));
+        const msg=el('dragonColorMsg');if(msg)msg.textContent='اللون المختار: '+selectedColor;
+        cartOptions[p.id]={...(cartOptions[p.id]||{}),color:selectedColor};
+      };
+    });
+  }
   const buy=el('lcBuyNow');
   if(buy)buy.onclick=async()=>{
     if(!available)return alert('❌ هذا المنتج غير متوفر حاليًا. أضف المخزون من البوت ثم حاول الشراء مرة أخرى.');
+    if(isDragon&&!selectedColor)return alert('اختر لون دراقون أولاً');
     if(!el('lcTerms').checked)return alert('وافق على الشروط والأحكام أولاً');
     buy.disabled=true;buy.textContent='جارٍ تنفيذ الشراء...';
     try{
       cart[p.id]=Math.min((cart[p.id]||0)+1,Number(p.stock_count||1));
+      cartOptions[p.id]={...(cartOptions[p.id]||{}),...(isDragon?{color:selectedColor}:{})};
       await checkout();
     }catch(e){
       console.error('purchase failed:',e);
@@ -308,7 +324,7 @@ function renderCart(){
 }async function checkout(){
  const name=(profile?.full_name||session.user.email||'عميل').trim();
  const phone=(profile?.phone||session.user.phone||'').trim();
- const items=Object.entries(cart).filter(([id,q])=>Number(q)>0).map(([product_id,quantity])=>({product_id,quantity:Number(quantity)}));
+ const items=Object.entries(cart).filter(([id,q])=>Number(q)>0).map(([product_id,quantity])=>({product_id,quantity:Number(quantity),...(cartOptions[product_id]?.color?{color:cartOptions[product_id].color}:{})}));
  if(!items.length)return alert('السلة فارغة');
  const total=items.reduce((sum,item)=>{const id=Array.isArray(item)?item[0]:item?.product_id;const q=Array.isArray(item)?item[1]:item?.quantity;const p=products.find(x=>x.id===id);return sum+(Number(p?.price||0)*Number(q||0))},0);
  const buyButtons=[...document.querySelectorAll('.lc-detail-buy,[id="pageBuy"],.lc-buy')];
@@ -322,6 +338,7 @@ function renderCart(){
    if(r.error)throw r.error;
    const orderId=r.data;
    cart={};
+   cartOptions={};
    let codes=[];
    let codeError=null;
    for(let attempt=0;attempt<3;attempt++){
@@ -445,7 +462,7 @@ async function renderOrders(){
   view.innerHTML='<div class="lc-orders-page"><div class="lc-orders-loading"><div>⏳</div><b>جارٍ تحميل طلباتك...</b><span>نسترجع آخر مشترياتك وأكوادك بأمان.</span></div></div>';
   try{
     const r=await sb.from('orders')
-      .select('id,total,status,payment_method,customer_name,customer_phone,created_at,updated_at,order_items(id,product_id,quantity,unit_price,products(name,category))')
+      .select('id,total,status,payment_method,customer_name,customer_phone,created_at,updated_at,order_items(id,product_id,quantity,unit_price,color,products(name,category))')
       .eq('user_id',session.user.id)
       .order('created_at',{ascending:false})
       .limit(50);
@@ -545,7 +562,7 @@ function showOrderDetails(orderId){
   const itemRows=items.map(item=>{
     const name=item.products?.name||'منتج رقمي';
     const productCodes=grouped[item.product_id]||[];
-    return `<div class="lc-detail-order-item"><div><b>${esc(name)}</b><span>${Number(item.quantity)} × ${money(item.unit_price)}</span></div><strong>${money(Number(item.unit_price)*Number(item.quantity))}</strong>${productCodes.length?`<div class="lc-detail-order-codes">${productCodes.map(code=>`<div class="lc-order-code"><span>🔑</span><code>${esc(code)}</code><button type="button" data-copy-code="${esc(code)}">نسخ</button></div>`).join('')}`:'<small class="muted">سيظهر الكود هنا عند تسليم الطلب.</small>'}</div>`;
+    return `<div class="lc-detail-order-item"><div><b>${esc(name)}</b><span>${Number(item.quantity)} × ${money(item.unit_price)}${item.color?' • اللون: '+esc(item.color):''}</span></div><strong>${money(Number(item.unit_price)*Number(item.quantity))}</strong>${productCodes.length?`<div class="lc-detail-order-codes">${productCodes.map(code=>`<div class="lc-order-code"><span>🔑</span><code>${esc(code)}</code><button type="button" data-copy-code="${esc(code)}">نسخ</button></div>`).join('')}`:'<small class="muted">سيظهر الكود هنا عند تسليم الطلب.</small>'}</div>`;
   }).join('');
   const modal=document.createElement('div');
   modal.className='lc-order-modal';
