@@ -271,6 +271,7 @@ function showProduct(p){
     </article>
   </section>`;
   el('lcBackToProducts').onclick=()=>renderProducts();
+  const buy=el('lcBuyNow');
   const updateBuyState=()=>{
     const whatsapp=requiresWhatsapp?(el('productWhatsapp')?.value.trim()||''):'';
     const ready=available&&(!isDragon||!!selectedColor)&&(!requiresWhatsapp||!!whatsapp);
@@ -301,7 +302,6 @@ function showProduct(p){
       updateBuyState();
     });
   }
-  const buy=el('lcBuyNow');
   updateBuyState();
   if(buy)buy.onclick=async()=>{
     if(!available)return alert('❌ هذا المنتج غير متوفر حاليًا. أضف المخزون من البوت ثم حاول الشراء مرة أخرى.');
