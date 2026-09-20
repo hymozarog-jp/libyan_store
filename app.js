@@ -1,4 +1,4 @@
-let sb,session,products=[],cart={},cartOptions={},profile,wallet,productOptions=[],adminTopupChannel,stockRefreshTimer;
+let sb,session,products=[],cart={},cartOptions={},profile,wallet,productOptions=[],adminTopupChannel,stockRefreshTimer,supportWhatsapp='supportWhatsapp';
 const app=document.getElementById('app');
 const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>`${Number(v||0).toFixed(2)} د.ل`;
@@ -90,6 +90,7 @@ function humanOrderError(e){
  return m;
 }
 function emailInput(){return el('email').value.trim()}
+function whatsappInternational(value){const raw=String(value||'').replace(/\D/g,'');if(raw.startsWith('218'))return raw;if(raw.startsWith('0'))return '218'+raw.slice(1);return raw;}
 let storeLoading=null;
 async function loadStore(){
  if(storeLoading)return storeLoading;
@@ -99,12 +100,15 @@ async function loadStore(){
   app.innerHTML='<div class="card" style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:42px">⏳</div><h2>تم تسجيل الدخول</h2><p class="muted">جارٍ فتح المتجر...</p></div>';
   const withTimeout=(promise,label,ms=12000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('انتهت مهلة تحميل '+label+'، تحقق من اتصال الإنترنت ثم أعد المحاولة.')),ms))]);
   try{
-   const [pr,opts]=await Promise.all([
+   const [pr,opts,settings]=await Promise.all([
     withTimeout(sb.from('products').select('id,name,description,category,price,currency,always_available,requires_whatsapp,requires_roblox_username').eq('active',true).order('created_at'),'المنتجات'),
-    withTimeout(sb.from('product_options').select('id,product_id,option_type,option_name,active').eq('active',true).order('created_at'),'خيارات المنتجات')
+    withTimeout(sb.from('product_options').select('id,product_id,option_type,option_name,active').eq('active',true).order('created_at'),'خيارات المنتجات'),
+    withTimeout(sb.from('store_settings').select('key,value').in('key',['whatsapp_number']),'إعدادات المتجر').catch(()=>({data:[],error:null}))
    ]);
    if(pr.error)throw pr.error;
    productOptions=opts.error?[]:(opts.data||[]);
+   const settingsMap=Object.fromEntries((settings?.data||[]).map(x=>[x.key,x.value]));
+   if(String(settingsMap.whatsapp_number||'').trim())supportWhatsapp=String(settingsMap.whatsapp_number).trim();
 
    const [p,w,stock]=await Promise.allSettled([
     withTimeout(sb.from('profiles').select('full_name,phone,role').eq('id',uid).maybeSingle(),'بيانات الحساب'),
@@ -472,7 +476,7 @@ function renderCart(){
        return (p?.name||'روبلوكس')+' × '+quantity;
      }).join('، ');
      const waText='السلام عليكم، تم شراء طلب روبلوكس من Libyan Store. رقم الطلب #'+String(order.id).slice(-8).toUpperCase()+' — '+purchasedNames+' — الإجمالي '+money(order.total)+' د.ل. أريد إكمال استلام الطلب.';
-     const waUrl='https://wa.me/218910005566?text='+encodeURIComponent(waText);
+     const waUrl='https://wa.me/whatsappInternational(supportWhatsapp)?text='+encodeURIComponent(waText);
      const waButton=document.createElement('a');
      waButton.href=waUrl;
      waButton.target='_blank';
