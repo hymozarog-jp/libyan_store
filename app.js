@@ -152,7 +152,7 @@ async function refreshProductStock(){
       if(Number(p.stock_count||0)!==nextStock)changed=true;
       return {...p,stock_count:nextStock};
     });
-    if(changed&&el('view')&&document.querySelector('.lc-products'))renderProducts();
+    if(changed&&el('view'))renderProducts();
   }catch(e){console.warn('stock refresh failed:',e)}
 }
 function startStockRefresh(){
