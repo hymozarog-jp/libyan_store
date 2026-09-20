@@ -97,7 +97,7 @@ async function loadStore(){
   const withTimeout=(promise,label,ms=12000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('انتهت مهلة تحميل '+label+'، تحقق من اتصال الإنترنت ثم أعد المحاولة.')),ms))]);
   try{
    const pr=await withTimeout(
-    sb.from('products').select('id,name,description,category,price,currency').eq('active',true).order('created_at'),
+    sb.from('products').select('id,name,description,category,price,currency,always_available,requires_whatsapp').eq('active',true).order('created_at'),
     'المنتجات'
    );
    if(pr.error)throw pr.error;
@@ -125,7 +125,7 @@ async function loadStore(){
     console.warn('stock load failed:',stock.status==='fulfilled'?stock.value.error:stock.reason);
    }
 
-   products=(pr.data||[]).map(p=>({...p,stock_count:stockMap.get(String(p.id))||0}));
+   products=(pr.data||[]).map(p=>({...p,stock_count:p.always_available?999999:(stockMap.get(String(p.id))||0)}));
    renderStore();
    startStockRefresh();
    startAdminTopupRealtime();
@@ -144,7 +144,7 @@ async function refreshProductStock(){
     const stockMap=new Map((r.data||[]).map(x=>[String(x.product_id),Number(x.available_stock||0)]));
     let changed=false;
     products=products.map(p=>{
-      const nextStock=stockMap.get(String(p.id))||0;
+      const nextStock=p.always_available?999999:(stockMap.get(String(p.id))||0);
       if(Number(p.stock_count||0)!==nextStock)changed=true;
       return {...p,stock_count:nextStock};
     });
@@ -246,8 +246,9 @@ function renderCategory(category){
 function showProduct(p){
   const view=el('view');if(!view)return;
   const img=typeof productImage==='function'?productImage(p.name):'';
-  const available=Number(p.stock_count||0)>0;
+  const available=Boolean(p.always_available)||Number(p.stock_count||0)>0;
   const isDragon=String(p.name||'').trim()==='دراقون';
+  const requiresWhatsapp=Boolean(p.requires_whatsapp);
   let selectedColor=isDragon?(cartOptions[p.id]?.color||''):'';
   view.innerHTML=`<section class="lc-product-page">
     <button type="button" class="lc-back-btn" id="lcBackToProducts">← العودة للمنتجات</button>
@@ -257,6 +258,7 @@ function showProduct(p){
         <h1>${esc(p.name)}</h1>
         <div class="lc-detail-price">${money(p.price)} <span>⌄</span></div>
         ${isDragon?`<div style="margin:14px 0"><b>اختر اللون:</b><div id="dragonColors" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px">${colorButtons}</div><div id="dragonColorMsg" class="muted" style="margin-top:8px">${selectedColor?'اللون المختار: '+esc(selectedColor):'اختر لونًا للمنتج'}</div></div>`:''}
+        ${requiresWhatsapp?`<div style="margin:14px 0"><b>رقم الواتساب:</b><input id="productWhatsapp" class="field" type="tel" inputmode="tel" placeholder="أدخل رقم الواتساب" style="margin-top:8px"></div>`:''}
         <label class="lc-detail-terms">
           <input type="checkbox" id="lcTerms">
           <span>أوافق على <b>الشروط والأحكام</b></span>
@@ -283,11 +285,13 @@ function showProduct(p){
   if(buy)buy.onclick=async()=>{
     if(!available)return alert('❌ هذا المنتج غير متوفر حاليًا. أضف المخزون من البوت ثم حاول الشراء مرة أخرى.');
     if(isDragon&&!selectedColor)return alert('اختر لون دراقون أولاً');
+    const whatsapp=requiresWhatsapp?(el('productWhatsapp')?.value.trim()||''):'';
+    if(requiresWhatsapp&&!whatsapp)return alert('أدخل رقم الواتساب أولاً');
     if(!el('lcTerms').checked)return alert('وافق على الشروط والأحكام أولاً');
     buy.disabled=true;buy.textContent='جارٍ تنفيذ الشراء...';
     try{
       cart[p.id]=Math.min((cart[p.id]||0)+1,Number(p.stock_count||1));
-      cartOptions[p.id]={...(cartOptions[p.id]||{}),...(isDragon?{color:selectedColor}:{})};
+      cartOptions[p.id]={...(cartOptions[p.id]||{}),...(isDragon?{color:selectedColor}:{}),...(requiresWhatsapp?{whatsapp}:{})};
       await checkout();
     }catch(e){
       console.error('purchase failed:',e);
@@ -324,7 +328,7 @@ function renderCart(){
 }async function checkout(){
  const name=(profile?.full_name||session.user.email||'عميل').trim();
  const phone=(profile?.phone||session.user.phone||'').trim();
- const items=Object.entries(cart).filter(([id,q])=>Number(q)>0).map(([product_id,quantity])=>({product_id,quantity:Number(quantity),...(cartOptions[product_id]?.color?{color:cartOptions[product_id].color}:{})}));
+ const items=Object.entries(cart).filter(([id,q])=>Number(q)>0).map(([product_id,quantity])=>({product_id,quantity:Number(quantity),...(cartOptions[product_id]?.color?{color:cartOptions[product_id].color}:{}),...(cartOptions[product_id]?.whatsapp?{whatsapp:cartOptions[product_id].whatsapp}:{})}));
  if(!items.length)return alert('السلة فارغة');
  const total=items.reduce((sum,item)=>{const id=Array.isArray(item)?item[0]:item?.product_id;const q=Array.isArray(item)?item[1]:item?.quantity;const p=products.find(x=>x.id===id);return sum+(Number(p?.price||0)*Number(q||0))},0);
  const buyButtons=[...document.querySelectorAll('.lc-detail-buy,[id="pageBuy"],.lc-buy')];
