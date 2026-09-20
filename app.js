@@ -446,8 +446,8 @@ function renderCart(){
        '<div class="lc-purchase-cover">'+(img?'<img src="'+img+'" alt="'+esc(p?.name||'المنتج')+'">':'<div class="lc-product-placeholder">⚡</div>')+'</div>'+
        '<div class="lc-purchase-product-title"><h2>'+esc(p?.name||'المنتج')+'</h2><span>'+productCodes.length+' كود</span></div>'+
        productCodes.map((code,index)=>'<div class="lc-secret-row">'+
-         '<div class="lc-secret-label"><span>الكود '+(index+1)+'</span><span>🔐 تسليم رقمي</span></div>'+
-         '<div class="lc-secret-box"><button type="button" class="lc-secret-action" data-copy-code="'+esc(code)+'" aria-label="نسخ الكود">▣</button><button type="button" class="lc-secret-action" data-toggle-code aria-label="إظهار الكود">◉</button><span class="lc-secret-value" data-code-value="'+esc(code)+'">'+('•'.repeat(Math.min(14,Math.max(8,code.length))))+'</span></div>'+
+         '<div class="lc-secret-label"><span>بيانات الدخول '+(index+1)+'</span><span>🔐 تسليم آمن</span></div>'+
+         credentialHtml(code)+
        '</div>').join('')+
      '</section>';
    }).join('');
@@ -499,11 +499,10 @@ function renderCart(){
      value.textContent=shown?'•'.repeat(Math.min(14,Math.max(8,value.dataset.codeValue.length))):value.dataset.codeValue;
      value.dataset.shown=shown?'0':'1';btn.textContent=shown?'◉':'◌';
    });
-   modal.querySelectorAll('[data-copy-code]').forEach(btn=>btn.onclick=async()=>{
-     const code=btn.dataset.copyCode;
-     try{await navigator.clipboard.writeText(code)}catch(e){const ta=document.createElement('textarea');ta.value=code;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
-     btn.textContent='✓ تم النسخ';setTimeout(()=>{if(btn.isConnected)btn.textContent='▣'},1200);
-   });
+   const copyText=async(value,btn)=>{try{await navigator.clipboard.writeText(value)}catch(e){const ta=document.createElement('textarea');ta.value=value;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}btn.textContent='✓ تم النسخ';setTimeout(()=>{if(btn.isConnected)btn.textContent='▣'},1200)};
+   modal.querySelectorAll('[data-copy-code]').forEach(btn=>btn.onclick=()=>copyText(btn.dataset.copyCode,btn));
+   modal.querySelectorAll('[data-copy-credential]').forEach(btn=>btn.onclick=()=>copyText(btn.dataset.copyCredential,btn));
+   modal.querySelectorAll('[data-toggle-credential]').forEach(btn=>btn.onclick=()=>{const value=btn.parentElement.querySelector('[data-credential-value]');const shown=value.dataset.shown==='1';value.textContent=shown?'•'.repeat(Math.min(18,Math.max(8,value.dataset.credentialValue.length))):value.dataset.credentialValue;value.dataset.shown=shown?'0':'1';btn.textContent=shown?'◉':'◌'});
    el('lcPurchaseOrders').onclick=()=>{close();document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));const btn=document.querySelector('[data-view="orders"]');if(btn)btn.classList.add('active');renderOrders()};
  }catch(e){
    processing.remove();
@@ -625,6 +624,30 @@ async function renderOrders(){
     view.innerHTML=`<div class="lc-orders-empty"><div>⚠️</div><h3>تعذر تحميل الطلبات</h3><p class="muted">${esc(e.message||'حدث خطأ غير متوقع')}</p><button class="btn primary" id="retryOrders">إعادة المحاولة</button></div>`;
     el('retryOrders')?.addEventListener('click',renderOrders);
   }
+}
+function parseCredential(code){
+  const raw=String(code??'').trim();
+  const parts=raw.split(/\\s*\\|\\s*/).map(x=>x.trim()).filter(Boolean);
+  if(parts.length===2){
+    const clean=v=>v.replace(/^(email|e-mail|username|user|يوزر|الإيميل|البريد|password|pass|كلمة السر|كلمه السر)\\s*[:=]\\s*/i,'').trim();
+    const leftLabel=/^(email|e-mail|الإيميل|البريد)\\s*[:=]/i.test(parts[0])?'email':/^(username|user|يوزر)\\s*[:=]/i.test(parts[0])?'username':'';
+    const rightLabel=/^(email|e-mail|الإيميل|البريد)\\s*[:=]/i.test(parts[1])?'email':/^(username|user|يوزر)\\s*[:=]/i.test(parts[1])?'username':'';
+    const leftPass=/^(password|pass|كلمة السر|كلمه السر)\\s*[:=]/i.test(parts[0]);
+    const rightPass=/^(password|pass|كلمة السر|كلمه السر)\\s*[:=]/i.test(parts[1]);
+    if(leftPass||rightPass||leftLabel||rightLabel){
+      return {login:leftPass?clean(parts[1]):clean(parts[0]),loginLabel:leftLabel||rightLabel||'email',password:leftPass?clean(parts[0]):clean(parts[1])};
+    }
+    return {login:parts[0],loginLabel:'email',password:parts[1]};
+  }
+  const m=raw.match(/^(?:email|e-mail|الإيميل|البريد|username|user|يوزر)\\s*[:=]\\s*(.*?)\\s*[|,;]\\s*(?:password|pass|كلمة السر|كلمه السر)\\s*[:=]\\s*(.+)$/i);
+  if(m){const label=/^(?:username|user|يوزر)/i.test(raw)?'username':'email';return {login:m[1].trim(),loginLabel:label,password:m[2].trim()}}
+  return null;
+}
+function credentialHtml(code){
+  const parsed=parseCredential(code);
+  if(!parsed)return '<div class="lc-secret-box"><button type="button" class="lc-secret-action" data-copy-code="'+esc(code)+'" aria-label="نسخ">▣</button><button type="button" class="lc-secret-action" data-toggle-code aria-label="إظهار">◉</button><span class="lc-secret-value" data-code-value="'+esc(code)+'">'+('•'.repeat(Math.min(14,Math.max(8,String(code).length))))+'</span></div>';
+  const rows=[{label:parsed.loginLabel==='username'?'اليوزر':'الإيميل',value:parsed.login},{label:'كلمة السر',value:parsed.password}];
+  return '<div class="lc-credential-grid">'+rows.map((row,i)=>'<div class="lc-credential-row"><span>'+row.label+'</span><div class="lc-credential-value"><button type="button" class="lc-secret-action" data-copy-credential="'+esc(row.value)+'">▣</button><button type="button" class="lc-secret-action" data-toggle-credential>◉</button><code data-credential-value="'+esc(row.value)+'">'+('•'.repeat(Math.min(18,Math.max(8,String(row.value).length))))+'</code></div></div>').join('')+'</div>';
 }
 function showOrderDetails(orderId){
   const orders=window.__LIBYAN_ORDERS||[];
