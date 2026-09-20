@@ -176,7 +176,15 @@ function renderStore(){
       <div class="lc-wallet">💳 <b>${money(wallet?.balance)}</b><span class="wallet-text">المحفظة</span></div>
       <div class="lc-logo"><span>Libyan Store</span><span class="lc-logo-mark">LS</span></div>
     </header>
-    <section class="lc-hero"><h1>بطاقات واشتراكات رقمية</h1><p>اشترِ بطاقاتك المفضلة واستلم الأكواد مباشرة بعد الدفع.</p></section>
+    <section class="lc-home-hero">
+  <div class="lc-home-hero-copy">
+    <span class="lc-home-kicker">⚡ LIBYAN STORE</span>
+    <h1>كل بطاقاتك الرقمية<br><strong>في مكان واحد</strong></h1>
+    <p>بطاقات ألعاب • اشتراكات • روبلوكس • منتجات رقمية</p>
+    <button class="lc-home-hero-btn" id="heroBrowse">تصفح الفئات ←</button>
+  </div>
+  <div class="lc-home-hero-art" aria-hidden="true"><span class="hero-orb orb-one"></span><span class="hero-orb orb-two"></span><span class="hero-controller">🎮</span><span class="hero-card hero-card-ps">PS</span><span class="hero-card hero-card-rb">◈</span></div>
+</section>
     <div id="view"></div>
     <nav class="lc-bottom">
       <button class="active" data-view="store">⌂<br>الرئيسية</button>
@@ -200,6 +208,7 @@ function renderStore(){
   el('lcMenu').onclick=()=>el('lcDrawer').classList.add('open');el('lcBackdrop').onclick=close;el('lcDrawerClose').onclick=close;
   el('lcSearch').onclick=()=>{const q=prompt('ابحث عن منتج');if(!q)return;const found=products.find(p=>String(p.name||'').toLowerCase().includes(q.toLowerCase()));if(found)showProduct(found);else alert('لم يتم العثور على المنتج')};
   el('lcBell').onclick=()=>alert('لا توجد إشعارات جديدة حالياً.');
+  el('heroBrowse')?.addEventListener('click',()=>el('view')?.scrollIntoView({behavior:'smooth',block:'start'}));
   el('lcLogout').onclick=async()=>{if(adminTopupChannel){await sb.removeChannel(adminTopupChannel);adminTopupChannel=null}await sb.auth.signOut();session=null;cart={};renderLogin()};
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');({store:renderProducts,cart:renderCartPage,wallet:renderWallet,orders:renderOrders,account:renderAccount,admin:renderAdmin}[b.dataset.view])();close()});
   renderProducts();
@@ -226,7 +235,7 @@ function renderProducts(){
       '<div class="lc-category-body"><h3>'+esc(category)+'</h3><span class="pill">'+count+' '+(count===1?'منتج':'منتجات')+'</span><span class="lc-category-arrow">←</span></div>'+
     '</button>';
   }).join('');
-  view.innerHTML='<div class="lc-section-title"><h2>الفئات</h2><span class="pill">'+groups.length+' فئات</span></div>'+
+  view.innerHTML='<div class="lc-category-heading"><div><span class="lc-category-kicker">استكشف المتجر</span><h2>الفئات</h2></div><span class="lc-category-grid-icon">▦</span></div>'+
     (cards?'<div class="lc-products lc-categories">'+cards+'</div>':'<div class="lc-empty">لا توجد منتجات متاحة حالياً.</div>')+
     '<div id="cartBox" style="margin-top:15px"></div>';
   document.querySelectorAll('[data-category-open]').forEach(b=>b.onclick=()=>renderCategory(b.dataset.categoryOpen));
