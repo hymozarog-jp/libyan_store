@@ -382,6 +382,23 @@ function renderCart(){
    const r=await sb.rpc('create_wallet_order',{p_items:items,p_customer_name:name,p_customer_phone:phone});
    if(r.error)throw r.error;
    const orderId=r.data;
+   const hasRobloxOrder=items.some(item=>{
+     const p=products.find(x=>x.id===item.product_id);
+     return /روبلوكس|roblox|robux/i.test(String(p?.name||'')+' '+String(p?.category||''));
+   });
+   const hasDragonOrder=items.some(item=>{
+     const p=products.find(x=>x.id===item.product_id);
+     return /دراقون|dragon/i.test(String(p?.name||'')+' '+String(p?.category||''));
+   });
+   const isFiveMinuteDelivery=hasRobloxOrder||hasDragonOrder;
+   if(isFiveMinuteDelivery){
+     const modal=document.createElement('div');
+     modal.className='lc-modal show';
+     modal.dir='rtl';
+     modal.innerHTML='<div class="lc-modal-card" style="max-width:430px;text-align:center;padding:28px 20px"><div style="font-size:52px;margin-bottom:10px">⏳</div><h2 style="margin:0 0 10px">تم استلام طلبك بنجاح 🎉</h2><p style="font-size:18px;line-height:1.8;margin:0">يرجى الانتظار <b>5 دقائق</b> ليتم شحن طلبك.</p><p class="muted" style="margin:8px 0 18px">سنتواصل معك عبر واتساب عند إتمام الشحن.</p><button class="btn primary" id="closePurchaseNotice" style="width:100%">حسنًا</button></div>';
+     document.body.appendChild(modal);
+     el('closePurchaseNotice').onclick=()=>modal.remove();
+   }
    const isDragonOrder=items.length>0&&items.some(item=>{
      const p=products.find(x=>x.id===item.product_id);
      return /دراقون|dragon/i.test(String(p?.name||'')+' '+String(p?.category||''));
