@@ -207,21 +207,49 @@ function renderCartPage(){
 function renderProducts(){
   const view=el('view');if(!view)return;
   const imageFor=p=>typeof productImage==='function'?productImage(p.name):'';
-  const groups=[...new Set(['ماب السرقه',...products.map(p=>String(p.category||'رقمي').trim()||'رقمي')])];
   const categoryTitle=category=>category==='Netflix'?'اشتراكات نتفلكس':category;
-  const cards=groups.map(category=>{
-    const sample=products.find(p=>String(p.category||'رقمي').trim()===category);
-    const img=imageFor(sample);
-    const count=products.filter(p=>String(p.category||'رقمي').trim()===category).length;
-    return '<button type="button" class="card lc-category-card" data-category-open="'+esc(category)+'">'+
-      '<div class="lc-category-image">'+(img?'<img src="'+img+'" alt="'+esc(categoryTitle(category))+'">':'<div class="lc-product-placeholder">⚡</div>')+'</div>'+
-      '<div class="lc-category-body"><h3>'+esc(categoryTitle(category))+'</h3><span class="pill">'+count+' '+(count===1?'فئة':'فئات')+'</span><span class="lc-category-arrow">←</span></div>'+
-    '</button>';
+  const categories=[...new Set(products.map(p=>String(p.category||'رقمي').trim()||'رقمي'))];
+  const packageCards=products.map(p=>{
+    const img=imageFor(p);
+    const available=Boolean(p.always_available)||Number(p.stock_count||0)>0;
+    const stockText=p.always_available?'متوفر دائمًا':available?'متوفر الآن':'غير متوفر حاليًا';
+    const stockClass=available?'available':'unavailable';
+    const category=String(p.category||'رقمي').trim()||'رقمي';
+    const desc=String(p.description||'').trim();
+    return '<article class="lc-package-card">'+
+      '<button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
+        '<div class="lc-package-media">'+
+          (img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>')+
+          '<span class="lc-package-category">'+esc(categoryTitle(category))+'</span>'+
+        '</div>'+
+        '<div class="lc-package-content">'+
+          '<div class="lc-package-head"><h3>'+esc(p.name)+'</h3><span class="lc-package-status '+stockClass+'">'+esc(stockText)+'</span></div>'+
+          (desc?'<p class="lc-package-description">'+esc(desc)+'</p>':'<p class="lc-package-description">باقة رقمية جاهزة للشراء والتسليم.</p>')+
+          '<div class="lc-package-footer"><div><span class="lc-package-price">'+money(p.price)+'</span><small>السعر</small></div><span class="lc-package-open">عرض الباقة ←</span></div>'+
+        '</div>'+
+      '</button>'+
+    '</article>';
   }).join('');
-  view.innerHTML='<div class="lc-category-heading"><div><span class="lc-category-kicker">استكشف المتجر</span><h2>الفئات</h2></div><span class="lc-category-grid-icon">▦</span></div>'+
-    (cards?'<div class="lc-products lc-categories">'+cards+'</div>':'<div class="lc-empty">لا توجد منتجات متاحة حالياً.</div>')+
-    '<div id="cartBox" style="margin-top:15px"></div>';
-  document.querySelectorAll('[data-category-open]').forEach(b=>b.onclick=()=>renderCategory(b.dataset.categoryOpen));
+  const filters='<button type="button" class="lc-filter-chip active" data-package-filter="all">الكل <span>'+products.length+'</span></button>'+
+    categories.map(c=>'<button type="button" class="lc-filter-chip" data-package-filter="'+esc(c)+'">'+esc(categoryTitle(c))+' <span>'+products.filter(p=>String(p.category||'رقمي').trim()===c).length+'</span></button>').join('');
+  view.innerHTML='<section class="lc-packages-page">'+
+    '<div class="lc-packages-hero"><div><span class="lc-category-kicker">Libyan Store</span><h1>الباقات المتاحة</h1><p>اختر الباقة المناسبة لك، وكل باقة موضحة بشكل مستقل.</p></div><div class="lc-packages-count"><b>'+products.length+'</b><span>باقة</span></div></div>'+
+    '<div class="lc-package-filters" aria-label="فلترة الباقات">'+filters+'</div>'+
+    (packageCards?'<div class="lc-package-grid" id="packageGrid">'+packageCards+'</div>':'<div class="lc-empty">لا توجد باقات متاحة حاليًا.</div>')+
+    '<div id="cartBox" style="margin-top:18px"></div>'+
+  '</section>';
+  const bindProducts=()=>document.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productOpen);if(p)showProduct(p)});
+  bindProducts();
+  document.querySelectorAll('[data-package-filter]').forEach(btn=>btn.onclick=()=>{
+    document.querySelectorAll('[data-package-filter]').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    const category=btn.dataset.packageFilter;
+    document.querySelectorAll('.lc-package-card').forEach(card=>{
+      const productId=card.querySelector('[data-product-open]')?.dataset.productOpen;
+      const p=products.find(x=>x.id===productId);
+      card.style.display=category==='all'||String(p?.category||'رقمي').trim()===category?'':'none';
+    });
+  });
   renderCart();
 }
 function renderCategory(category){
