@@ -29,3 +29,6 @@ button:hover,.grid>.card:hover{transform:none!important}
 
 /* Promotional pricing */
 .lc-package-pricing{display:flex;flex-direction:column;align-items:flex-start;gap:3px}.lc-package-old-price{font-size:12px;color:#7f8b9b;text-decoration:line-through;text-decoration-thickness:1.5px}.lc-package-pricing small{color:#6f7d90;font-size:10px}.lc-package-price{font-size:20px;font-weight:900;color:#ff956c;line-height:1.1}
+
+/* Discount badge */
+.lc-package-media{position:relative}.lc-package-discount{position:absolute;top:10px;left:10px;padding:6px 10px;border-radius:999px;background:#ff5524;color:#fff;font-size:11px;font-weight:900;box-shadow:0 3px 10px rgba(0,0,0,.2)}
