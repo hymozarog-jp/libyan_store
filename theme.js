@@ -78,6 +78,13 @@
       });
       const grouped=groups.map(g=>({name:g,items:filtered.filter(p=>groupName(p)===g)})).filter(g=>g.items.length);
       note.textContent=grouped.length+' خدمات';
+      const mapCover=g=>{
+        const n=String(g.name||'').toLowerCase();
+        if(n.includes('سرقه')||n.includes('steal')||n.includes('brainrot')) return 'https://tr.rbxcdn.com/180DAY-7b6c6c4d0b4b2f2f4f0e4a2f3b4a5c6d/420/420/Image/Webp/noFilter';
+        if(n.includes('ميردر')||n.includes('murder')||n.includes('mm2')) return 'https://tr.rbxcdn.com/180DAY-8f2c7b4a1d3e5f6a7b8c9d0e1f2a3b4c/420/420/Image/Webp/noFilter';
+        if(n.includes('كيبورد')||n.includes('keyboard')) return 'https://tr.rbxcdn.com/180DAY-9a3b7c1d5e7f9a2b4c6d8e0f1a3b5c7d/420/420/Image/Webp/noFilter';
+        return '';
+      };
       grid.innerHTML=grouped.map(g=>{
         const gStock=g.items.reduce((s,p)=>s+Number(p.stock_count||0),0);
         const slug='service-'+g.name.replace(/[^a-zA-Z0-9\u0600-\u06ff]+/g,'-');
@@ -99,8 +106,13 @@
               '</article>';
             }).join('')+'</div></section>';
         }).join('');
+        const cover=mapCover(g);
         return '<section class="lc-service-group" id="'+esc(slug)+'">'+
-          '<div class="lc-service-head"><div><span class="lc-service-kicker">خدمة رقمية</span><h2>'+esc(g.name)+'</h2><p>'+g.items.length+' باقة متاحة'+(gStock?' • '+gStock+' متوفر':'')+'</p></div><span class="lc-service-icon">'+(g.name==='Netflix'?'N':g.name==='Spotify'?'♫':g.name==='Shahid'?'S':g.name==='Roblox'?'R':'⚡')+'</span></div>'+
+          '<button type="button" class="lc-game-cover" data-game-open="'+esc(g.name)+'">'+
+            '<div class="lc-game-cover-img">'+(cover?'<img src="'+cover+'" alt="'+esc(g.name)+'" loading="lazy" decoding="async">':'<div class="lc-game-cover-fallback">🎮</div>')+'</div>'+
+            '<div class="lc-game-cover-info"><span>ماب / لعبة</span><h2>'+esc(g.name)+'</h2><p>'+g.items.length+' منتجات'+(gStock?' • '+gStock+' متوفر':'')+'</p><b>اضغط لعرض الأغراض ←</b></div>'+
+          '</button>'+
+          '<div class="lc-service-head"><div><span class="lc-service-kicker">منتجات اللعبة</span><h2>'+esc(g.name)+'</h2><p>'+g.items.length+' باقة متاحة'+(gStock?' • '+gStock+' متوفر':'')+'</p></div><span class="lc-service-icon">'+(g.name==='Netflix'?'N':g.name==='Spotify'?'♫':g.name==='Shahid'?'S':g.name==='Roblox'?'R':'⚡')+'</span></div>'+
           '<div class="lc-package-tabs"><div class="lc-package-tabs-title">اختر الفئة</div>'+
             '<div class="lc-package-tab-list"><button type="button" class="lc-package-tab active" data-package-tab="all"><strong>كل الفئات</strong><span>'+g.items.length+' باقة</span></button>'+
             cats.map(cat=>{const count=g.items.filter(p=>packageCategory(p)===cat).length;return '<button type="button" class="lc-package-tab" data-package-tab="'+esc(cat)+'"><strong>'+esc(cat)+'</strong><span>'+count+' باقة</span></button>';}).join('')+
@@ -108,6 +120,11 @@
           '<div class="lc-package-panels">'+categorySections+'</div></section>';
       }).join('');
       el('lcNoResults').style.display=grouped.length?'none':'block';
+      grid.querySelectorAll('.lc-game-cover').forEach(btn=>btn.onclick=()=>{
+        const section=btn.closest('.lc-service-group');
+        section?.scrollIntoView({behavior:'smooth',block:'start'});
+        section?.classList.add('lc-game-open');
+      });
       grid.querySelectorAll('.lc-package-tab').forEach(btn=>btn.onclick=()=>{
         const section=btn.closest('.lc-service-group');
         section.querySelectorAll('.lc-package-tab').forEach(x=>x.classList.toggle('active',x===btn));
