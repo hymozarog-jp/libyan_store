@@ -94,7 +94,7 @@
                   '<span class="lc-stock '+(inStock?'ok':'out')+'">'+(inStock?'متوفر':'نفد المخزون')+'</span><span class="lc-product-sale-badge">خصم</span></div>'+
                   '<div class="lc-product-body"><span class="pill">'+esc(g.name)+'</span><h3>'+esc(p.name)+'</h3>'+
                   '<div class="lc-product-desc">'+esc(p.description||'اشتراك رقمي يتم تسليمه بعد إتمام الدفع.')+'</div>'+
-                  '<div class="lc-product-footer"><div class="lc-product-price">'+money(p.price)+'</div><span class="lc-arrow">←</span></div></div>'+
+                  '<div class="lc-product-footer"><div class="lc-product-price-wrap"><span class="lc-product-old-price">'+money(robuxOldPrices[p.name]||0)+'</span><div class="lc-product-price">'+money(p.price)+'</div><small class="lc-product-sale-label">السعر بعد الخصم</small></div><span class="lc-arrow">←</span></div></div>'+
                 '</button><div class="lc-product-action"><button class="btn lc-buy" type="button" data-product-buy="'+p.id+'" '+(inStock?'':'disabled')+'>'+(inStock?'اشترِ الآن':'غير متوفر حالياً')+'</button></div>'+
               '</article>';
             }).join('')+'</div></section>';
