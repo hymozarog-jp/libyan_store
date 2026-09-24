@@ -221,7 +221,7 @@ function renderProducts(){
       '<button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
         '<div class="lc-package-media">'+
           (img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>')+
-          '<span class="lc-package-category">'+esc(categoryTitle(category))+'</span>'+
+          '<span class="lc-package-category">'+esc(categoryTitle(category))+'</span><span class="lc-package-discount">خصم</span>'+
         '</div>'+
         '<div class="lc-package-content">'+
           '<div class="lc-package-head"><h3>'+esc(p.name)+'</h3><span class="lc-package-status '+stockClass+'">'+esc(stockText)+'</span></div>'+
