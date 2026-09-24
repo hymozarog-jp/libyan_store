@@ -8,30 +8,21 @@ let authBusy=false;
 async function boot(){
  try{
   sb=await loadSupabase();
-  if(window.__LIBYAN_RECOVERY_ACTIVE)return;
-  const oauthParams=new URLSearchParams(location.search);
-  const oauthMessage=oauthParams.get('error_description')||oauthParams.get('error');
-  if(oauthMessage){
-   history.replaceState({},document.title,location.pathname+location.hash);
-   renderLogin('تعذر تسجيل الدخول باستخدام Google: '+decodeURIComponent(oauthMessage.replace(/\+/g,' ')));
-   return;
-  }
-  sb.auth.onAuthStateChange((event,nextSession)=>{
-   if(event==='SIGNED_IN'||event==='INITIAL_SESSION'){
-    session=nextSession||null;
-    if(session&&document.getElementById('login')) loadStore();
-   }else if(event==='SIGNED_OUT'){
-    session=null;cart={};
-    if(adminTopupChannel){sb.removeChannel(adminTopupChannel);adminTopupChannel=null}
-    renderLogin();
-   }
-  });
+  // الدخول أصبح تلقائيًا عبر مستخدم مجهول؛ لا تظهر شاشة تسجيل الدخول للزائر.
+  if(window.__LIBYAN_RECOVERY_ACTIVE){ window.__LIBYAN_RECOVERY_ACTIVE=false; }
   const r=await sb.auth.getSession();
   if(r.error)throw r.error;
   session=r.data.session||null;
-  if(session) await loadStore();
-  else renderLogin();
- }catch(e){app.innerHTML='<div class="card" style="text-align:center;margin-top:30px"><h1>⚡ Libyan Store</h1><p class="muted">'+esc(e.message||'تعذر تشغيل تسجيل الدخول')+'</p><button class="btn primary" onclick="location.reload()">إعادة المحاولة</button></div>'}
+  if(!session){
+   const anon=await sb.auth.signInAnonymously();
+   if(anon.error)throw anon.error;
+   session=anon.data.session||null;
+  }
+  if(!session)throw new Error('تعذر إنشاء جلسة الزائر تلقائيًا');
+  await loadStore();
+ }catch(e){
+  app.innerHTML='<div class="card" style="text-align:center;margin-top:30px"><h1>⚡ Libyan Store</h1><p class="muted">'+esc(e.message||'تعذر تشغيل المتجر')+'</p><button class="btn primary" onclick="location.reload()">إعادة المحاولة</button></div>'
+ }
 }
 function renderLogin(msg='',signupMode=false){app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">⚡</div><h1>Libyan Store</h1><p class="muted">اشتراكات رقمية ومحفظة وتسليم أكواد</p><div class="card" style="display:grid;gap:10px;text-align:right"><div style="display:flex;align-items:center;gap:8px;margin:4px 0;color:#8f9baa"><span style="height:1px;background:#263345;flex:1"></span><small>أو بالبريد الإلكتروني</small><span style="height:1px;background:#263345;flex:1"></span></div><div id="signupFields" style="display:${signupMode?'grid':'none'};gap:10px"><input id="fullName" class="field" autocomplete="name" placeholder="الاسم الكامل"><input id="phone" class="field" type="tel" inputmode="tel" autocomplete="tel" placeholder="رقم الهاتف"></div><input id="email" class="field" type="email" autocomplete="email" placeholder="البريد الإلكتروني"><input id="pass" class="field" type="password" autocomplete="${signupMode?'new-password':'current-password'}" placeholder="كلمة المرور"><button class="btn primary" id="login">${signupMode?'تسجيل الدخول':'دخول'}</button><button class="btn" id="signup">${signupMode?'إنشاء الحساب':'إنشاء حساب جديد'}</button><small id="msg" class="muted">${esc(msg)}</small></div></div>`;el('login').onclick=()=>signupMode?renderLogin('',false):auth(false);el('signup').onclick=()=>signupMode?auth(true):renderLogin('',true)}
 async function socialLogin(provider){
@@ -201,8 +192,8 @@ function renderStore(){
   el('lcSearch').onclick=()=>{const q=prompt('ابحث عن منتج');if(!q)return;const found=products.find(p=>String(p.name||'').toLowerCase().includes(q.toLowerCase()));if(found)showProduct(found);else alert('لم يتم العثور على المنتج')};
   el('lcBell').onclick=()=>alert('لا توجد إشعارات جديدة حالياً.');
   el('heroBrowse')?.addEventListener('click',()=>el('view')?.scrollIntoView({behavior:'smooth',block:'start'}));
-  el('lcLogout').onclick=async()=>{if(adminTopupChannel){await sb.removeChannel(adminTopupChannel);adminTopupChannel=null}await sb.auth.signOut();session=null;cart={};renderLogin()};
-  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{const viewName=b.dataset.view;if(viewName==='wallet'&&!session?.user){close();renderLogin('سجّل الدخول أولاً حتى تتمكن من شحن المحفظة.');return}document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');({store:renderProducts,cart:renderCartPage,wallet:renderWallet,orders:renderOrders,account:renderAccount,admin:renderAdmin}[viewName])();close()});
+  el('lcLogout').onclick=()=>alert('المتجر يعمل بدون تسجيل دخول.');
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{const viewName=b.dataset.view;if(viewName==='wallet'&&!session?.user){close();return}document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');({store:renderProducts,cart:renderCartPage,wallet:renderWallet,orders:renderOrders,account:renderAccount,admin:renderAdmin}[viewName])();close()});
   renderProducts();
 }
 function renderCartPage(){
