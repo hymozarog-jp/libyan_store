@@ -415,6 +415,7 @@ function renderCart(){
      const p=products.find(x=>x.id===item.product_id);
      return /دراقون|dragon/i.test(String(p?.name||'')+' '+String(p?.category||''));
    });
+   const isFiveMinuteDelivery=hasRobloxOrder||hasDragonOrder;
    const isDragonOrder=items.length>0&&items.some(item=>{
      const p=products.find(x=>x.id===item.product_id);
      return /دراقون|dragon/i.test(String(p?.name||'')+' '+String(p?.category||''));
