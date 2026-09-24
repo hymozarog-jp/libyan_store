@@ -251,10 +251,13 @@ button{transition:none!important}
 .lc-product-img img,.lc-modal-img img,.lc-purchase-cover img,.lc-detail-image img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;display:block!important;background:#fff!important;transform:none!important}
 .lc-product:hover .lc-product-img img{transform:none!important}
 
-/* Game map cover cards */
-.lc-game-cover{width:100%;display:grid;grid-template-columns:minmax(180px,34%) 1fr;gap:18px;align-items:center;text-align:right;background:var(--lc-card,#111927);border:1px solid #243247;border-radius:22px;padding:12px;margin-bottom:14px;cursor:pointer;color:inherit;overflow:hidden}
-.lc-game-cover-img{aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center}
-.lc-game-cover-img img{width:100%;height:100%;object-fit:cover;display:block}
-.lc-game-cover-fallback{font-size:58px}
-.lc-game-cover-info span{font-size:12px;opacity:.65}.lc-game-cover-info h2{margin:4px 0;font-size:24px}.lc-game-cover-info p{margin:4px 0 12px;opacity:.75}.lc-game-cover-info b{font-size:13px}
-@media(max-width:700px){.lc-game-cover{grid-template-columns:1fr}.lc-game-cover-img{aspect-ratio:16/8}.lc-game-cover-info{padding:0 4px 8px}}
+
+/* Restore compact product artwork sizing */
+.lc-product-img{aspect-ratio:auto!important;height:170px!important;background:#fff!important;overflow:hidden!important}
+.lc-product-img img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;display:block!important;background:#fff!important;transform:none!important}
+.lc-product:hover .lc-product-img img{transform:none!important}
+.lc-modal-img,.lc-purchase-cover,.lc-detail-image{aspect-ratio:auto!important;height:180px!important;background:#fff!important;overflow:hidden!important}
+.lc-modal-img img,.lc-purchase-cover img,.lc-detail-image img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;display:block!important;background:#fff!important;transform:none!important}
+@media(max-width:760px){
+  .lc-product-img{height:145px!important}
+}
