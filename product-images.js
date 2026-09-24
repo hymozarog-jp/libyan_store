@@ -4,6 +4,7 @@ function productImage(name=''){
   if(n.includes('shahid')||n.includes('شاهد'))return 'assets/shahid.svg';
   if(n.includes('spotify')||n.includes('سبوتيفاي'))return 'assets/spotify.svg';
   if(n.includes('roblox')||n.includes('robux')||n.includes('روبلوكس'))return 'assets/robux.svg';
+  if(n.includes('قرما اند مدوندونق')||n.includes('grim and mondongo')||n.includes('grim')&&n.includes('mondongo'))return 'https://a.allegroimg.com/s512/11854b/803acea94f64ae50872068c16ff6/Mieteteira-Bicicleteira-Steal-a-Brainrot-Roblox';
   if(n.includes('دراقون')||n.includes('dragon cannelloni')||n.includes('cannelloni'))return 'https://production-gameflipusercontent.fingershock.com/us-east-1%3A71f60d98-b8ed-4dec-b31b-28001bfdaf0a/f5b51031-e17c-4e7a-ab2a-81775ed0b511/abea5f1c-99c2-4bbc-9c95-803d2708ec93/640x640.webp';
   return '';
 }
