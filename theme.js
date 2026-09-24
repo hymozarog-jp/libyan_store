@@ -62,7 +62,7 @@
         '<div class="lc-search-box"><span>⌕</span><input id="lcProductSearch" class="field" placeholder="ابحث عن Netflix أو Spotify أو شاهد..."></div>'+
         '<div class="lc-categories" id="lcCategories"><button type="button" class="active" data-cat="all">الكل</button>'+groups.map(x=>'<button type="button" data-cat="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>'+
       '</section>'+
-      '<div class="lc-section-title"><div><h2>الخدمات والمنتجات</h2><span class="lc-results-note" id="lcResultsNote">'+groups.length+' خدمات</span></div></div>'+
+      '<div class="lc-section-title"><div><h2>الخدمات والمنتجات</h2><span class="lc-results-note" id="lcResultsNote">'+groups.length+' خدمات</span></div></div>'+'<div id="lcMapBannerWrap" class="lc-map-banner-wrap">'+mapGroups+'</div>'+
       '<div id="lcGroupGrid" class="lc-service-groups"></div>'+
       '<div id="lcNoResults" class="lc-empty" style="display:none">لا توجد منتجات تطابق بحثك.</div>'+
       '<div id="cartBox" style="margin-top:15px"></div>';
@@ -77,6 +77,21 @@
         return (activeCat==='all'||group===activeCat)&&(!q||hay.includes(q));
       });
       const grouped=groups.map(g=>({name:g,items:filtered.filter(p=>groupName(p)===g)})).filter(g=>g.items.length);
+      const mapCoverUrl='https://www.eldorado.gg/blog/wp-content/uploads/2025/10/Steal-a-Brainrot-Admin-Abuse-2.webp';
+      const mapGroups=grouped.map(g=>{
+        if(g.name!=='ماب السرقه') return '';
+        const featured=g.items.slice(0,3);
+        return '<button type="button" class="lc-map-banner" data-map-open="'+esc(g.name)+'">'+
+          '<img class="lc-map-banner-bg" src="'+mapCoverUrl+'" alt="ماب السرقه" loading="lazy" decoding="async">'+
+          '<span class="lc-map-banner-shade"></span>'+
+          '<span class="lc-map-banner-title"><small>ماب السرقه • Steal a Brainrot</small><strong>الأغراض المتوفرة</strong></span>'+
+          '<span class="lc-map-products">'+featured.map(p=>{
+            const img=pImage(p);
+            return '<span class="lc-map-product">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'')+'<b>'+esc(p.name)+'</b></span>';
+          }).join('')+'</span>'+
+        '</button>';
+      }).join('');
+      
       note.textContent=grouped.length+' خدمات';
       grid.innerHTML=grouped.map(g=>{
         const gStock=g.items.reduce((s,p)=>s+Number(p.stock_count||0),0);
@@ -109,6 +124,10 @@
           '<div class="lc-package-panels">'+categorySections+'</div></section>';
       }).join('');
       el('lcNoResults').style.display=grouped.length?'none':'block';
+      document.querySelectorAll('.lc-map-banner').forEach(btn=>btn.onclick=()=>{
+        const target=Array.from(grid.querySelectorAll('.lc-service-group')).find(s=>s.querySelector('.lc-service-head h2')?.textContent===btn.dataset.mapOpen);
+        target?.scrollIntoView({behavior:'smooth',block:'start'});
+      });
       grid.querySelectorAll('.lc-package-tab').forEach(btn=>btn.onclick=()=>{
         const section=btn.closest('.lc-service-group');
         section.querySelectorAll('.lc-package-tab').forEach(x=>x.classList.toggle('active',x===btn));
