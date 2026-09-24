@@ -415,15 +415,6 @@ function renderCart(){
      const p=products.find(x=>x.id===item.product_id);
      return /دراقون|dragon/i.test(String(p?.name||'')+' '+String(p?.category||''));
    });
-   const isFiveMinuteDelivery=hasRobloxOrder||hasDragonOrder;
-   if(isFiveMinuteDelivery){
-     const modal=document.createElement('div');
-     modal.className='lc-modal show';
-     modal.dir='rtl';
-     modal.innerHTML='<div class="lc-modal-card" style="max-width:430px;text-align:center;padding:28px 20px"><div style="font-size:52px;margin-bottom:10px">⏳</div><h2 style="margin:0 0 10px">تم استلام طلبك بنجاح 🎉</h2><p style="font-size:18px;line-height:1.8;margin:0">يرجى الانتظار <b>5 دقائق</b> ليتم شحن طلبك.</p><p class="muted" style="margin:8px 0 18px">سنتواصل معك عبر واتساب عند إتمام الشحن.</p><button class="btn primary" id="closePurchaseNotice" style="width:100%">حسنًا</button></div>';
-     document.body.appendChild(modal);
-     el('closePurchaseNotice').onclick=()=>modal.remove();
-   }
    const isDragonOrder=items.length>0&&items.some(item=>{
      const p=products.find(x=>x.id===item.product_id);
      return /دراقون|dragon/i.test(String(p?.name||'')+' '+String(p?.category||''));
@@ -477,9 +468,9 @@ function renderCart(){
    modal.id='lcPurchaseModal';modal.className='lc-modal show';modal.dir='rtl';
    modal.innerHTML='<div class="lc-modal-card lc-purchase-modal">'+
      '<button class="lc-modal-close" id="lcPurchaseClose" aria-label="إغلاق">×</button>'+
-     '<div class="lc-purchase-success"><span class="lc-purchase-ok">✓</span><div><b>تمت عملية الشراء بنجاح</b><span>تم خصم '+money(order.total)+' من محفظتك</span></div></div>'+
+     '<div class="lc-purchase-success"><span class="lc-purchase-ok">✓</span><div><b>'+(isFiveMinuteDelivery?'تم استلام طلبك بنجاح 🎉':'تمت عملية الشراء بنجاح')+'</b><span>'+(isFiveMinuteDelivery?'يرجى الانتظار 5 دقائق ليتم شحن طلبك.':'تم خصم '+money(order.total)+' من محفظتك')+'</span></div></div>'+
      (isRobloxOrder ? '<section class="lc-purchase-no-codes" style="text-align:center"><div style="font-size:28px">📱</div><b>رقم التواصل لاستلام الروبلوكس</b><p style="font-size:24px;font-weight:900;direction:ltr;margin:10px 0">${esc(supportWhatsapp)}</p><p>تواصل معنا على هذا الرقم بعد إتمام الشراء.</p></section>' : '')+
-     '<div class="lc-purchase-summary"><div><span>رقم الطلب</span><b>#'+String(order.id).slice(-8).toUpperCase()+'</b></div><div><span>الأكواد</span><b>'+codes.length+' كود</b></div><div><span>الرصيد المتبقي</span><b>'+money(wallet?.balance)+'</b></div></div>'+
+     (isFiveMinuteDelivery?'<div class="lc-purchase-no-codes" style="text-align:center"><p style="font-size:17px;margin:8px 0">سنتواصل معك عبر واتساب عند إتمام الشحن.</p></div>':'')+     '<div class="lc-purchase-summary"><div><span>رقم الطلب</span><b>#'+String(order.id).slice(-8).toUpperCase()+'</b></div><div><span>الأكواد</span><b>'+codes.length+' كود</b></div><div><span>الرصيد المتبقي</span><b>'+money(wallet?.balance)+'</b></div></div>'+
      (isRobloxOrder ? '' : (productsHtml||'<section class="lc-purchase-no-codes"><div>✅</div><b>تم الدفع بنجاح</b><p>تم إنشاء الطلب، لكن الأكواد لم تظهر الآن. ستجدها محفوظة داخل «طلباتي» ويمكنك فتح الطلب لاحقًا.</p></section>'))+
      (noCodes?'':'<div class="lc-purchase-tip">💡 اضغط على زر النسخ بجانب أي كود لنسخه مباشرة.</div>')+
      '<div class="lc-purchase-actions"><button class="btn" id="lcPurchaseOrders">طلباتي</button><button class="btn primary" id="lcPurchaseClose2">إغلاق</button></div>'+
