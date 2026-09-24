@@ -204,6 +204,7 @@ function renderCartPage(){
   document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{delete cart[b.dataset.remove];renderCartPage()});
   if(el('pageBuy'))el('pageBuy').onclick=checkout;
 }
+const robuxOldPrices={'روبلوكس 100':20,'روبلوكس 200':40,'روبلوكس 300':60,'روبلوكس 400':80,'روبلوكس 500':100,'روبلوكس 600':120,'روبلوكس 700':140,'روبلوكس 800':160,'روبلوكس 900':180,'روبلوكس 1000':200};
 function renderProducts(){
   const view=el('view');if(!view)return;
   const imageFor=p=>typeof productImage==='function'?productImage(p.name):'';
@@ -225,7 +226,7 @@ function renderProducts(){
         '<div class="lc-package-content">'+
           '<div class="lc-package-head"><h3>'+esc(p.name)+'</h3><span class="lc-package-status '+stockClass+'">'+esc(stockText)+'</span></div>'+
           (desc?'<p class="lc-package-description">'+esc(desc)+'</p>':'<p class="lc-package-description">باقة رقمية جاهزة للشراء والتسليم.</p>')+
-          '<div class="lc-package-footer"><div><span class="lc-package-price">'+money(p.price)+'</span><small>السعر</small></div><span class="lc-package-open">عرض الباقة ←</span></div>'+
+          '<div class="lc-package-footer"><div class="lc-package-pricing"><span class="lc-package-old-price">'+money(robuxOldPrices[p.name]||0)+'</span><span class="lc-package-price">'+money(p.price)+'</span><small>السعر بعد الخصم</small></div><span class="lc-package-open">عرض الباقة ←</span></div>'+
         '</div>'+
       '</button>'+
     '</article>';
