@@ -418,9 +418,14 @@ function renderCart(){
    const isFiveMinuteDelivery=hasRobloxOrder||hasDragonOrder;
    try{
      const n=await sb.functions.invoke('discord-notify',{body:{type:'order',id:orderId}});
-     if(n.error)console.warn('order notification error:',n.error);
-     else console.log('order notification sent:',n.data);
-   }catch(e){console.warn('order notification failed:',e)}
+     if(n.error){
+       console.error('order notification error:',n.error);
+       alert('تم تسجيل الطلب، لكن تعذر إرسال إشعار Discord للإدارة.');
+     }else console.log('order notification sent:',n.data);
+   }catch(e){
+     console.error('order notification failed:',e);
+     alert('تم تسجيل الطلب، لكن تعذر إرسال إشعار Discord للإدارة.');
+   }
    cart={};
    cartOptions={};
    let codes=[];
