@@ -14,28 +14,19 @@
     {src:'supabase.js?v=20260920-1',core:true},
     {src:'app.js?v=20260924-3',core:true},
     {src:'topup-status.js?v=20260919-1'},
-    {src:'product-images.js?v=20260924-8'},
+    {src:'product-images.js?v=20260924-9'},
     {src:'theme.js?v=20260924-6'}
   ];
   function loadScript(src,timeout){
     return new Promise(function(resolve,reject){
       var s=document.createElement('script'),done=false,t=setTimeout(function(){if(!done){done=true;s.remove();reject(new Error('timeout: '+src))}},timeout||8000);
-      s.onload=function(){if(!done){done=true;clearTimeout(t);resolve()}};
-      s.onerror=function(){if(!done){done=true;clearTimeout(t);s.remove();reject(new Error('load: '+src))}};
-      s.src=src;document.head.appendChild(s);
+      s.onload=function(){if(!done){done=true;clearTimeout(t);resolve()}}; s.onerror=function(){if(!done){done=true;clearTimeout(t);s.remove();reject(new Error('load: '+src))}}; s.src=src;document.head.appendChild(s);
     });
   }
   async function start(){
-    try{
-      await loadScript(files[0].src,8000);
-      await loadScript(files[1].src,12000);
-    }catch(e){
-      app.innerHTML='<div class="card" style="max-width:430px;margin:30px auto;text-align:center"><h2>⚠️ تعذر تشغيل المتجر</h2><p class="muted">حدثت مشكلة أثناء تحميل ملفات المتجر.</p><small class="muted">'+String(e.message||e)+'</small><button class="btn primary" style="width:100%;margin-top:14px" onclick="location.reload()">إعادة المحاولة</button></div>';
-      return;
-    }
-    for(var j=2;j<files.length;j++){
-      try{await loadScript(files[j].src,8000)}catch(e){console.warn('Optional storefront script failed:',e.message||e)}
-    }
+    try{ await loadScript(files[0].src,8000); await loadScript(files[1].src,12000); }
+    catch(e){ app.innerHTML='<div class="card" style="max-width:430px;margin:30px auto;text-align:center"><h2>⚠️ تعذر تشغيل المتجر</h2><p class="muted">حدثت مشكلة أثناء تحميل ملفات المتجر.</p><small class="muted">'+String(e.message||e)+'</small><button class="btn primary" style="width:100%;margin-top:14px" onclick="location.reload()">إعادة المحاولة</button></div>'; return; }
+    for(var j=2;j<files.length;j++){ try{await loadScript(files[j].src,8000)}catch(e){console.warn('Optional storefront script failed:',e.message||e)} }
     document.getElementById('app').dataset.ready='1';
   }
   start();
