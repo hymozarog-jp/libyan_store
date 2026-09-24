@@ -34,6 +34,7 @@
       modal.remove();await checkout();
     };
   }
+  const robuxOldPrices={'روبلوكس 100':20,'روبلوكس 200':40,'روبلوكس 300':60,'روبلوكس 400':80,'روبلوكس 500':100,'روبلوكس 600':120,'روبلوكس 700':140,'روبلوكس 800':160,'روبلوكس 900':180,'روبلوكس 1000':200};
   window.renderProducts=function(){
     const packageCategory=p=>{const n=String(p.name||'').toLowerCase();if(/3\s*months|3\s*month|3\s*أشهر|ثلاثة\s*أشهر/.test(n))return '3 أشهر';if(/1\s*month|1\s*months|شهر/.test(n))return 'شهر';return 'أخرى';};
     const view=el('view');if(!view)return;
@@ -90,7 +91,7 @@
               return '<article class="card lc-product" data-package-category="'+esc(cat)+'">'+
                 '<button type="button" data-product-open="'+p.id+'" class="lc-product-open">'+
                   '<div class="lc-product-img">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<div class="lc-product-placeholder">⚡</div>')+
-                  '<span class="lc-stock '+(inStock?'ok':'out')+'">'+(inStock?'متوفر':'نفد المخزون')+'</span></div>'+
+                  '<span class="lc-stock '+(inStock?'ok':'out')+'">'+(inStock?'متوفر':'نفد المخزون')+'</span><span class="lc-product-sale-badge">خصم</span></div>'+
                   '<div class="lc-product-body"><span class="pill">'+esc(g.name)+'</span><h3>'+esc(p.name)+'</h3>'+
                   '<div class="lc-product-desc">'+esc(p.description||'اشتراك رقمي يتم تسليمه بعد إتمام الدفع.')+'</div>'+
                   '<div class="lc-product-footer"><div class="lc-product-price">'+money(p.price)+'</div><span class="lc-arrow">←</span></div></div>'+
