@@ -87,11 +87,11 @@
           return '<section class="lc-package-panel" data-package-panel="'+esc(cat)+'">'+
             '<div class="lc-package-panel-head"><div><span>فئة الباقة</span><h3>'+esc(cat)+'</h3></div><b>'+items.length+' باقة</b></div>'+
             '<div class="lc-service-products">'+items.map(p=>{
-              const img=pImage(p),stock=Number(p.stock_count||0),inStock=stock>0;
+              const img=pImage(p),stock=Number(p.stock_count||0),inStock=stock>0,limitedStock=p.stock_quantity!==null&&p.stock_quantity!==undefined;
               return '<article class="card lc-product" data-package-category="'+esc(cat)+'">'+
                 '<button type="button" data-product-open="'+p.id+'" class="lc-product-open">'+
                   '<div class="lc-product-img">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<div class="lc-product-placeholder">⚡</div>')+
-                  '<span class="lc-stock '+(inStock?'ok':'out')+'">'+(inStock?'متوفر':'نفد المخزون')+'</span><span class="lc-product-sale-badge">خصم</span></div>'+
+                  '<span class="lc-stock '+(inStock?'ok':'out')+'">'+(inStock?(limitedStock?'متبقي '+stock+' قطع':'متوفر'):'نفد المخزون')+'</span><span class="lc-product-sale-badge">خصم</span></div>'+
                   '<div class="lc-product-body"><span class="pill">'+esc(g.name)+'</span><h3>'+esc(p.name)+'</h3>'+
                   '<div class="lc-product-desc">'+esc(p.description||'اشتراك رقمي يتم تسليمه بعد إتمام الدفع.')+'</div>'+
                   '<div class="lc-product-footer"><div class="lc-product-price-wrap"><span class="lc-product-old-price">'+money(robuxOldPrices[p.name]||0)+'</span><div class="lc-product-price">'+money(p.price)+'</div><small class="lc-product-sale-label">السعر بعد الخصم</small></div><span class="lc-arrow">←</span></div></div>'+
