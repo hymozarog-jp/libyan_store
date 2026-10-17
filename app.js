@@ -592,7 +592,14 @@ async function renderWalletTopupPage(method, nums={}){
         <span class="muted">المبلغ المختار</span><b id="walletChosenAmount" style="font-size:23px;color:#f5b942">— د.ل</b>
       </div>
     </section>
-    <section class="card" style="margin-top:12px">
+    ${isLibyana ? `<section class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">📱 الدفع عبر كود ليبيانا</h3>
+      <p class="muted">بعد اختيار المبلغ اضغط اتصال، وستفتح شاشة الاتصال بالكود جاهزًا. راجع الكود وأكّد الاتصال من هاتفك.</p>
+      <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px">رقم ليبيانا: <b style="font-size:18px">0925620538</b></div>
+      <div style="padding:12px;border-radius:12px;background:rgba(245,185,66,.09);border:1px solid rgba(245,185,66,.28);margin-bottom:12px">كود الدفع: <code id="walletUssdPreview">اختار المبلغ أولاً</code></div>
+      <button class="btn primary" id="walletCallTopup" style="width:100%" disabled>📞 اتصال لتأكيد الدفع</button>
+      <p class="muted" style="font-size:12px;margin-bottom:0">اضغط «اتصال لتأكيد الدفع» لفتح شاشة الاتصال بالكود، ثم أكّد الاتصال من هاتفك. الاتصال وحده لا يضيف الرصيد تلقائيًا.</p>
+    </section>` : `<section class="card" style="margin-top:12px">
       <h3 style="margin-top:0">📱 بيانات التحويل</h3>
       <p class="muted">حوّل قيمة الشحن إلى الرقم الموضح، ثم اكتب رقم الهاتف الذي تم التحويل منه وأرسل الطلب للمراجعة.</p>
       <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px">رقم ${provider}: <b style="font-size:18px">${esc(destination)}</b></div>
@@ -600,12 +607,13 @@ async function renderWalletTopupPage(method, nums={}){
       <input id="walletSenderPhone" class="field" type="tel" inputmode="tel" placeholder="09xxxxxxxx" autocomplete="tel">
       <button class="btn primary" id="walletSubmitTopup" style="width:100%;margin-top:14px" disabled>إرسال طلب الشحن</button>
       <p class="muted" style="font-size:12px;margin-bottom:0">سيتم إضافة الرصيد بعد مراجعة الطلب واعتماده من الإدارة. هذه الخطوة لا تنفّذ دفعًا تلقائيًا.</p>
-    </section>
+    </section>`}
   </div>`;
   el('backWalletProviders').onclick=renderWallet;
   let selectedAmount=0;
   const amountButtons=[...document.querySelectorAll('.wallet-amount-option')];
-  const custom=el('walletCustomAmount'),submit=el('walletSubmitTopup');
+  const custom=el('walletCustomAmount'),submit=el('walletSubmitTopup'),callButton=el('walletCallTopup');
+  const ussdCode=()=>selectedAmount>0&&Number.isInteger(selectedAmount)?'*122*0925620538*'+(selectedAmount*100)+'*1#':'';
   const refreshAmount=()=>{
     const customValue=Number(custom.value);
     if(custom.value.trim()){
@@ -613,7 +621,18 @@ async function renderWalletTopupPage(method, nums={}){
       amountButtons.forEach(b=>{b.style.background='rgba(255,255,255,.04)';b.style.borderColor='#39465b';b.style.color='inherit'});
     }
     el('walletChosenAmount').textContent=selectedAmount>0?money(selectedAmount):'— د.ل';
-    submit.disabled=!(selectedAmount>0&&Number.isFinite(selectedAmount)&&Number.isInteger(selectedAmount)&&el('walletSenderPhone').value.trim().length>=5);
+    const validAmount=selectedAmount>0&&Number.isFinite(selectedAmount)&&Number.isInteger(selectedAmount);
+    if(isLibyana){
+      el('walletUssdPreview').textContent=validAmount?ussdCode():'اختار المبلغ أولاً';
+      callButton.disabled=!validAmount;
+    }else{
+      submit.disabled=!(validAmount&&el('walletSenderPhone').value.trim().length>=5);
+    }
+  };
+  if(isLibyana)callButton.onclick=()=>{
+    const code=ussdCode();
+    if(!code)return alert('اختار مبلغ الشحن أولاً');
+    window.location.href='tel:'+code.replace('#','%23');
   };
   amountButtons.forEach(b=>b.onclick=()=>{
     selectedAmount=Number(b.dataset.amount);custom.value='';
@@ -621,21 +640,23 @@ async function renderWalletTopupPage(method, nums={}){
     refreshAmount();
   });
   custom.addEventListener('input',refreshAmount);
-  el('walletSenderPhone').addEventListener('input',refreshAmount);
-  submit.onclick=async()=>{
-    if(submit.disabled||submit.dataset.busy==='1')return;
-    if(!session?.user){renderLogin('سجّل الدخول أولاً حتى تتمكن من شحن المحفظة.');return}
-    submit.dataset.busy='1';submit.disabled=true;const original=submit.textContent;submit.textContent='جارٍ إرسال طلب الشحن...';
-    try{
-      const x=await sb.from('wallet_topups').insert({user_id:session.user.id,amount:selectedAmount,method:method,sender_phone:el('walletSenderPhone').value.trim(),status:'pending'}).select('id').single();
-      if(x.error){console.error('topup insert:',x.error);alert('تعذر تسجيل طلب الشحن: '+(x.error.message||'خطأ غير معروف'));return}
-      let notifyFailed=false;
-      try{const n=await sb.functions.invoke('discord-notify',{body:{type:'topup',id:x.data.id}});if(n.error)notifyFailed=true}catch(e){notifyFailed=true;console.warn('Discord topup notification failed:',e)}
-      alert(notifyFailed?'تم إرسال طلب الشحن، لكن تعذر إرسال إشعار الإدارة.':'تم إرسال طلب الشحن بنجاح. يرجى الانتظار حتى تتم مراجعة الطلب واعتماده.');
-      await renderWallet();
-    }catch(e){alert('تعذر إرسال طلب الشحن: '+(e.message||'خطأ غير معروف'))}
-    finally{if(el('walletSubmitTopup')){submit.dataset.busy='';submit.textContent=original;refreshAmount()}}
-  };
+  if(!isLibyana){
+    el('walletSenderPhone').addEventListener('input',refreshAmount);
+    submit.onclick=async()=>{
+      if(submit.disabled||submit.dataset.busy==='1')return;
+      if(!session?.user){renderLogin('سجّل الدخول أولاً حتى تتمكن من شحن المحفظة.');return}
+      submit.dataset.busy='1';submit.disabled=true;const original=submit.textContent;submit.textContent='جارٍ إرسال طلب الشحن...';
+      try{
+        const x=await sb.from('wallet_topups').insert({user_id:session.user.id,amount:selectedAmount,method:method,sender_phone:el('walletSenderPhone').value.trim(),status:'pending'}).select('id').single();
+        if(x.error){console.error('topup insert:',x.error);alert('تعذر تسجيل طلب الشحن: '+(x.error.message||'خطأ غير معروف'));return}
+        let notifyFailed=false;
+        try{const n=await sb.functions.invoke('discord-notify',{body:{type:'topup',id:x.data.id}});if(n.error)notifyFailed=true}catch(e){notifyFailed=true;console.warn('Discord topup notification failed:',e)}
+        alert(notifyFailed?'تم إرسال طلب الشحن، لكن تعذر إرسال إشعار الإدارة.':'تم إرسال طلب الشحن بنجاح. يرجى الانتظار حتى تتم مراجعة الطلب واعتماده.');
+        await renderWallet();
+      }catch(e){alert('تعذر إرسال طلب الشحن: '+(e.message||'خطأ غير معروف'))}
+      finally{if(el('walletSubmitTopup')){submit.dataset.busy='';submit.textContent=original;refreshAmount()}}
+    };
+  }
 }
 
 async function renderOrders(){
