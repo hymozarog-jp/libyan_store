@@ -1,9 +1,12 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "libyan-store",
-  "compatibility_date": "2026-09-20",
+  "name": "libyan-store2",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-18",
   "assets": {
     "directory": ".",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
   }
 }
