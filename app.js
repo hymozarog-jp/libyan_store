@@ -440,7 +440,7 @@ function renderCart(){
      sb.from('orders').select('id,total,status,created_at').eq('id',orderId).maybeSingle(),
      sb.from('wallets').select('balance').eq('user_id',session.user.id).maybeSingle()
    ]);
-   if(walletRes.data)wallet=walletRes.data;
+   if(walletRes.data){wallet=walletRes.data;const balanceAmount=document.getElementById('rbBalanceAmount');if(balanceAmount)balanceAmount.textContent=Number(wallet.balance||0).toFixed(4);}
    const order=orderRes.data||{id:orderId,total:total,status:'paid',created_at:new Date().toISOString()};
    const grouped={};
    codes.forEach(x=>(grouped[x.product_id]??=[]).push(x.code));
