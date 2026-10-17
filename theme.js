@@ -117,7 +117,6 @@
               '</article>';
             }).join('')+'</div></section>';
         }).join('');
-        const cover=mapCover(g);
         return '<section class="lc-service-group" id="'+esc(slug)+'">'+
           '<div class="lc-service-head"><div><span class="lc-service-kicker">منتجات اللعبة</span><h2>'+esc(g.name)+'</h2><p>'+g.items.length+' باقة متاحة'+(gStock?' • '+gStock+' متوفر':'')+'</p></div><span class="lc-service-icon">'+(g.name==='Netflix'?'N':g.name==='Spotify'?'♫':g.name==='Shahid'?'S':g.name==='Roblox'?'R':'⚡')+'</span></div>'+
           '<div class="lc-package-tabs"><div class="lc-package-tabs-title">اختر الفئة</div>'+
