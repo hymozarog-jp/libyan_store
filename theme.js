@@ -16,8 +16,8 @@
       if(Number.isFinite(value))paintBalance(value);else{const node=document.getElementById('rbBalanceAmount');if(node)node.textContent='—';}
     }catch(error){console.warn('Customer wallet refresh failed:',error)}})();
     const menu=document.getElementById('rbMenu');
-    menu.onclick=()=>{const choices=[['الرئيسية','store'],['طلباتي','orders'],['رصيدي','wallet'],['حسابي','account']];const answer=prompt('اكتب رقم الصفحة:\n1 الرئيسية\n2 طلباتي\n3 رصيدي\n4 حسابي');const v=choices[Number(answer)-1]?.[1];if(v==='store')renderStore();else if(v)({orders:renderOrders,wallet:renderWallet,account:renderAccount}[v])?.();};
-    document.querySelectorAll('[data-rb-view]').forEach(b=>b.onclick=()=>{const v=b.dataset.rbView;if(v==='store')renderStore();else ({cart:renderCartPage,orders:renderOrders,account:renderAccount}[v])?.();});
+    menu.onclick=()=>{const choices=[['الرئيسية','store'],['طلباتي','orders'],['رصيدي','wallet'],['حسابي','account']];const answer=prompt('اكتب رقم الصفحة:\n1 الرئيسية\n2 طلباتي\n3 رصيدي\n4 حسابي');const v=choices[Number(answer)-1]?.[1];if(v==='store'){renderStore();return;}if(v){const store=document.getElementById('rbStoreContent'),view=document.getElementById('view');if(store)store.style.display='none';if(view)view.style.display='block';({orders:renderOrders,wallet:renderWallet,account:renderAccount}[v])?.();}};
+    document.querySelectorAll('[data-rb-view]').forEach(b=>b.onclick=()=>{const v=b.dataset.rbView;if(v==='store'){renderStore();return;}const store=document.getElementById('rbStoreContent'),view=document.getElementById('view');if(store)store.style.display='none';if(view)view.style.display='block';({wallet:renderWallet,cart:renderCartPage,orders:renderOrders,account:renderAccount}[v])?.();});
     window.renderProducts();
   };
   window.renderProducts=function(){
