@@ -613,7 +613,7 @@ async function renderWalletTopupPage(method, nums={}){
   let selectedAmount=0;
   const amountButtons=[...document.querySelectorAll('.wallet-amount-option')];
   const custom=el('walletCustomAmount'),submit=el('walletSubmitTopup'),callButton=el('walletCallTopup');
-  const ussdCode=()=>selectedAmount>0&&Number.isInteger(selectedAmount)?'*122*0925620538*'+(selectedAmount*100)+'*1#':'';
+  const ussdCode=()=>selectedAmount>0&&Number.isInteger(selectedAmount)?'*122*0925620538*'+(selectedAmount*1000)+'#':'';
   const refreshAmount=()=>{
     const customValue=Number(custom.value);
     if(custom.value.trim()){
