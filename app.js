@@ -592,7 +592,7 @@ async function renderWalletTopupPage(method, nums={}){
         <span class="muted">المبلغ المختار</span><b id="walletChosenAmount" style="font-size:23px;color:#f5b942">— د.ل</b>
       </div>
     </section>
-    <section class="card" style="margin-top:12px">
+    ${isLibyana ? `<section class="card" style="margin-top:12px">
       <h3 style="margin-top:0">📱 الدفع عبر كود ليبيانا</h3>
       <p class="muted">بعد اختيار المبلغ اضغط اتصال، وستفتح شاشة الاتصال بالكود جاهزًا. راجع الكود وأكّد الاتصال من هاتفك.</p>
       <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px">رقم ليبيانا: <b style="font-size:18px">0925620538</b></div>
@@ -602,7 +602,15 @@ async function renderWalletTopupPage(method, nums={}){
       <input id="walletSenderPhone" class="field" type="tel" inputmode="tel" placeholder="09xxxxxxxx" autocomplete="tel">
       <button class="btn" id="walletSubmitTopup" style="width:100%;margin-top:10px" disabled>إرسال طلب الشحن للمراجعة</button>
       <p class="muted" style="font-size:12px;margin-bottom:0">الاتصال لا يؤكد الدفع للمتجر تلقائيًا. سيُضاف الرصيد بعد مراجعة الإدارة واعتماد الطلب.</p>
-    </section>
+    </section>` : `<section class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">📱 بيانات التحويل</h3>
+      <p class="muted">حوّل قيمة الشحن إلى الرقم الموضح، ثم اكتب رقم الهاتف الذي تم التحويل منه وأرسل الطلب للمراجعة.</p>
+      <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px">رقم ${provider}: <b style="font-size:18px">${esc(destination)}</b></div>
+      <label for="walletSenderPhone" style="display:block;margin-bottom:7px">رقم الهاتف المحوّل منه</label>
+      <input id="walletSenderPhone" class="field" type="tel" inputmode="tel" placeholder="09xxxxxxxx" autocomplete="tel">
+      <button class="btn primary" id="walletSubmitTopup" style="width:100%;margin-top:14px" disabled>إرسال طلب الشحن</button>
+      <p class="muted" style="font-size:12px;margin-bottom:0">سيتم إضافة الرصيد بعد مراجعة الطلب واعتماده من الإدارة. هذه الخطوة لا تنفّذ دفعًا تلقائيًا.</p>
+    </section>`}
   </div>`;
   el('backWalletProviders').onclick=renderWallet;
   let selectedAmount=0;
@@ -617,11 +625,11 @@ async function renderWalletTopupPage(method, nums={}){
     }
     el('walletChosenAmount').textContent=selectedAmount>0?money(selectedAmount):'— د.ل';
     const validAmount=selectedAmount>0&&Number.isFinite(selectedAmount)&&Number.isInteger(selectedAmount);
-    el('walletUssdPreview').textContent=validAmount?ussdCode():'اختار المبلغ أولاً';
-    callButton.disabled=!validAmount;
+    if(isLibyana){el('walletUssdPreview').textContent=validAmount?ussdCode():'اختار المبلغ أولاً';callButton.disabled=!validAmount;}
+    
     submit.disabled=!(validAmount&&el('walletSenderPhone').value.trim().length>=5);
   };
-  callButton.onclick=()=>{
+  if(isLibyana)callButton.onclick=()=>{
     const code=ussdCode();
     if(!code)return alert('اختار مبلغ الشحن أولاً');
     window.location.href='tel:'+code.replace('#','%23');
