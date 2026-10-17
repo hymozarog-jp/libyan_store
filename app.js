@@ -542,12 +542,100 @@ async function renderWallet(){
    const label={topup:'شحن',purchase:'شراء',refund:'استرجاع',adjustment:'تعديل / هدية'}[x.type]||x.type;
    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #202b3a"><div><b>'+label+'</b><div class="muted" style="font-size:12px">'+new Date(x.created_at).toLocaleString('ar-LY')+(x.note?' — '+esc(x.note):'')+'</div></div><div style="text-align:left"><b style="color:'+(positive?'#63d48c':'#ff8b7b')+'">'+(positive?'+':'−')+money(Math.abs(Number(x.amount||0)))+'</b><div class="muted" style="font-size:12px">الرصيد بعد العملية: '+money(x.balance_after)+'</div></div></div>';
  }).join('')||'<span class="muted">لا توجد حركات مالية بعد.</span>';
- el('view').innerHTML=`<div class="card" style="text-align:center"><h2>💰 رصيدي</h2><div style="font-size:34px;font-weight:900;margin:10px 0;color:#f5b942" id="walletPageBalance">${money(wallet?.balance??0)}</div><div class="muted">الرصيد الحالي في محفظتك — بالدينار الليبي</div></div><div class="card" style="margin-top:12px"><h2>➕ تعبئة الرصيد</h2><p class="muted">اختار طريقة التعبئة المناسبة ليك</p><div style="display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:14px 0"><button type="button" class="wallet-method-card" data-method="libyana" style="display:flex;flex-direction:column;align-items:center;width:100%;background:#fff;border:2px solid #e9edf4;border-radius:16px;padding:14px;color:#222;cursor:pointer;font:inherit"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Libyana_mobile_phone_logo.png" alt="الشعار الرسمي لشركة ليبيانا للهاتف المحمول" style="display:block;width:100%;max-width:320px;height:78px;object-fit:contain;margin-bottom:8px"><b>التعبئة عبر ليبيانا</b></button><button type="button" class="wallet-method-card" data-method="almadar" style="display:flex;flex-direction:column;align-items:center;width:100%;background:#fff;border:2px solid #e9edf4;border-radius:16px;padding:14px;color:#222;cursor:pointer;font:inherit"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Almadar_Aljadid_Logo.png" alt="الشعار الرسمي لشركة المدار الجديد" style="display:block;width:100%;max-width:320px;height:78px;object-fit:contain;margin-bottom:8px"><b>التعبئة عبر المدار</b></button></div><p class="muted">اشحن 500 د.ل لتحصل على 30 د.ل هدية 🎁</p><div style="display:flex;justify-content:center;margin:14px 0"><div style="position:relative;width:170px;height:170px"><svg width="170" height="170" viewBox="0 0 170 170" style="transform:rotate(-90deg)"><circle cx="85" cy="85" r="72" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="12"/><circle id="topupProgress" cx="85" cy="85" r="72" fill="none" stroke="#f39a22" stroke-width="12" stroke-linecap="round" stroke-dasharray="452.39" stroke-dashoffset="452.39"/></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><b id="topupCircleAmount" style="font-size:28px">0</b><span style="font-size:13px;color:#aeb7c5">من 500 د.ل</span></div></div></div><p id="topupBonusHint" style="text-align:center;margin:0 0 12px;color:#f7c77d">اشحن 500 د.ل واحصل على 30 د.ل هدية 🎁</p><div style="background:rgba(255,255,255,.04);padding:12px;border-radius:12px;margin:10px 0;line-height:2">رقم ليبيانا: <b>${esc(nums.libyana_number||'غير محدد')}</b><br>رقم المدار: <b>${esc(nums.almadar_number||'غير محدد')}</b></div><input type="hidden" id="tm" value="libyana"><p id="selectedWalletMethod" style="font-weight:700;margin:8px 0">طريقة التعبئة: ليبيانا</p><input id="ta" class="field" style="margin-top:8px" type="number" min="1" placeholder="المبلغ بالدينار"><input id="tp" class="field" style="margin-top:8px" placeholder="رقم الهاتف المحوّل منه"><button class="btn primary" id="sendTop" style="width:100%;margin-top:10px">إرسال طلب الشحن</button></div><div class="card" style="margin-top:12px"><h3>طلبات الشحن</h3>${(r.data||[]).map(x=>`<div style="padding:9px 0;border-bottom:1px solid #202b3a">${money(x.amount)} — ${esc(x.method)} — <span class="pill">${esc(x.status)}</span></div>`).join('')||'<span class="muted">لا توجد طلبات</span>'}</div><div class="card" style="margin-top:12px"><h3>📒 سجل الحركات المالية</h3><p class="muted" style="margin-top:0">كل شحن وشراء وهدية يظهر هنا مع الرصيد بعد العملية.</p>${txRows}</div>`;
- const updateCircle=()=>{const entered=Math.max(0,Number(el('ta').value)||0),amount=entered>0?entered:topupTotal,progress=Math.min(amount,500)/500,ring=2*Math.PI*72;el('topupProgress').style.strokeDashoffset=String(ring*(1-progress));el('topupCircleAmount').textContent=amount.toLocaleString('ar-LY');el('topupBonusHint').textContent=amount>=500?'🎁 مبروك! وصلت إلى 500 د.ل وستحصل على 30 د.ل هدية عند اعتماد الشحن.':(entered>0?'اشحن '+Math.max(0,500-amount).toLocaleString('ar-LY')+' د.ل إضافية للوصول إلى 500 د.ل والحصول على 30 د.ل هدية 🎁':'إجمالي شحناتك الحالية: '+amount.toLocaleString('ar-LY')+' د.ل — الهدف 500 د.ل 🎁')};
- document.querySelectorAll('.wallet-method-card').forEach(card=>{card.onclick=()=>{document.querySelectorAll('.wallet-method-card').forEach(c=>{c.style.borderColor='#e9edf4';c.style.boxShadow='none'});card.style.borderColor=card.dataset.method==='libyana'?'#e74d5b':'#7c3aed';card.style.boxShadow='0 0 0 2px '+(card.dataset.method==='libyana'?'rgba(231,77,91,.15)':'rgba(124,58,237,.15)');el('tm').value=card.dataset.method;el('selectedWalletMethod').textContent='طريقة التعبئة: '+(card.dataset.method==='libyana'?'ليبيانا':'المدار');};});document.querySelector('.wallet-method-card[data-method="libyana"]')?.click();
- el('ta').addEventListener('input',updateCircle);updateCircle();
- el('sendTop').onclick=async()=>{const btn=el('sendTop');if(btn.dataset.busy==='1')return;if(!session?.user){renderLogin('سجّل الدخول أولاً حتى تتمكن من شحن المحفظة.');return}const amount=Number(el('ta').value);if(!(amount>0)||!el('tp').value.trim())return alert('أكمل البيانات');btn.dataset.busy='1';btn.disabled=true;const originalText=btn.textContent;btn.textContent='جارٍ إرسال طلب الشحن...';try{const x=await sb.from('wallet_topups').insert({user_id:session.user.id,amount,method:el('tm').value,sender_phone:el('tp').value.trim(),status:'pending'}).select('id').single();if(x.error){console.error('topup insert:',x.error);return alert('تعذر تسجيل طلب الشحن: '+(x.error.message||'خطأ غير معروف'))}let notifyFailed=false;try{const n=await sb.functions.invoke('discord-notify',{body:{type:'topup',id:x.data.id}});if(n.error){notifyFailed=true;console.warn('Discord topup notification error:',n.error)}else console.log('Discord topup notification sent:',n.data)}catch(e){notifyFailed=true;console.warn('Discord topup notification failed:',e)}alert(notifyFailed?'تم إرسال طلب الشحن، لكن تعذر إرسال إشعار الإدارة.':'تم إرسال طلب الشحن بنجاح. يرجى الانتظار حتى تتم مراجعة الطلب واعتماده، وسيتم إبلاغك عبر واتساب عند إتمام الشحن.')}finally{btn.dataset.busy='';btn.disabled=false;btn.textContent=originalText}}
+  el('view').innerHTML=`<div class="wallet-flow">
+    <section class="card wallet-balance-card" style="text-align:center;padding:24px">
+      <div style="font-size:13px;opacity:.8">رصيد محفظتك الحالي</div>
+      <div style="font-size:36px;font-weight:900;margin:8px 0;color:#f5b942" id="walletPageBalance">${money(wallet?.balance??0)}</div>
+      <div class="muted">اختار شركة الاتصالات لبدء تعبئة الرصيد</div>
+    </section>
+    <section class="card" style="margin-top:12px">
+      <h2 style="margin-top:0">➕ اختار طريقة الشحن</h2>
+      <p class="muted">اضغط على ليبيانا أو المدار، وبعدها اختار قيمة الشحن.</p>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:16px">
+        <button type="button" class="wallet-method-card wallet-provider" data-method="libyana" style="display:flex;align-items:center;gap:16px;text-align:right;width:100%;background:#fff;border:1px solid #e9edf4;border-radius:18px;padding:16px;color:#222;cursor:pointer;font:inherit;box-shadow:0 5px 18px rgba(0,0,0,.08)">
+          <span style="flex:1"><b style="display:block;font-size:17px">ليبيانا</b><small style="display:block;color:#64748b;margin-top:5px">اختيار قيمة الشحن ←</small></span>
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Libyana_mobile_phone_logo.png" alt="شعار ليبيانا" style="display:block;width:130px;height:58px;object-fit:contain">
+        </button>
+        <button type="button" class="wallet-method-card wallet-provider" data-method="almadar" style="display:flex;align-items:center;gap:16px;text-align:right;width:100%;background:#fff;border:1px solid #e9edf4;border-radius:18px;padding:16px;color:#222;cursor:pointer;font:inherit;box-shadow:0 5px 18px rgba(0,0,0,.08)">
+          <span style="flex:1"><b style="display:block;font-size:17px">المدار الجديد</b><small style="display:block;color:#64748b;margin-top:5px">اختيار قيمة الشحن ←</small></span>
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Almadar_Aljadid_Logo.png" alt="شعار المدار الجديد" style="display:block;width:130px;height:58px;object-fit:contain">
+        </button>
+      </div>
+    </section>
+    <section class="card" style="margin-top:12px"><h3>طلبات الشحن</h3>${(r.data||[]).map(x=>`<div style="padding:9px 0;border-bottom:1px solid #202b3a">${money(x.amount)} — ${esc(x.method)} — <span class="pill">${esc(x.status)}</span></div>`).join('')||'<span class="muted">لا توجد طلبات</span>'}</section>
+    <section class="card" style="margin-top:12px"><h3>📒 سجل الحركات المالية</h3><p class="muted" style="margin-top:0">كل شحن وشراء وهدية يظهر هنا مع الرصيد بعد العملية.</p>${txRows}</section>
+  </div>`;
+  document.querySelectorAll('.wallet-provider').forEach(card=>{card.onclick=()=>renderWalletTopupPage(card.dataset.method,nums)});
 }
+
+async function renderWalletTopupPage(method, nums={}){
+  const isLibyana=method==='libyana';
+  const provider=isLibyana?'ليبيانا':'المدار الجديد';
+  const destination=nums[isLibyana?'libyana_number':'almadar_number']||'غير محدد';
+  const logo=isLibyana?'https://commons.wikimedia.org/wiki/Special:FilePath/Libyana_mobile_phone_logo.png':'https://commons.wikimedia.org/wiki/Special:FilePath/Almadar_Aljadid_Logo.png';
+  const accent=isLibyana?'#e74d5b':'#7c3aed';
+  el('view').innerHTML=`<div class="wallet-topup-step">
+    <button class="btn" id="backWalletProviders" style="margin-bottom:12px">→ رجوع لطرق الشحن</button>
+    <section class="card" style="text-align:center;padding:20px">
+      <img src="${logo}" alt="شعار ${provider}" style="width:190px;height:78px;object-fit:contain;background:#fff;border-radius:14px;padding:8px">
+      <h2 style="margin:12px 0 4px">الشحن عبر ${provider}</h2>
+      <p class="muted" style="margin:0">اختار قيمة الشحن المناسبة ليك</p>
+    </section>
+    <section class="card" style="margin-top:12px">
+      <label style="font-weight:800;display:block;margin-bottom:12px">قيمة الشحن بالدينار الليبي</label>
+      <div id="walletAmountChoices" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px">
+        ${[5,10,20,30,50,100].map(n=>`<button type="button" class="wallet-amount-option" data-amount="${n}" style="border:1px solid #39465b;border-radius:13px;padding:14px 6px;background:rgba(255,255,255,.04);color:inherit;font:inherit;font-weight:800;cursor:pointer">${n} د.ل</button>`).join('')}
+      </div>
+      <label for="walletCustomAmount" style="display:block;margin:16px 0 7px">أو اكتب مبلغًا آخر</label>
+      <input id="walletCustomAmount" class="field" type="number" min="1" step="1" inputmode="numeric" placeholder="المبلغ بالدينار">
+      <div style="margin-top:16px;padding:15px;border-radius:14px;background:rgba(245,185,66,.09);border:1px solid rgba(245,185,66,.28);display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <span class="muted">المبلغ المختار</span><b id="walletChosenAmount" style="font-size:23px;color:#f5b942">— د.ل</b>
+      </div>
+    </section>
+    <section class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">📱 بيانات التحويل</h3>
+      <p class="muted">حوّل قيمة الشحن إلى الرقم الموضح، ثم اكتب رقم الهاتف الذي تم التحويل منه وأرسل الطلب للمراجعة.</p>
+      <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px">رقم ${provider}: <b style="font-size:18px">${esc(destination)}</b></div>
+      <label for="walletSenderPhone" style="display:block;margin-bottom:7px">رقم الهاتف المحوّل منه</label>
+      <input id="walletSenderPhone" class="field" type="tel" inputmode="tel" placeholder="09xxxxxxxx" autocomplete="tel">
+      <button class="btn primary" id="walletSubmitTopup" style="width:100%;margin-top:14px" disabled>إرسال طلب الشحن</button>
+      <p class="muted" style="font-size:12px;margin-bottom:0">سيتم إضافة الرصيد بعد مراجعة الطلب واعتماده من الإدارة. هذه الخطوة لا تنفّذ دفعًا تلقائيًا.</p>
+    </section>
+  </div>`;
+  el('backWalletProviders').onclick=renderWallet;
+  let selectedAmount=0;
+  const amountButtons=[...document.querySelectorAll('.wallet-amount-option')];
+  const custom=el('walletCustomAmount'),submit=el('walletSubmitTopup');
+  const refreshAmount=()=>{
+    const customValue=Number(custom.value);
+    selectedAmount=custom.value.trim()?customValue:selectedAmount;
+    if(custom.value.trim())amountButtons.forEach(b=>{b.style.background='rgba(255,255,255,.04)';b.style.borderColor='#39465b';b.style.color='inherit'});
+    el('walletChosenAmount').textContent=selectedAmount>0?money(selectedAmount):'— د.ل';
+    submit.disabled=!(selectedAmount>0&&Number.isFinite(selectedAmount)&&Number.isInteger(selectedAmount)&&el('walletSenderPhone').value.trim().length>=5);
+  };
+  amountButtons.forEach(b=>b.onclick=()=>{
+    selectedAmount=Number(b.dataset.amount);custom.value='';
+    amountButtons.forEach(x=>{const active=x===b;x.style.background=active?accent:'rgba(255,255,255,.04)';x.style.borderColor=active?accent:'#39465b';x.style.color=active?'#fff':'inherit'});
+    refreshAmount();
+  });
+  custom.addEventListener('input',refreshAmount);
+  el('walletSenderPhone').addEventListener('input',refreshAmount);
+  submit.onclick=async()=>{
+    if(submit.disabled||submit.dataset.busy==='1')return;
+    if(!session?.user){renderLogin('سجّل الدخول أولاً حتى تتمكن من شحن المحفظة.');return}
+    submit.dataset.busy='1';submit.disabled=true;const original=submit.textContent;submit.textContent='جارٍ إرسال طلب الشحن...';
+    try{
+      const x=await sb.from('wallet_topups').insert({user_id:session.user.id,amount:selectedAmount,method:method,sender_phone:el('walletSenderPhone').value.trim(),status:'pending'}).select('id').single();
+      if(x.error){console.error('topup insert:',x.error);alert('تعذر تسجيل طلب الشحن: '+(x.error.message||'خطأ غير معروف'));return}
+      let notifyFailed=false;
+      try{const n=await sb.functions.invoke('discord-notify',{body:{type:'topup',id:x.data.id}});if(n.error)notifyFailed=true}catch(e){notifyFailed=true;console.warn('Discord topup notification failed:',e)}
+      alert(notifyFailed?'تم إرسال طلب الشحن، لكن تعذر إرسال إشعار الإدارة.':'تم إرسال طلب الشحن بنجاح. يرجى الانتظار حتى تتم مراجعة الطلب واعتماده.');
+      await renderWallet();
+    }catch(e){alert('تعذر إرسال طلب الشحن: '+(e.message||'خطأ غير معروف'))}
+    finally{if(el('walletSubmitTopup')){submit.dataset.busy='';submit.textContent=original;refreshAmount()}}
+  };
+}
+
 async function renderOrders(){
   const view=el('view');
   view.innerHTML='<div class="lc-orders-page"><div class="lc-orders-loading"><div>⏳</div><b>جارٍ تحميل طلباتك...</b><span>نسترجع آخر مشترياتك وأكوادك بأمان.</span></div></div>';
