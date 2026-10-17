@@ -608,8 +608,12 @@ async function renderWalletTopupPage(method, nums={}){
   const custom=el('walletCustomAmount'),submit=el('walletSubmitTopup');
   const refreshAmount=()=>{
     const customValue=Number(custom.value);
-    selectedAmount=custom.value.trim()?customValue:selectedAmount;
-    if(custom.value.trim())amountButtons.forEach(b=>{b.style.background='rgba(255,255,255,.04)';b.style.borderColor='#39465b';b.style.color='inherit'});
+    if(custom.value.trim()){
+      selectedAmount=customValue;
+      amountButtons.forEach(b=>{b.style.background='rgba(255,255,255,.04)';b.style.borderColor='#39465b';b.style.color='inherit'});
+    }else if(!amountButtons.some(b=>b.style.background===accent)){
+      selectedAmount=0;
+    }
     el('walletChosenAmount').textContent=selectedAmount>0?money(selectedAmount):'— د.ل';
     submit.disabled=!(selectedAmount>0&&Number.isFinite(selectedAmount)&&Number.isInteger(selectedAmount)&&el('walletSenderPhone').value.trim().length>=5);
   };
