@@ -63,7 +63,7 @@
         '<div class="lc-search-box"><span>⌕</span><input id="lcProductSearch" class="field" placeholder="ابحث عن باقة Robux..."></div>'+
         '<div class="lc-categories" id="lcCategories"><button type="button" class="active" data-cat="all">الكل</button>'+groups.map(x=>'<button type="button" data-cat="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>'+
       '</section>'+
-      '<div class="lc-section-title"><div><h2>الخدمات والمنتجات</h2><span class="lc-results-note" id="lcResultsNote">'+groups.length+' خدمات</span></div></div>'+'<div id="lcMapBannerWrap" class="lc-map-banner-wrap"></div>'+
+      '<div class="lc-section-title"><div><h2>باقات Robux</h2><span class="lc-results-note" id="lcResultsNote">'+groups.length+' خدمات</span></div></div>'+'<div id="lcMapBannerWrap" class="lc-map-banner-wrap"></div>'+
       '<div id="lcGroupGrid" class="lc-service-groups"></div>'+
       '<div id="lcNoResults" class="lc-empty" style="display:none">لا توجد منتجات تطابق بحثك.</div>'+
       '<div id="cartBox" style="margin-top:15px"></div>';
