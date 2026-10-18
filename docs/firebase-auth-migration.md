@@ -104,7 +104,8 @@ The migration branch now allows unauthenticated visitors to browse active produc
 - Libyana checkout prepares the existing USSD payment code using the order total and configured merchant number.
 - Almadar checkout displays the merchant transfer number.
 - The form does **not** claim that payment is verified and does not auto-deliver a package. The operator must review the payment/receipt and confirm delivery manually.
-- Guest orders are not persisted as rows in `public.orders`, because that table requires an authenticated Supabase user UUID and existing order-code delivery is tied to that identity. This implementation intentionally avoids fabricating an account, bypassing RLS, or misusing the wallet/order RPC.
-- The active product-options SELECT policy for `anon` was added and verified; it exposes only rows where `active = true`.
+- Guest checkout writes a request to `public.guest_purchase_requests` through the `create_guest_purchase_request` database function. The function recalculates prices from active database products, validates product availability and required options, and returns a request ID; it does not create a paid row in `public.orders` or dispense product codes.
+- RLS allows admins to view and update guest requests; the admin dashboard now has actions to confirm payment, reject a request, and confirm fulfilment. The active product-options SELECT policy for `anon` exposes only rows where `active = true`.
+- The database table/function and narrowly scoped RLS grants have been applied and verified in Supabase production. The frontend remains on the migration branch and has **not** been deployed, so the new checkout is not live yet.
 
-The frontend changes are committed to `firebase-auth-migration` and have not been deployed. A full automatic guest order workflow would require a separate guest-order request table/backend, payment confirmation, anti-abuse controls, and a safe delivery/fulfilment path.
+This provides a staged manual mobile-money workflow without login. Automatic payment verification or automatic delivery is not implemented; the admin must verify the transfer before marking the request paid and fulfil the package before marking it delivered.
