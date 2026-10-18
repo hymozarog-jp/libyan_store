@@ -43,12 +43,11 @@
   showLoader();
   var files=[
     {src:'supabase.js?v=20260920-1',core:true},
-    {src:'app.js?v=20261018-welcome-1',core:true},
+    {src:'app.js?v=20261018-direct-payment-1',core:true},
     {src:'google-avatar-fix.js?v=20261018-2'},
     {src:'topup-status.js?v=20260919-1'},
     {src:'product-images.js?v=20260924-11'},
-    {src:'theme.js?v=20261018-wallet-1'},
-    {src:'wallet-ui-fix.js?v=20261018-wallet-fix-1'},
+    {src:'theme.js?v=20261018-direct-payment-1'},
     {src:'restore-layout.js?v=1'}
   ];
   function loadScript(src,timeout){
@@ -62,7 +61,7 @@
     }
     catch(e){ app.innerHTML='<div class="card" style="max-width:430px;margin:30px auto;text-align:center"><h2>⚠️ تعذر تشغيل المتجر</h2><p class="muted">حدثت مشكلة أثناء تحميل ملفات المتجر.</p><small class="muted">'+String(e.message||e)+'</small><button class="btn primary" style="width:100%;margin-top:14px" onclick="location.reload()">إعادة المحاولة</button></div>'; return; }
     for(var j=2;j<files.length;j++){
-      setLoadProgress(58+((j-1)/(files.length-1))*37,'نجهّز '+(['','', 'تجهيز الحساب والصورة','حالة التعبئة','صور الباقات','التصميم والتفاعلات','المحفظة','اللمسات الأخيرة'][j]||'التفاصيل الأخيرة')+'...');
+      setLoadProgress(58+((j-1)/(files.length-1))*37,'نجهّز '+(['','', 'تجهيز الحساب والصورة','حالة التعبئة','صور الباقات','التصميم والتفاعلات','الدفع المباشر','اللمسات الأخيرة'][j]||'التفاصيل الأخيرة')+'...');
       try{await loadScript(files[j].src,8000)}catch(e){console.warn('Optional storefront script failed:',e.message||e)}
     }
     setLoadProgress(100,'اكتمل التحميل! أهلاً بيك 💜');
