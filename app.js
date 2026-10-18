@@ -334,7 +334,13 @@ function renderProducts(){
   }).join('');
   const filters='<button type="button" class="lc-filter-chip active" data-package-filter="all">الكل <span>'+products.length+'</span></button>'+
     categories.map(c=>'<button type="button" class="lc-filter-chip" data-package-filter="'+esc(c)+'">'+esc(categoryTitle(c))+' <span>'+products.filter(p=>String(p.category||'رقمي').trim()===c).length+'</span></button>').join('');
+  const welcomeName=String(profile?.full_name||session?.user?.user_metadata?.full_name||session?.user?.email?.split('@')[0]||'عميلنا').trim();
+  const avatarUrl=getAccountAvatarUrl();
   view.innerHTML='<section class="lc-packages-page">'+
+    '<div style="display:flex;align-items:center;gap:12px;padding:16px;margin-bottom:16px;border-radius:18px;background:linear-gradient(135deg,#211b55,#30276d);color:#fff">'+
+      '<div style="width:54px;height:54px;flex:0 0 54px;border-radius:50%;overflow:hidden;background:#fff2;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800">'+(avatarUrl?'<img src="'+esc(avatarUrl)+'" alt="" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover">':esc(welcomeName.slice(0,1).toUpperCase()))+'</div>'+
+      '<div><div style="font-size:13px;opacity:.85">أهلاً بيك من جديد 👋</div><div style="font-size:19px;font-weight:900;margin-top:3px">'+esc(welcomeName)+'</div><div style="font-size:12px;opacity:.8;margin-top:3px">حسابك ورصيدك جاهزين للتسوّق</div></div>'+
+    '</div>'+
     '<div class="lc-packages-hero"><div><span class="lc-category-kicker">Libyan Store</span><h1>الباقات المتاحة</h1><p>اختر الباقة المناسبة لك، وكل باقة موضحة بشكل مستقل.</p></div><div class="lc-packages-count"><b>'+products.length+'</b><span>باقة</span></div></div>'+
     '<div class="lc-package-filters" aria-label="فلترة الباقات">'+filters+'</div>'+
     (packageCards?'<div class="lc-package-grid" id="packageGrid">'+packageCards+'</div>':'<div class="lc-empty">لا توجد باقات متاحة حاليًا.</div>')+
