@@ -518,26 +518,33 @@ function renderGuestPaymentCheckout(){
  <label class="auth-label" for="guestBuyerName">الاسم</label><input id="guestBuyerName" class="field" maxlength="80" autocomplete="name" placeholder="اسمك" required>
  <label class="auth-label" for="guestBuyerPhone">رقم هاتفك / واتساب</label><input id="guestBuyerPhone" class="field" type="tel" inputmode="tel" maxlength="24" autocomplete="tel" placeholder="09xxxxxxxx" required>
  <label class="auth-label" for="guestPaymentMethod">طريقة الدفع</label><select id="guestPaymentMethod" class="field"><option value="libyana">ليبيانا</option><option value="almadar">المدار الجديد</option></select>
- <div class="card" style="margin:12px 0;padding:13px"><div class="muted">حوّل إلى الرقم التالي</div><div id="guestPayDestination" style="font-size:22px;font-weight:900;direction:ltr;text-align:right"></div><button type="button" id="guestCopyDestination" class="btn" style="margin-top:8px">نسخ الرقم</button></div>
+ <div class="card" style="margin:12px 0;padding:13px"><div id="guestPayDestinationLabel" class="muted">رقم التحويل</div><div id="guestPayDestination" style="font-size:22px;font-weight:900;direction:ltr;text-align:right;overflow-wrap:anywhere"></div><button type="button" id="guestCopyDestination" class="btn" style="margin-top:8px">نسخ الرقم / الكود</button><button type="button" id="guestCallPayment" class="btn primary" style="width:100%;margin-top:8px;display:none">📞 فتح كود الدفع في الهاتف</button></div>
  <label class="auth-label" for="guestSenderPhone">رقم الهاتف الذي تم الدفع منه</label><input id="guestSenderPhone" class="field" type="tel" inputmode="tel" maxlength="24" placeholder="09xxxxxxxx" required>
  <label class="auth-label" for="guestPaymentRef">رقم العملية / مرجع التحويل (إن وجد)</label><input id="guestPaymentRef" class="field" maxlength="80" placeholder="اختياري">
  <p class="muted" style="font-size:12px">مهم: هذا يفتح طلب واتساب فقط، ولا يعتبر الدفع مؤكداً أو الحزمة مسلّمة حتى تراجع الإدارة الإيصال.</p>
  <button type="button" id="guestSendPayment" class="btn primary" style="width:100%;margin-top:8px">إرسال تفاصيل الطلب عبر واتساب</button>
  </div>`;
  document.body.appendChild(modal);
- const method=el('guestPaymentMethod'),dest=el('guestPayDestination');
- const updateDestination=()=>{dest.textContent=paymentNumbers[method.value==='libyana'?'libyana_number':'almadar_number']||'تواصل مع الإدارة';};
+ const method=el('guestPaymentMethod'),dest=el('guestPayDestination'),destLabel=el('guestPayDestinationLabel'),callPayment=el('guestCallPayment');
+ const libyanaCode=()=>Number.isInteger(total)&&total>0?'*122*'+paymentNumbers.libyana_number+'*'+(total*1000)+'#':'';
+ const updateDestination=()=>{
+  const isLibyana=method.value==='libyana';
+  destLabel.textContent=isLibyana?'كود دفع ليبيانا':'رقم المدار للتحويل';
+  dest.textContent=isLibyana?(libyanaCode()||'الدفع بكود ليبيانا يتطلب مبلغًا صحيحًا بالدينار'):paymentNumbers.almadar_number||'تواصل مع الإدارة';
+  callPayment.style.display=isLibyana?'block':'none';
+ };
  method.onchange=updateDestination;updateDestination();
  el('guestPayClose').onclick=()=>modal.remove();
- el('guestCopyDestination').onclick=()=>{const n=dest.textContent;if(!n||n==='تواصل مع الإدارة')return alert('رقم الدفع غير محدد، تواصل مع الإدارة.');if(navigator.clipboard?.writeText)navigator.clipboard.writeText(n).then(()=>alert('تم نسخ رقم الدفع')).catch(()=>alert(n));else alert(n)};
+ el('guestCopyDestination').onclick=()=>{const n=dest.textContent;if(!n||n==='تواصل مع الإدارة'||n.startsWith('الدفع بكود'))return alert('تعذر تجهيز كود الدفع. تواصل مع الإدارة.');if(navigator.clipboard?.writeText)navigator.clipboard.writeText(n).then(()=>alert('تم النسخ')).catch(()=>alert(n));else alert(n)};
+ callPayment.onclick=()=>{const code=libyanaCode();if(!code)return alert('كود ليبيانا يحتاج إجماليًا بالدينار الصحيح.');window.location.href='tel:'+code.replace('#','%23')};
  el('guestSendPayment').onclick=()=>{
   const name=el('guestBuyerName').value.trim(),phone=el('guestBuyerPhone').value.trim(),sender=el('guestSenderPhone').value.trim(),ref=el('guestPaymentRef').value.trim(),provider=method.value==='libyana'?'ليبيانا':'المدار الجديد',recipient=dest.textContent;
   if(name.length<2)return alert('اكتب اسمك أولاً.');
   if(phone.replace(/\D/g,'').length<8)return alert('اكتب رقم هاتف صحيح.');
   if(sender.replace(/\D/g,'').length<8)return alert('اكتب رقم الهاتف الذي دفعت منه.');
-  if(!recipient||recipient==='تواصل مع الإدارة')return alert('رقم الدفع غير محدد، تواصل مع الإدارة.');
+  if(!recipient||recipient==='تواصل مع الإدارة'||recipient.startsWith('الدفع بكود'))return alert('بيانات الدفع غير مكتملة.');
   const lines=items.map(item=>{const p=products.find(x=>x.id===item.product_id);return '- '+(p?.name||'حزمة')+' × '+item.quantity+' = '+money(Number(p?.price||0)*item.quantity)+(item.color?'، اللون '+item.color:'')+(item.roblox_username?'، Roblox '+item.roblox_username:'')+(item.whatsapp?'، واتساب '+item.whatsapp:'')}).join('\n');
-  const message=['طلب شراء جديد — Libyan Store','الاسم: '+name,'رقم التواصل: '+phone,'طريقة الدفع: '+provider,'رقم المستلم: '+recipient,'رقم المرسل: '+sender,ref?'مرجع العملية: '+ref:'','المنتجات:\n'+lines,'الإجمالي: '+money(total),'سأرسل إيصال التحويل هنا، يرجى تأكيد الدفع وتسليم الحزمة بعد المراجعة.'].filter(Boolean).join('\n');
+  const message=['طلب شراء جديد — Libyan Store','الاسم: '+name,'رقم التواصل: '+phone,'طريقة الدفع: '+provider,method.value==='libyana'?'كود ليبيانا المستخدم: '+recipient:'رقم المستلم: '+recipient,'رقم المرسل: '+sender,ref?'مرجع العملية: '+ref:'','المنتجات:\n'+lines,'الإجمالي: '+money(total),'يرجى مراجعة الدفع وتأكيده قبل تسليم الحزمة.'].filter(Boolean).join('\n');
   const digits=String(supportWhatsapp||'').replace(/\D/g,'').replace(/^0/,'218');
   if(!digits)return alert('رقم واتساب المتجر غير مضبوط.');
   window.open('https://wa.me/'+digits+'?text='+encodeURIComponent(message),'_blank','noopener');
