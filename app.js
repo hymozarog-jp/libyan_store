@@ -598,7 +598,8 @@ async function renderWalletTopupPage(method, nums={}){
       <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px">رقم ليبيانا: <b style="font-size:18px">0925620538</b></div>
       <div style="padding:12px;border-radius:12px;background:rgba(245,185,66,.09);border:1px solid rgba(245,185,66,.28);margin-bottom:12px">كود الدفع: <code id="walletUssdPreview">اختار المبلغ أولاً</code></div>
       <button class="btn primary" id="walletCallTopup" style="width:100%" disabled>📞 اتصال لتأكيد الدفع</button>
-      <p class="muted" style="font-size:12px;margin-bottom:0">اضغط «اتصال لتأكيد الدفع» لفتح شاشة الاتصال بالكود، ثم أكّد الاتصال من هاتفك. الاتصال وحده لا يضيف الرصيد تلقائيًا.</p>
+      <p class="muted" style="font-size:12px;margin-bottom:0">اضغط «اتصال لتأكيد الدفع» لفتح شاشة الاتصال بالكود، ثم أكّد الاتصال من هاتفك. بعد الرجوع، سنحدّث الرصيد تلقائيًا إذا وصل تحديث للمحفظة.</p>
+      <div id="walletCallStatus" role="status" aria-live="polite" style="display:none;margin-top:12px;padding:12px;border-radius:12px;background:rgba(245,185,66,.09);border:1px solid rgba(245,185,66,.28)">الرجاء الانتظار…</div>
     </section>` : `<section class="card" style="margin-top:12px">
       <h3 style="margin-top:0">📱 بيانات التحويل</h3>
       <p class="muted">حوّل قيمة الشحن إلى الرقم الموضح، ثم اكتب رقم الهاتف الذي تم التحويل منه وأرسل الطلب للمراجعة.</p>
@@ -629,11 +630,69 @@ async function renderWalletTopupPage(method, nums={}){
       submit.disabled=!(validAmount&&el('walletSenderPhone').value.trim().length>=5);
     }
   };
-  if(isLibyana)callButton.onclick=()=>{
-    const code=ussdCode();
-    if(!code)return alert('اختار مبلغ الشحن أولاً');
-    window.location.href='tel:'+code.replace('#','%23');
-  };
+  if(isLibyana){
+    let callStarted=false, pollTimer=null, pollStartedAt=0;
+    const balanceBeforeCall=Number(wallet?.balance||0);
+    const statusBox=el('walletCallStatus');
+    const showCallStatus=(message,success=false)=>{
+      if(!statusBox)return;
+      statusBox.style.display='block';
+      statusBox.style.background=success?'rgba(60,190,115,.10)':'rgba(245,185,66,.09)';
+      statusBox.style.borderColor=success?'rgba(60,190,115,.4)':'rgba(245,185,66,.28)';
+      statusBox.textContent=message;
+    };
+    const stopPolling=()=>{
+      if(pollTimer){clearInterval(pollTimer);pollTimer=null}
+      document.removeEventListener('visibilitychange',checkAfterCall);
+      window.removeEventListener('focus',checkAfterCall);
+      callButton.disabled=false;
+      callButton.textContent='📞 إعادة الاتصال';
+    };
+    const checkAfterCall=async()=>{
+      if(!callStarted||document.visibilityState==='hidden')return;
+      try{
+        const result=await sb.from('wallets').select('balance').eq('user_id',session.user.id).maybeSingle();
+        if(result.error)throw result.error;
+        const latest=Number(result.data?.balance||0);
+        wallet=result.data||{balance:0};
+        const balanceEl=el('walletPageBalance');
+        if(balanceEl)balanceEl.textContent=money(latest);
+        const headerBalance=document.querySelector('.lc-wallet b');
+        if(headerBalance)headerBalance.textContent=money(latest);
+        const profileBalance=document.querySelector('.lc-profile-balance');
+        if(profileBalance)profileBalance.textContent=money(latest);
+        if(latest>balanceBeforeCall){
+          const difference=latest-balanceBeforeCall;
+          showCallStatus('تم تحديث رصيد محفظتك. الرصيد الحالي: '+money(latest)+' — الزيادة المسجلة: '+money(difference)+'.',true);
+          stopPolling();
+          return;
+        }
+        if(Date.now()-pollStartedAt>=60000){
+          showCallStatus('لم يظهر تحديث جديد للرصيد حتى الآن. إذا أكملت التحويل بنجاح، فقد يحتاج الرصيد إلى اعتماد الإدارة؛ أعد فتح «رصيدي» لاحقًا للتحقق.');
+          stopPolling();
+          return;
+        }
+        showCallStatus('الرجاء الانتظار، جارٍ تحديث رصيد المحفظة والتحقق من وصول التحديث…');
+      }catch(error){
+        console.warn('Libyana wallet refresh:',error);
+        showCallStatus('الرجاء الانتظار… تعذّر تحديث الرصيد الآن، سنحاول مرة أخرى.');
+      }
+    };
+    callButton.onclick=()=>{
+      const code=ussdCode();
+      if(!code)return alert('اختار مبلغ الشحن أولاً');
+      if(callStarted&&pollTimer)return;
+      callStarted=true;
+      pollStartedAt=Date.now();
+      callButton.disabled=true;
+      callButton.textContent='⏳ الرجاء الانتظار…';
+      showCallStatus('الرجاء الانتظار، بعد إتمام التحويل ارجع للمتجر وسنحدّث الرصيد تلقائيًا إذا وصل تحديث للمحفظة.');
+      document.addEventListener('visibilitychange',checkAfterCall);
+      window.addEventListener('focus',checkAfterCall);
+      pollTimer=setInterval(checkAfterCall,3000);
+      window.location.href='tel:'+code.replace('#','%23');
+    };
+  }
   amountButtons.forEach(b=>b.onclick=()=>{
     selectedAmount=Number(b.dataset.amount);custom.value='';
     amountButtons.forEach(x=>{const active=x===b;x.style.background=active?accent:'rgba(255,255,255,.04)';x.style.borderColor=active?accent:'#39465b';x.style.color=active?'#fff':'inherit'});
