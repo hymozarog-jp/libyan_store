@@ -318,3 +318,33 @@ button{transition:none!important}
 .lc-account-avatar:hover{transform:translateY(-1px) scale(1.04);border-color:#60a5fa;box-shadow:0 4px 16px #2563eb38}
 .lc-account-avatar:focus-visible{outline:3px solid #60a5fa;outline-offset:3px}
 @media(max-width:520px){.lc-account-avatar{width:36px;height:36px;flex-basis:36px}.lc-header{gap:7px}.lc-wallet{gap:5px;padding:8px 9px}.lc-wallet .wallet-text{display:none}}
+
+
+/* Wallet refresh: modern violet digital-wallet design (option 2) */
+.rb-balance{gap:10px!important;flex-wrap:wrap!important;padding:12px 15px!important;border:1px solid #8b70ff55!important;border-radius:18px!important;background:linear-gradient(115deg,#211744 0%,#17172f 58%,#24204b 100%)!important;box-shadow:0 10px 28px #24144c45!important}
+.rb-balance span{color:#d6ccff!important;font-weight:750}
+.rb-balance strong{color:#c6b5ff!important;font-size:23px!important}
+#rbWalletTopup{margin:0 0 0 auto!important;padding:9px 13px!important;border:1px solid #b5a0ff66!important;border-radius:12px!important;background:linear-gradient(115deg,#8c65f5,#6542d8)!important;color:#fff!important;box-shadow:0 7px 20px #7652e83d!important;font-size:12px!important;transition:transform .18s,filter .18s!important}
+#rbWalletTopup:hover{transform:translateY(-1px)!important;filter:brightness(1.08)!important}
+.wallet-flow,.wallet-topup-step{display:grid;gap:14px;animation:wallet-rise .28s ease-out}
+.wallet-flow .card,.wallet-topup-step .card{margin:0!important;padding:20px!important;border:1px solid #8b70ff35!important;border-radius:22px!important;background:linear-gradient(150deg,#1c1b38,#141528 75%)!important;color:#f8f7ff!important;box-shadow:0 12px 28px #08081735!important}
+.wallet-flow .wallet-balance-card{position:relative;overflow:hidden;text-align:right!important;padding:25px!important;background:radial-gradient(ellipse at 95% 0%,#8b5cf644,transparent 48%),linear-gradient(135deg,#6550cf,#4d38a6 55%,#30265f)!important;border:1px solid #b9a8ff70!important}
+.wallet-flow .wallet-balance-card:after{content:"";position:absolute;width:150px;height:150px;left:-45px;bottom:-85px;border:1px solid #ffffff30;border-radius:50%;box-shadow:0 0 0 20px #ffffff08,0 0 0 40px #ffffff05;pointer-events:none}
+.wallet-flow #walletPageBalance{color:#fff!important;font-size:clamp(29px,6vw,39px)!important;letter-spacing:-.6px}
+.wallet-flow .muted,.wallet-topup-step .muted{color:#c0bddc!important}
+.wallet-flow h2,.wallet-flow h3,.wallet-topup-step h2,.wallet-topup-step h3{color:#fff!important}
+.wallet-flow .wallet-provider{border:1px solid #a08aff40!important;border-radius:17px!important;background:linear-gradient(110deg,#282348,#1a1b33)!important;color:#fff!important;box-shadow:0 7px 20px #09081730!important;transition:transform .18s,border-color .18s!important}
+.wallet-flow .wallet-provider:hover{transform:translateY(-2px);border-color:#a78bfa!important}
+.wallet-flow .wallet-provider small{color:#c6baff!important}
+.wallet-flow .wallet-provider img,.wallet-topup-step img{background:#fff!important;border-radius:12px!important}
+.wallet-flow .wallet-flow .card{min-width:0}
+.wallet-flow .wallet-provider:focus-visible,.wallet-topup-step button:focus-visible{outline:3px solid #b9a8ff;outline-offset:3px}
+.wallet-topup-step .wallet-amount-option{border-color:#8b70ff66!important;border-radius:13px!important;background:#282348!important;color:#f7f4ff!important;transition:background .18s,border-color .18s,transform .18s!important}
+.wallet-topup-step .wallet-amount-option:hover,.wallet-topup-step .wallet-amount-option:focus{background:#6249c9!important;border-color:#c4b5fd!important}
+.wallet-topup-step input{border:1px solid #8b70ff55!important;border-radius:13px!important;background:#111226!important;color:#fff!important}
+.wallet-topup-step input:focus{border-color:#a78bfa!important;box-shadow:0 0 0 3px #8b5cf633!important}
+.wallet-topup-step #walletChosenAmount{color:#c6b5ff!important}
+.wallet-flow .pill,.wallet-topup-step .pill{border-radius:999px}
+@keyframes wallet-rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:520px){.rb-balance{gap:8px!important;padding:11px!important}.rb-balance strong{font-size:20px!important}#rbWalletTopup{padding:8px 10px!important;font-size:11px!important}.wallet-flow .card,.wallet-topup-step .card{padding:16px!important;border-radius:18px!important}.wallet-flow .wallet-provider img{width:95px!important;height:52px!important}}
+@media(prefers-reduced-motion:reduce){.wallet-flow,.wallet-topup-step{animation:none}#rbWalletTopup,.wallet-flow .wallet-provider,.wallet-topup-step .wallet-amount-option{transition:none!important}}
