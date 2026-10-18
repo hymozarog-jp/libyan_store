@@ -48,8 +48,8 @@ function renderLogin(msg='',signupMode=false){
      <label class="auth-label" for="email">البريد الإلكتروني</label><div class="auth-input-wrap"><span class="auth-input-icon">✉</span><input id="email" class="field auth-field" type="email" autocomplete="email" placeholder="name@example.com" required dir="ltr"></div>
      <label class="auth-label" for="pass">كلمة المرور</label><div class="auth-input-wrap"><span class="auth-input-icon">⌑</span><input id="pass" class="field auth-field" type="password" autocomplete="${signupMode?'new-password':'current-password'}" placeholder="6 أحرف على الأقل" required minlength="6" dir="auto"><button class="auth-show-pass" id="togglePass" type="button" aria-label="إظهار كلمة المرور" aria-pressed="false">إظهار</button></div>
      <div class="auth-form-tools">${signupMode?'<span class="auth-hint">استخدم 6 أحرف على الأقل</span>':'<button type="button" id="forgot" class="auth-link">نسيت كلمة المرور؟</button>'}</div>
-     <button class="btn primary auth-submit" id="login" type="submit"><span>${signupMode?'متابعة تسجيل الدخول':'تسجيل الدخول'}</span><span class="auth-submit-arrow">←</span></button>
-     <button class="btn auth-secondary" id="signup" type="button">${signupMode?'إنشاء الحساب وإرسال رمز التحقق':'إنشاء حساب جديد'} <span>＋</span></button>
+     <button class="btn primary auth-submit" id="login" type="submit"><span>${signupMode?'إنشاء الحساب وإرسال رمز التحقق':'تسجيل الدخول'}</span><span class="auth-submit-arrow">←</span></button>
+     <button class="btn auth-secondary" id="signup" type="button">${signupMode?'العودة لتسجيل الدخول':'إنشاء حساب جديد'} <span>＋</span></button>
      <div class="auth-message ${msg?'has-message':''}" id="msg" role="status" aria-live="polite">${esc(msg)}</div>
     </form>
     <p class="auth-terms">بالمتابعة، أنت تستخدم خدمات <b>Libyan Store</b> بأمان.</p>
@@ -60,7 +60,7 @@ function renderLogin(msg='',signupMode=false){
  el('authTabSignup').onclick=()=>{if(!signupMode)renderLogin('',true)};
  el('authForm').onsubmit=e=>{e.preventDefault();auth(signupMode)};
  el('login').onclick=e=>{e.preventDefault();auth(signupMode)};
- el('signup').onclick=()=>signupMode?auth(true):renderLogin('',true);
+ el('signup').onclick=()=>renderLogin('',!signupMode);
  const toggle=el('togglePass');
  toggle.onclick=()=>{const input=el('pass'),visible=input.type==='password';input.type=visible?'text':'password';toggle.textContent=visible?'إخفاء':'إظهار';toggle.setAttribute('aria-pressed',String(visible));toggle.setAttribute('aria-label',visible?'إخفاء كلمة المرور':'إظهار كلمة المرور');input.focus()};
  if(el('forgot'))el('forgot').onclick=resetPassword;
