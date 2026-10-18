@@ -397,7 +397,7 @@ function showProduct(p){
         <h1>${esc(p.name)}</h1>
         <div class="lc-detail-price">${money(p.price)} <span>⌄</span></div>
         ${isDragon?`<div class="lc-required-box"><div class="lc-option-title">🎨 اختر اللون <span>مطلوب</span></div><div id="dragonColors" class="lc-color-grid">${colorButtons}</div><div id="dragonColorMsg" class="lc-option-hint">${selectedColor?'✓ اللون المختار: '+esc(selectedColor):'⚠️ لازم تختار لون قبل الشراء'}</div></div>`:''}
-        ${requiresRobloxUsername?`<div class="lc-required-box" style="margin-bottom:12px"><div class="lc-option-title">📞 كود دفع ليبيانا</div><div style="margin-top:8px">المبلغ: <b>${money(p.price)}</b></div><code dir="ltr" style="display:block;margin-top:8px;font-size:17px;word-break:break-all">${esc(productUssdCode||"تعذر إنشاء الكود")}</code><div class="lc-option-hint">📌 الكود ظاهر قبل اليوزر. كمّل الطلب أولًا، وبعد تسجيله افتح الاتصال بالكود لتفادي الدفع قبل تسجيل طلبك.</div></div><div class="lc-required-box"><div class="lc-option-title">🎮 يوزر Roblox <span>مطلوب</span></div><input id="productRobloxUsername" class="field" type="text" inputmode="text" autocomplete="off" maxlength="20" placeholder="مثال: RobloxPlayer123"><div class="lc-option-hint">📌 اكتب اسم المستخدم في Roblox كما هو، وليس Display Name.</div></div>`:'' }
+        \${requiresRobloxUsername?\`<div class="lc-required-box" style="margin-bottom:12px;border:1px solid #22c55e;background:linear-gradient(135deg,#052e16,#14532d);box-shadow:0 0 0 1px #22c55e33,0 8px 24px #16a34a22"><div class="lc-option-title" style="color:#bbf7d0">📞 الدفع عبر ليبيانا</div><div style="margin-top:8px;color:#dcfce7">المبلغ: <b>\${money(p.price)}</b></div><button type="button" id="lcDirectPayUssd" class="btn primary" style="width:100%;margin-top:12px;background:linear-gradient(135deg,#22c55e,#15803d);border:1px solid #86efac;color:#fff;font-weight:800;box-shadow:0 5px 0 #166534,0 8px 20px #22c55e33;transition:transform .15s,filter .15s,box-shadow .15s">📲 الدفع مباشرة</button><div class="lc-option-hint" style="color:#bbf7d0;margin-top:10px">اضغط الزر لفتح شاشة الاتصال بكود الدفع، ثم راجع المبلغ وأكّد العملية من هاتفك.</div></div><div class="lc-required-box"><div class="lc-option-title">🎮 يوزر Roblox <span>مطلوب</span></div><input id="productRobloxUsername" class="field" type="text" inputmode="text" autocomplete="off" maxlength="20" placeholder="مثال: RobloxPlayer123"><div class="lc-option-hint">📌 اكتب اسم المستخدم في Roblox كما هو، وليس Display Name.</div></div>\`:\'\'}
                 <label class="lc-detail-terms">
           <input type="checkbox" id="lcTerms">
           <span>أوافق على <b>الشروط والأحكام</b></span>
@@ -430,6 +430,14 @@ function showProduct(p){
         updateBuyState();
       };
     });
+  }
+  const directPayButton=el('lcDirectPayUssd');
+  if(directPayButton){
+    directPayButton.onmouseenter=()=>{directPayButton.style.filter='brightness(1.12)';directPayButton.style.transform='translateY(-2px)';directPayButton.style.boxShadow='0 7px 0 #166534,0 12px 24px #22c55e44'};
+    directPayButton.onmouseleave=()=>{directPayButton.style.filter='';directPayButton.style.transform='';directPayButton.style.boxShadow='0 5px 0 #166534,0 8px 20px #22c55e33'};
+    directPayButton.onpointerdown=()=>{directPayButton.style.transform='translateY(2px)';directPayButton.style.boxShadow='0 2px 0 #166534'};
+    directPayButton.onpointerup=()=>{directPayButton.style.transform='';directPayButton.style.boxShadow='0 5px 0 #166534,0 8px 20px #22c55e33'};
+    directPayButton.onclick=()=>{if(!productUssdCode)return alert('تعذر إنشاء كود صالح لهذا المبلغ.');window.location.href='tel:'+productUssdCode.replace('#','%23')};
   }
   const robloxInput=el('productRobloxUsername');
   if(robloxInput){
