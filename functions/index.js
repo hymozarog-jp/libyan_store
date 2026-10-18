@@ -1,7 +1,6 @@
+const functions = require("firebase-functions/v1");
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
-const { logger } = require("firebase-functions");
-const { onUserCreated } = require("firebase-functions/v2/identity");
 
 initializeApp();
 
@@ -12,12 +11,11 @@ initializeApp();
  *
  * This does NOT grant admin privileges and does NOT migrate database identity.
  */
-exports.addSupabaseAuthenticatedClaim = onUserCreated(
-  { region: "us-central1" },
-  async (event) => {
-    const user = event.data;
-    if (!user?.uid) {
-      logger.warn("Firebase Auth create event had no user UID");
+exports.addSupabaseAuthenticatedClaim = functions.auth.user().onCreate(
+  async (user) => {
+    const uid = user?.uid;
+    if (!uid) {
+      functions.logger.warn("Firebase Auth create event had no user UID");
       return;
     }
 
@@ -25,10 +23,10 @@ exports.addSupabaseAuthenticatedClaim = onUserCreated(
     const current = user.customClaims || {};
     if (current.role === "authenticated") return;
 
-    await auth.setCustomUserClaims(user.uid, {
+    await auth.setCustomUserClaims(uid, {
       ...current,
       role: "authenticated",
     });
-    logger.info("Added Supabase authenticated claim", { uid: user.uid });
+    functions.logger.info("Added Supabase authenticated claim", { uid });
   }
 );
