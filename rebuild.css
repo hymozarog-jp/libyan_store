@@ -75,3 +75,18 @@ body{background:radial-gradient(ellipse at 50% -12%,#16341f 0,transparent 45%),#
 .nav button:hover{background:#16241a!important;color:#fff!important}
 @media(max-width:699px){.shell{padding:10px 10px 100px!important}.lc-packages-hero h1{font-size:22px!important}.lc-package-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}.lc-robux-media{padding:8px!important}.lc-robux-content{padding:9px 7px 10px!important}.lc-robux-content h3{font-size:12px!important}.lc-robux-price{font-size:15px!important}.lc-buy-button,.lc-out-button{padding:9px 5px;font-size:11px}.ls-account-chip{gap:7px;padding-right:7px}.ls-avatar{width:36px;height:36px}.ls-account-chip b{max-width:74px;font-size:12px}.ls-top-action{width:34px;height:36px}.ls-balance{gap:4px;padding:8px 7px}.ls-balance b{font-size:11px}.ls-balance small{font-size:9px}}
 @media(max-width:360px){.ls-store-actions{gap:4px}.ls-top-action{width:30px}.ls-balance{padding:7px 5px}.lc-package-grid{gap:7px!important}.lc-robux-content h3{font-size:11px!important}}
+
+
+/* Final storefront polish for existing product renderer */
+.lc-packages-page>div[style*="display:flex"][style*="border-radius:18px"]{background:linear-gradient(110deg,#101612,#14251a)!important;border:1px solid #294a32!important;border-radius:17px!important}
+.lc-packages-page>div[style*="display:flex"][style*="border-radius:18px"]>div:first-child{border:1px solid #376744!important;background:#1a3823!important;color:#8bffa5!important}
+.lc-packages-page>div[style*="display:flex"][style*="border-radius:18px"]:after{content:"🔔 3     ◉ 0.000 د.ل     ☰";display:block;margin-right:auto;align-self:center;padding:8px 10px;border:1px solid #2b3b30;border-radius:12px;background:#0c130e;color:#9affae;font-size:11px;font-weight:800;white-space:nowrap}
+.lc-robux-content:after{content:"شراء الآن  ←";display:block;width:100%;padding:9px 6px;border-radius:10px;background:#39d96b;color:#06130a;font-size:11px;font-weight:950}
+.lc-robux-card.is-unavailable .lc-robux-content:after{content:"غير متوفر";background:#292d2a;color:#858d87}
+.lc-robux-card .lc-robux-media{background:#030504!important}
+.lc-robux-card .lc-robux-media img{object-fit:contain!important}
+.lc-robux-card .lc-robux-price{color:#8bffa5!important}
+.lc-robux-card .lc-robux-content{background:#101411}
+.lc-robux-card .lc-robux-content h3{color:#f2fff4}
+.lc-package-grid:has(.lc-robux-card){grid-template-columns:repeat(2,minmax(0,1fr))!important}
+@media(max-width:699px){.lc-packages-page>div[style*="display:flex"][style*="border-radius:18px"]:after{font-size:9px;padding:7px 6px}.lc-package-grid:has(.lc-robux-card){grid-template-columns:repeat(2,minmax(0,1fr))!important}}
