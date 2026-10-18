@@ -13,17 +13,58 @@ async function boot(){
   if(r.error)throw r.error;
   session=r.data.session||null;
   if(!session){
-   const anon=await sb.auth.signInAnonymously();
-   if(anon.error)throw anon.error;
-   session=anon.data.session||null;
+   renderLogin('',false);
+   return;
   }
-  if(!session)throw new Error('تعذر إنشاء جلسة الزائر تلقائيًا');
   await loadStore();
  }catch(e){
   app.innerHTML='<div class="card" style="text-align:center;margin-top:30px"><h1>⚡ Libyan Store</h1><p class="muted">'+esc(e.message||'تعذر تشغيل المتجر')+'</p><button class="btn primary" onclick="location.reload()">إعادة المحاولة</button></div>'
  }
 }
-function renderLogin(msg='',signupMode=false){app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">⚡</div><h1>Libyan Store</h1><p class="muted">اشتراكات رقمية ومحفظة وتسليم أكواد</p><div class="card" style="display:grid;gap:10px;text-align:right"><div style="display:flex;align-items:center;gap:8px;margin:4px 0;color:#8f9baa"><span style="height:1px;background:#263345;flex:1"></span><small>أو بالبريد الإلكتروني</small><span style="height:1px;background:#263345;flex:1"></span></div><div id="signupFields" style="display:${signupMode?'grid':'none'};gap:10px"><input id="fullName" class="field" autocomplete="name" placeholder="الاسم الكامل"><input id="phone" class="field" type="tel" inputmode="tel" autocomplete="tel" placeholder="رقم الهاتف"></div><input id="email" class="field" type="email" autocomplete="email" placeholder="البريد الإلكتروني"><input id="pass" class="field" type="password" autocomplete="${signupMode?'new-password':'current-password'}" placeholder="كلمة المرور"><button class="btn primary" id="login">${signupMode?'تسجيل الدخول':'دخول'}</button><button class="btn" id="signup">${signupMode?'إنشاء الحساب':'إنشاء حساب جديد'}</button><small id="msg" class="muted">${esc(msg)}</small></div></div>`;el('login').onclick=()=>signupMode?renderLogin('',false):auth(false);el('signup').onclick=()=>signupMode?auth(true):renderLogin('',true)}
+function renderLogin(msg='',signupMode=false){
+ app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">⚡</div><h1>Libyan Store</h1><p class="muted">أنشئ حسابك أو سجّل الدخول بالبريد الإلكتروني</p><div class="card" style="display:grid;gap:10px;text-align:right">
+ ${signupMode?'<input id="fullName" class="field" autocomplete="name" placeholder="الاسم الكامل"><input id="phone" class="field" type="tel" inputmode="tel" autocomplete="tel" placeholder="رقم الهاتف">':''}
+ <label for="email">البريد الإلكتروني</label><input id="email" class="field" type="email" autocomplete="email" placeholder="name@example.com" value="">
+ <label for="pass">كلمة المرور</label><input id="pass" class="field" type="password" autocomplete="${signupMode?'new-password':'current-password'}" placeholder="6 أحرف على الأقل">
+ <button class="btn primary" id="login">${signupMode?'متابعة تسجيل الدخول':'تسجيل الدخول'}</button>
+ <button class="btn" id="signup">${signupMode?'إنشاء الحساب وإرسال رمز التحقق':'إنشاء حساب جديد'}</button>
+ <button class="btn" id="forgot">نسيت كلمة المرور؟</button>
+ <small id="msg" class="muted" role="status">${esc(msg)}</small></div></div>`;
+ el('login').onclick=()=>signupMode?renderLogin('',false):auth(false);
+ el('signup').onclick=()=>signupMode?auth(true):renderLogin('',true);
+ el('forgot').onclick=resetPassword;
+}
+function renderVerifyEmail(email,msg=''){
+ app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">✉️</div><h1>تحقق من بريدك</h1><p class="muted">أرسلنا رمز تحقق إلى <b dir="ltr">${esc(email)}</b>. اكتب الرمز المكوّن من 6 أرقام لإكمال إنشاء الحساب.</p><div class="card" style="display:grid;gap:12px;text-align:right"><label for="emailCode">رمز التحقق</label><input id="emailCode" class="field" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" dir="ltr" style="text-align:center;letter-spacing:8px;font-size:24px"><button class="btn primary" id="verifyCode">تأكيد البريد الإلكتروني</button><button class="btn" id="resendCode">إعادة إرسال الرمز</button><button class="btn" id="backToLogin">العودة لتسجيل الدخول</button><small id="msg" class="muted" role="status">${esc(msg)}</small></div></div>`;
+ el('verifyCode').onclick=()=>verifyEmailCode(email);
+ el('resendCode').onclick=()=>resendEmailCode(email);
+ el('backToLogin').onclick=()=>renderLogin('',false);
+}
+async function verifyEmailCode(email){
+ if(authBusy)return;
+ const token=String(el('emailCode')?.value||'').replace(/\D/g,'');
+ const msg=el('msg');
+ if(token.length!==6){msg.textContent='اكتب رمز التحقق المكوّن من 6 أرقام.';return}
+ authBusy=true;msg.textContent='جارٍ التحقق من الرمز...';el('verifyCode').disabled=true;
+ try{
+  const r=await sb.auth.verifyOtp({email,token,type:'signup'});
+  if(r.error){msg.textContent=humanAuthError(r.error);return}
+  session=r.data.session||null;
+  if(!session){msg.textContent='تم التحقق، لكن تعذر فتح الجلسة. ارجع وسجّل الدخول.';return}
+  await loadStore();
+ }catch(e){msg.textContent=humanAuthError(e)}
+ finally{authBusy=false;if(el('verifyCode'))el('verifyCode').disabled=false}
+}
+async function resendEmailCode(email){
+ if(authBusy)return;
+ const msg=el('msg');authBusy=true;msg.textContent='جارٍ إرسال رمز جديد...';el('resendCode').disabled=true;
+ try{
+  const r=await sb.auth.resend({type:'signup',email});
+  if(r.error){msg.textContent=humanAuthError(r.error);return}
+  msg.textContent='طلبنا إرسال رمز جديد. افحص البريد الوارد ومجلد الرسائل غير المرغوب فيها.';
+ }catch(e){msg.textContent=humanAuthError(e)}
+ finally{authBusy=false;if(el('resendCode'))el('resendCode').disabled=false}
+}
 async function socialLogin(provider){
  if(authBusy)return;
  const msg=el('msg');authBusy=true;if(msg)msg.textContent=provider==='google'?'جارٍ فتح Google...':'جارٍ فتح تسجيل الدخول...';
@@ -45,20 +86,36 @@ async function notifyLoginToDiscord(){try{const r=await sb.functions.invoke('dis
 async function auth(signup){
  if(authBusy)return;
  const msg=el('msg'),button=signup?el('signup'):el('login');
- const email=emailInput(),password=el('pass').value.trim();
+ const email=emailInput(),password=el('pass')?.value||'';
  if(!email)return msg.textContent='اكتب البريد الإلكتروني أولاً';
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return msg.textContent='تأكد من كتابة بريد إلكتروني صحيح.';
  if(password.length<6)return msg.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';
  let fullName='',phone='';
- if(signup){fullName=el('fullName')?.value.trim()||'';phone=el('phone')?.value.trim()||'';if(fullName.length<2)return msg.textContent='اكتب الاسم الكامل';if(!phone)return msg.textContent='اكتب رقم الهاتف';}
- authBusy=true;msg.textContent=signup?'جارٍ إنشاء الحساب...':'جارٍ تسجيل الدخول...';if(button)button.disabled=true;
+ if(signup){
+  fullName=el('fullName')?.value.trim()||'';phone=el('phone')?.value.trim()||'';
+  if(fullName.length<2)return msg.textContent='اكتب الاسم الكامل';
+  if(!phone)return msg.textContent='اكتب رقم الهاتف';
+ }
+ authBusy=true;msg.textContent=signup?'جارٍ إنشاء الحساب وإرسال رمز التحقق...':'جارٍ تسجيل الدخول...';if(button)button.disabled=true;
  try{
-  const r=signup?await sb.auth.signUp({email,password,options:{data:{full_name:fullName,phone}}}):await sb.auth.signInWithPassword({email,password});
-  if(r.error){msg.textContent=humanAuthError(r.error);return;}
-  if(signup&&!r.data.session){msg.textContent='تم إنشاء الحساب. افتح بريدك الإلكتروني لتأكيد الحساب، ثم سجّل الدخول.';return;}
-  session=r.data.session;if(!session){msg.textContent='تعذر إنشاء جلسة تسجيل الدخول. حاول مرة أخرى.';return;}
-  if(!signup)notifyLoginToDiscord();
+  if(signup){
+   const r=await sb.auth.signUp({email,password,options:{data:{full_name:fullName,phone}}});
+   if(r.error){msg.textContent=humanAuthError(r.error);return}
+   if(r.data.session){
+    await sb.auth.signOut();
+    session=null;
+   }
+   renderVerifyEmail(email,'إذا لم تصلك الرسالة خلال دقائق، افحص مجلد الرسائل غير المرغوب فيها أو أعد إرسال الرمز.');
+   return;
+  }
+  const r=await sb.auth.signInWithPassword({email,password});
+  if(r.error){msg.textContent=humanAuthError(r.error);return}
+  session=r.data.session||null;
+  if(!session){msg.textContent='تعذر إنشاء جلسة تسجيل الدخول. حاول مرة أخرى.';return}
+  notifyLoginToDiscord();
   await loadStore();
- }catch(e){msg.textContent=humanAuthError(e)}finally{authBusy=false;if(button)button.disabled=false}
+ }catch(e){if(el('msg'))el('msg').textContent=humanAuthError(e)}
+ finally{authBusy=false;if(button)button.disabled=false}
 }
 function humanAuthError(e){
  const m=String(e?.message||e||'تعذر تنفيذ العملية');
@@ -191,7 +248,7 @@ function renderStore(){
   el('lcSearch').onclick=()=>{const q=prompt('ابحث عن منتج');if(!q)return;const found=products.find(p=>String(p.name||'').toLowerCase().includes(q.toLowerCase()));if(found)showProduct(found);else alert('لم يتم العثور على المنتج')};
   el('lcBell').onclick=()=>alert('لا توجد إشعارات جديدة حالياً.');
   el('heroBrowse')?.addEventListener('click',()=>el('view')?.scrollIntoView({behavior:'smooth',block:'start'}));
-  el('lcLogout').onclick=()=>alert('المتجر يعمل بدون تسجيل دخول.');
+  el('lcLogout').onclick=async()=>{if(!confirm('هل تريد تسجيل الخروج؟'))return;try{const r=await sb.auth.signOut();if(r.error)throw r.error;session=null;profile=null;wallet=null;renderLogin('تم تسجيل الخروج بنجاح.',false)}catch(e){alert(humanAuthError(e))}};
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{const viewName=b.dataset.view;if(viewName==='wallet'&&!session?.user){close();return}document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');({store:renderProducts,cart:renderCartPage,wallet:renderWallet,orders:renderOrders,account:renderAccount,admin:renderAdmin}[viewName])();close()});
   renderProducts();
 }
@@ -754,19 +811,19 @@ async function renderOrders(){
 function parseCredential(code){
   const raw=String(code??'').trim();
   if(raw.startsWith('{')&&raw.endsWith('}')){try{const obj=JSON.parse(raw);const login=String(obj.login??obj.email??obj.username??'').trim();const password=String(obj.password??'').trim();const accountNumber=String(obj.account_number??obj.accountNumber??'').trim();const accountCode=String(obj.account_code??obj.accountCode??'').trim();if(login&&password)return {login,loginLabel:obj.login_type==='username'?'username':'email',password,accountNumber,accountCode};}catch(e){}}
-  const parts=raw.split(/\\s*\\|\\s*/).map(x=>x.trim()).filter(Boolean);
+  const parts=raw.split(/\s*\\|\s*/).map(x=>x.trim()).filter(Boolean);
   if(parts.length===2){
-    const clean=v=>v.replace(/^(email|e-mail|username|user|يوزر|الإيميل|البريد|password|pass|كلمة السر|كلمه السر)\\s*[:=]\\s*/i,'').trim();
-    const leftLabel=/^(email|e-mail|الإيميل|البريد)\\s*[:=]/i.test(parts[0])?'email':/^(username|user|يوزر)\\s*[:=]/i.test(parts[0])?'username':'';
-    const rightLabel=/^(email|e-mail|الإيميل|البريد)\\s*[:=]/i.test(parts[1])?'email':/^(username|user|يوزر)\\s*[:=]/i.test(parts[1])?'username':'';
-    const leftPass=/^(password|pass|كلمة السر|كلمه السر)\\s*[:=]/i.test(parts[0]);
-    const rightPass=/^(password|pass|كلمة السر|كلمه السر)\\s*[:=]/i.test(parts[1]);
+    const clean=v=>v.replace(/^(email|e-mail|username|user|يوزر|الإيميل|البريد|password|pass|كلمة السر|كلمه السر)\s*[:=]\s*/i,'').trim();
+    const leftLabel=/^(email|e-mail|الإيميل|البريد)\s*[:=]/i.test(parts[0])?'email':/^(username|user|يوزر)\s*[:=]/i.test(parts[0])?'username':'';
+    const rightLabel=/^(email|e-mail|الإيميل|البريد)\s*[:=]/i.test(parts[1])?'email':/^(username|user|يوزر)\s*[:=]/i.test(parts[1])?'username':'';
+    const leftPass=/^(password|pass|كلمة السر|كلمه السر)\s*[:=]/i.test(parts[0]);
+    const rightPass=/^(password|pass|كلمة السر|كلمه السر)\s*[:=]/i.test(parts[1]);
     if(leftPass||rightPass||leftLabel||rightLabel){
       return {login:leftPass?clean(parts[1]):clean(parts[0]),loginLabel:leftLabel||rightLabel||'email',password:leftPass?clean(parts[0]):clean(parts[1])};
     }
     return {login:parts[0],loginLabel:'email',password:parts[1]};
   }
-  const m=raw.match(/^(?:email|e-mail|الإيميل|البريد|username|user|يوزر)\\s*[:=]\\s*(.*?)\\s*[|,;]\\s*(?:password|pass|كلمة السر|كلمه السر)\\s*[:=]\\s*(.+)$/i);
+  const m=raw.match(/^(?:email|e-mail|الإيميل|البريد|username|user|يوزر)\s*[:=]\s*(.*?)\s*[|,;]\s*(?:password|pass|كلمة السر|كلمه السر)\s*[:=]\s*(.+)$/i);
   if(m){const label=/^(?:username|user|يوزر)/i.test(raw)?'username':'email';return {login:m[1].trim(),loginLabel:label,password:m[2].trim()}}
   return null;
 }
