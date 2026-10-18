@@ -44,3 +44,35 @@ A trusted Firebase Admin backend credential is needed for server-managed UID/cus
 ## Official integration reference
 
 https://supabase.com/docs/guides/auth/third-party/firebase-auth
+
+## Read-only repository and live-schema audit (2026-10-18)
+
+This audit inspected the current branch's auth flow and queried production schema metadata only. No production rows, policies, functions, or deployments were changed.
+
+### Findings confirmed from the live schema
+
+- `public.profiles.id` is UUID and has a foreign key to `auth.users.id`.
+- `public.wallets.user_id`, `public.wallet_topups.user_id`, `public.orders.user_id`, `public.wallet_transactions.user_id`, and the exchange tables' user references are UUIDs linked to `public.profiles`.
+- Profile/wallet/order RPCs and authorization helpers depend on `auth.uid()`.
+- The current browser flow in `app.js` calls Supabase Auth directly for session restore, sign-up, password login, email OTP verification, sign-out, password reset, and OAuth.
+- Production currently reports 102 profiles, 102 wallets, and 22 orders. These counts were read as schema/table metadata and are not a migration target.
+
+### Important blocker before writing the auth swap
+
+A Firebase UID being UUID-shaped is **not sufficient by itself**: the current `profiles.id -> auth.users.id` foreign key requires a matching Supabase Auth user row too. A direct Firebase-only sign-up would not automatically create that row. Also, Firebase's signed `sub` claim cannot simply be replaced by a client-side UUID mapping.
+
+Therefore, do not implement a client-only Firebase swap, do not drop the foreign key or weaken RLS as a shortcut, and do not create a service-account key yet.
+
+### Safe implementation sequence
+
+1. Build a disposable Supabase development branch/project and test Firebase third-party JWT acceptance there.
+2. Prove an identity design that satisfies all three constraints together: verified Firebase ID token, UUID identity used by `auth.uid()`, and valid references for profile/wallet/order rows. Explicitly verify whether the required `auth.users` row can be provisioned safely without relying on unsupported direct writes to Supabase's managed auth schema.
+3. If a supported design cannot preserve those constraints, stop and present the trade-offs before any production schema change.
+4. Only after the identity design is proven, implement server-side provisioning and email verification. Keep service-account credentials out of GitHub and browser code; add them only to the chosen backend's secret store when the code is ready.
+5. Test signup, email verification, login, logout, password reset, RLS isolation, profile/wallet bootstrap, checkout atomicity, order-code visibility, and admin authorization in the disposable environment.
+6. Review a non-draft PR and obtain explicit approval before production deployment.
+
+### Current implementation status
+
+No auth code has been swapped. `index.html`, `app.js`, `supabase.js`, `worker.js`, production database schema/data, and the live deployment remain unchanged by this audit.
+
