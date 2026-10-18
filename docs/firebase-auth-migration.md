@@ -1,0 +1,111 @@
+# Firebase Authentication Migration (staged)
+
+## Current status
+
+- The storefront currently uses Supabase Auth directly in `app.js`.
+- The Supabase client is created in `supabase.js`.
+- Profiles, wallets, orders, top-ups, exchange records, RLS policies, and transactional RPCs use UUID user IDs and `auth.uid()`.
+- Firebase project: `l1017n`; Supabase project ref: `aybsettkyxfugntizfqq`.
+- Work is confined to this migration branch and is not deployed.
+
+## Verified compatibility blocker
+
+Firebase Auth can provide a signed ID token for Supabase third-party authentication, but the token subject is the Firebase UID. The current schema requires `profiles.id` to reference an existing `auth.users.id`, and the rest of the data model and security layer consistently use that UUID.
+
+Making a Firebase UID look like a UUID does not create the corresponding Supabase Auth user row. A client-side UID-to-UUID mapping is not trusted and cannot change the signed JWT subject. Simply passing the Firebase token to the current app therefore is not a complete or safe migration.
+
+## Decision
+
+Do not switch the browser authentication flow yet. Do not drop the `profiles -> auth.users` foreign key, weaken RLS, expose service-role credentials, or modify production records to force compatibility.
+
+The next implementation milestone must prove one of these supported architectures in an isolated environment:
+
+1. **Supported identity bridge:** a trusted backend verifies Firebase tokens and securely resolves them to the existing database UUID identity, while preserving Supabase authorization semantics and all existing foreign keys. This is only acceptable if the design does not rely on unsupported writes to Supabase-managed `auth` tables.
+2. **Deliberate identity/data-model redesign:** migrate the full ownership model, foreign keys, RLS policies, and all security-sensitive RPCs to a verified Firebase identity mapping. This is a larger staged project and requires comprehensive tests and an approved rollback plan.
+
+Neither option is considered implemented or proven. Do not create paid development resources without explicit approval. No production schema or data changes are authorized by this document.
+
+## Security-sensitive surfaces inventoried
+
+- `create_wallet_order`: owner identity, stock locking, wallet balance, order and ledger writes.
+- `create_wallet_topup`: owner identity and top-up ownership.
+- `get_my_order_codes`: order ownership check before returning purchased codes.
+- `is_admin`, `review_wallet_topup`, `admin_set_setting`: admin authorization and privileged writes.
+- Discord wallet/top-up functions: separate trusted automation paths.
+- RLS ownership policies for profiles, wallets, orders, top-ups, transactions, exchange requests, matches, messages, ratings, and reports.
+
+A separate inventory is maintained in `docs/firebase-auth-authorization-inventory.md`. Existing duplicate permissive RLS policies must be evaluated together because permissive policies combine with OR semantics.
+
+## Required verification before any production rollout
+
+- Firebase tokens are accepted only from the configured Firebase project.
+- The trusted database identity maps to exactly the correct existing owner UUID.
+- Profile creation and wallet bootstrap work for new users.
+- Existing users retain access to their own records, with no cross-account reads or writes.
+- Purchased product codes cannot be retrieved by another user.
+- Admin privileges cannot be self-assigned or inherited by an unrelated Firebase account.
+- Checkout and top-up operations remain atomic; failed transactions roll back correctly.
+- Email verification, login, logout, password recovery, and session restoration all work.
+- All identity-sensitive RLS policies and RPCs pass positive and negative tests.
+- A reviewed PR, rollback plan, and explicit production rollout approval exist.
+
+## Required secret handling
+
+Any Firebase Admin credential or signing capability must remain server-side in a managed secret store. Never commit private keys, expose privileged keys in browser code, or ask the user to paste service-account JSON into chat.
+
+## Official reference
+
+https://supabase.com/docs/guides/auth/third-party/firebase-auth
+
+## Audit history (2026-10-18)
+
+Read-only review confirmed the current auth flow and live schema constraints. No auth code, production rows, database schema, RLS policies, secrets, or live deployment were changed by the audit.
+
+## Next action
+
+The Firebase Web SDK configuration has been received. Client configuration alone does not authorize changing production authentication. Validate the Supabase third-party provider configuration and identity ownership model before enabling Firebase sign-in.
+
+
+### Additional live-schema audit (2026-10-18)
+
+A read-only query confirmed UUID foreign-key ownership references to `profiles.id` from `wallets.user_id`, `orders.user_id`, `wallet_topups.user_id`, `wallet_transactions.user_id`, exchange requests/messages/ratings/reports, and privileged attribution fields such as `store_settings.updated_by` and `wallet_topups.reviewed_by`. This confirms that switching the browser to Firebase Auth alone would not preserve the current ownership model.
+
+Supabase's current Firebase guide also requires a Firebase third-party integration in Supabase Authentication settings and a trusted server-side process to set the `role: authenticated` custom claim. The available project connector cannot configure that Dashboard integration, so it has not been enabled or verified.
+
+No production schema, rows, RLS policies, auth settings, or deployment were changed. Keep the current login flow intact until the identity bridge or full schema redesign is tested.
+
+
+## Identity-to-authorization implementation gate (verified 2026-10-18)
+
+The official Supabase third-party OIDC guide explicitly states that `auth.uid()` casts the JWT `sub` claim to UUID and fails when the provider subject is not a UUID: https://supabase.com/docs/guides/auth/third-party/custom-oidc
+
+This is a concrete blocker for Firebase UIDs. A mapping table alone is not enough: all effective RLS policies and security-definer routines currently using `auth.uid()` must resolve the authenticated Firebase subject to the existing profile UUID, while refusing unverified or ambiguous mappings. The browser cannot supply or choose that UUID. The Supabase third-party provider must also be enabled in the project settings and Firebase JWTs must carry `role: authenticated`.
+
+A read-only inspection found identity-sensitive security-definer routines including `create_wallet_order`, `create_wallet_topup`, `get_my_order_codes`, `is_admin`, `review_wallet_topup`, and `admin_set_setting`. Their authorization checks and transactional behavior must be migrated and tested together with RLS. No SQL migration has been applied, because the available connection cannot configure the required third-party provider and there is no verified identity mapping or isolated test environment. Applying a partial SQL change to production would risk locking users out or exposing other users' data.
+
+
+## Trusted Firebase claim automation added (2026-10-18)
+
+The migration branch now contains:
+
+- `functions/index.js`: a Firebase Auth user-created trigger that adds the non-privileged `role: authenticated` claim while preserving existing custom claims.
+- `functions/scripts/backfill-authenticated-claim.js`: a one-time Admin SDK script for existing Firebase users. It uses Application Default Credentials and does not include or require committing a service-account JSON file.
+- `firebase.json` and `functions/package.json`: Firebase Functions deployment configuration and pinned dependencies.
+
+These are source changes only. They have **not** been deployed to Firebase, and the backfill has **not** been run. A Firebase deployment requires an authorized Firebase CLI session and may require the project's Cloud Functions billing/plan prerequisites. The claim helper only addresses the JWT role claim; it does not resolve the database UUID ownership blocker described above.
+
+The frontend must remain on the existing Supabase Auth flow until a safe identity architecture is implemented and verified. Do not enable Firebase as the storefront's sole auth provider yet.
+
+
+## Guest package checkout with mobile-money instructions (2026-10-18)
+
+The migration branch now allows unauthenticated visitors to browse active products and open a guest checkout. The guest form collects name, contact number, payment method (Libyana or Almadar), sender phone, and optional transfer reference, then opens a prefilled WhatsApp message to the store's configured support number.
+
+- Libyana checkout prepares the existing USSD payment code using the order total and configured merchant number.
+- Almadar checkout displays the merchant transfer number.
+- The form does **not** claim that payment is verified and does not auto-deliver a package. The operator must review the payment/receipt and confirm delivery manually.
+- Guest checkout writes a request to `public.guest_purchase_requests` through the `create_guest_purchase_request` database function. The function recalculates prices from active database products, validates product availability and required options, and returns a request ID; it does not create a paid row in `public.orders` or dispense product codes.
+- RLS allows admins to view and update guest requests; the admin dashboard now has actions to confirm payment, reject a request, and confirm fulfilment. The active product-options SELECT policy for `anon` exposes only rows where `active = true`.
+- The database table/function and narrowly scoped RLS grants have been applied and verified in Supabase production. The frontend remains on the migration branch and has **not** been deployed, so the new checkout is not live yet.
+
+This provides a staged manual mobile-money workflow without login. Automatic payment verification or automatic delivery is not implemented; the admin must verify the transfer before marking the request paid and fulfil the package before marking it delivered.
