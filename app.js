@@ -12,6 +12,13 @@ async function boot(){
   const r=await sb.auth.getSession();
   if(r.error)throw r.error;
   session=r.data.session||null;
+  const forceLogin=new URLSearchParams(location.search).get('login')==='1';
+  if(forceLogin){
+   if(session){const out=await sb.auth.signOut();if(out.error)throw out.error;}
+   session=null;profile=null;wallet=null;
+   renderLogin('',false);
+   return;
+  }
   if(!session){
    renderLogin('',false);
    return;
