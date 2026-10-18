@@ -381,7 +381,6 @@ function showProduct(p){
   const img=typeof productImage==='function'?productImage(p.name):'';
   const available=Boolean(p.always_available)||Number(p.stock_count||0)>0;
   const isDragon=String(p.name||'').trim()==='دراقون';
-  const requiresWhatsapp=Boolean(p.requires_whatsapp);
   const requiresRobloxUsername=Boolean(p.requires_roblox_username);
   let selectedColor=isDragon?(cartOptions[p.id]?.color||''):'';
   let selectedRobloxUsername=requiresRobloxUsername?(cartOptions[p.id]?.roblox_username||''):'';
@@ -397,23 +396,21 @@ function showProduct(p){
         <div class="lc-detail-price">${money(p.price)} <span>⌄</span></div>
         ${isDragon?`<div class="lc-required-box"><div class="lc-option-title">🎨 اختر اللون <span>مطلوب</span></div><div id="dragonColors" class="lc-color-grid">${colorButtons}</div><div id="dragonColorMsg" class="lc-option-hint">${selectedColor?'✓ اللون المختار: '+esc(selectedColor):'⚠️ لازم تختار لون قبل الشراء'}</div></div>`:''}
         ${requiresRobloxUsername?`<div class="lc-required-box"><div class="lc-option-title">🎮 يوزر Roblox <span>مطلوب</span></div><input id="productRobloxUsername" class="field" type="text" inputmode="text" autocomplete="off" maxlength="20" placeholder="مثال: RobloxPlayer123"><div class="lc-option-hint">📌 اكتب اسم المستخدم في Roblox كما هو، وليس Display Name.</div></div>`:''}
-        ${requiresWhatsapp?`<div class="lc-required-box lc-whatsapp-box"><div class="lc-option-title">📱 رقم الواتساب <span>مطلوب</span></div><input id="productWhatsapp" class="field" type="tel" inputmode="tel" autocomplete="tel" placeholder="مثال: 0912345678"><div class="lc-option-hint">📌 اكتب رقم واتساب صحيح حتى نقدر نتواصل معك.</div></div>`:''}
-        <label class="lc-detail-terms">
+                <label class="lc-detail-terms">
           <input type="checkbox" id="lcTerms">
           <span>أوافق على <b>الشروط والأحكام</b></span>
         </label>
         <div class="lc-detail-divider"></div>
         <div class="lc-detail-total"><span>الإجمالي:</span><strong>${money(p.price)}</strong></div>
-        <button class="btn primary lc-detail-buy" id="lcBuyNow" type="button" ${(!available||((isDragon&&!selectedColor)||(requiresWhatsapp&&!String(cartOptions[p.id]?.whatsapp||'').trim())||(requiresRobloxUsername&&!String(cartOptions[p.id]?.roblox_username||'').trim())))?'disabled':''}>${available?'اشترِ الآن':'نفد المخزون'}</button>
+        <button class="btn primary lc-detail-buy" id="lcBuyNow" type="button" ${(!available||(isDragon&&!selectedColor)||(requiresRobloxUsername&&!String(cartOptions[p.id]?.roblox_username||'').trim()))?'disabled':''}>${available?'اشترِ الآن':'نفد المخزون'}</button>
       </div>
     </article>
   </section>`;
   el('lcBackToProducts').onclick=()=>renderProducts();
   const buy=el('lcBuyNow');
   const updateBuyState=()=>{
-    const whatsapp=requiresWhatsapp?(el('productWhatsapp')?.value.trim()||''):'';
     const robloxUsername=requiresRobloxUsername?(el('productRobloxUsername')?.value.trim()||''):'';
-    const ready=available&&(!isDragon||dragonColors.includes(selectedColor))&&(!requiresWhatsapp||!!whatsapp)&&(!requiresRobloxUsername||/^[A-Za-z0-9]+(_[A-Za-z0-9]+)?$/.test(robloxUsername)&&robloxUsername.length>=3&&robloxUsername.length<=20);
+    const ready=available&&(!isDragon||dragonColors.includes(selectedColor))&&(!requiresRobloxUsername||/^[A-Za-z0-9]+(_[A-Za-z0-9]+)?$/.test(robloxUsername)&&robloxUsername.length>=3&&robloxUsername.length<=20);
     if(buy){
       buy.disabled=!ready;
       if(ready)buy.textContent='اشترِ الآن';
@@ -441,28 +438,17 @@ function showProduct(p){
       updateBuyState();
     });
   }
-  const whatsappInput=el('productWhatsapp');
-  if(whatsappInput){
-    whatsappInput.value=cartOptions[p.id]?.whatsapp||'';
-    whatsappInput.addEventListener('input',()=>{
-      const whatsapp=whatsappInput.value.trim();
-      cartOptions[p.id]={...(cartOptions[p.id]||{}),whatsapp};
-      updateBuyState();
-    });
-  }
   updateBuyState();
   if(buy)buy.onclick=async()=>{
     if(!available)return alert('❌ هذا المنتج غير متوفر حاليًا. أضف المخزون من البوت ثم حاول الشراء مرة أخرى.');
     if(isDragon&&!selectedColor)return alert('⚠️ اختر اللون أولاً من الخيارات الظاهرة فوق زر الشراء.');
-    const whatsapp=requiresWhatsapp?(el('productWhatsapp')?.value.trim()||''):'';
     const robloxUsername=requiresRobloxUsername?(el('productRobloxUsername')?.value.trim()||''):'';
-    if(requiresWhatsapp&&!whatsapp)return alert('⚠️ اكتب رقم الواتساب أولاً في الخانة الظاهرة فوق زر الشراء.');
     if(requiresRobloxUsername&&(!/^[A-Za-z0-9]+(_[A-Za-z0-9]+)?$/.test(robloxUsername)||robloxUsername.length<3||robloxUsername.length>20))return alert('⚠️ اكتب يوزر Roblox صحيحًا (3-20 حرفًا/رقمًا، ويمكن استخدام _ مرة واحدة).');
     if(!el('lcTerms').checked)return alert('وافق على الشروط والأحكام أولاً');
     buy.disabled=true;buy.textContent='جارٍ تنفيذ الشراء...';
     try{
       cart[p.id]=Math.min((cart[p.id]||0)+1,Number(p.stock_count||1));
-      cartOptions[p.id]={...(cartOptions[p.id]||{}),...(isDragon?{color:selectedColor}:{}),...(requiresWhatsapp?{whatsapp}:{}),...(requiresRobloxUsername?{roblox_username:robloxUsername}:{})};
+      cartOptions[p.id]={...(cartOptions[p.id]||{}),...(isDragon?{color:selectedColor}:{}),...(requiresRobloxUsername?{roblox_username:robloxUsername}:{})};
       await checkout();
     }catch(e){
       console.error('purchase failed:',e);
@@ -499,7 +485,7 @@ function renderCart(){
 }async function checkout(){
  const entries=Object.entries(cart).filter(([id,q])=>Number(q)>0&&products.some(p=>p.id===id));
  if(!entries.length)return alert('السلة فارغة');
- const items=entries.map(([product_id,quantity])=>({product_id,quantity:Number(quantity),...(cartOptions[product_id]?.color?{color:cartOptions[product_id].color}:{}),...(cartOptions[product_id]?.whatsapp?{whatsapp:cartOptions[product_id].whatsapp}:{}),...(cartOptions[product_id]?.roblox_username?{roblox_username:cartOptions[product_id].roblox_username}:{})}));
+ const items=entries.map(([product_id,quantity])=>({product_id,quantity:Number(quantity),...(cartOptions[product_id]?.color?{color:cartOptions[product_id].color}:{}),...(cartOptions[product_id]?.roblox_username?{roblox_username:cartOptions[product_id].roblox_username}:{})}));
  const total=entries.reduce((sum,[id,q])=>sum+Number(products.find(p=>p.id===id)?.price||0)*Number(q),0);
  const ussdAmount=Math.round(total*1000);
  const ussdCode=()=>Number.isFinite(ussdAmount)&&ussdAmount>0?'*122*0925620538*'+ussdAmount+'#':'';
