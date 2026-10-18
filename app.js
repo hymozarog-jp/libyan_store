@@ -253,7 +253,10 @@ function getAccountAvatarUrl(){
  const identities=Array.isArray(user.identities)?user.identities:[];
  const google=identities.find(x=>x.provider==='google')?.identity_data||{};
  const meta=user.user_metadata||{};
- return google.avatar_url||google.picture||google.photo_url||meta.avatar_url||meta.picture||meta.avatar||'';
+ const firebaseProviders=Array.isArray(user.providerData)?user.providerData:[];
+ const firebaseProvider=firebaseProviders.find(x=>x&&x.photoURL)?.photoURL||'';
+ const candidates=[user.photoURL,user.photoUrl,user.avatar_url,user.picture,google.avatar_url,google.picture,google.photo_url,meta.avatar_url,meta.picture,meta.avatar,meta.photoURL,firebaseProvider];
+ return candidates.find(x=>typeof x==='string'&&/^https:\/\//i.test(x))||'';
 }
 function renderStore(){
   app.innerHTML=`<div class="shell lc-shell">
