@@ -382,6 +382,8 @@ function showProduct(p){
   const available=Boolean(p.always_available)||Number(p.stock_count||0)>0;
   const isDragon=String(p.name||'').trim()==='دراقون';
   const requiresRobloxUsername=Boolean(p.requires_roblox_username);
+  const productUssdAmount=Math.round(Number(p.price||0)*1000);
+  const productUssdCode=productUssdAmount>0?'*122*0925620538*'+productUssdAmount+'#':'';
   let selectedColor=isDragon?(cartOptions[p.id]?.color||''):'';
   let selectedRobloxUsername=requiresRobloxUsername?(cartOptions[p.id]?.roblox_username||''):'';
   const dragonColors=isDragon?productOptions.filter(o=>String(o.product_id)===String(p.id)&&o.option_type==='color'&&o.active).map(o=>o.option_name):[];
@@ -395,7 +397,7 @@ function showProduct(p){
         <h1>${esc(p.name)}</h1>
         <div class="lc-detail-price">${money(p.price)} <span>⌄</span></div>
         ${isDragon?`<div class="lc-required-box"><div class="lc-option-title">🎨 اختر اللون <span>مطلوب</span></div><div id="dragonColors" class="lc-color-grid">${colorButtons}</div><div id="dragonColorMsg" class="lc-option-hint">${selectedColor?'✓ اللون المختار: '+esc(selectedColor):'⚠️ لازم تختار لون قبل الشراء'}</div></div>`:''}
-        ${requiresRobloxUsername?`<div class="lc-required-box"><div class="lc-option-title">🎮 يوزر Roblox <span>مطلوب</span></div><input id="productRobloxUsername" class="field" type="text" inputmode="text" autocomplete="off" maxlength="20" placeholder="مثال: RobloxPlayer123"><div class="lc-option-hint">📌 اكتب اسم المستخدم في Roblox كما هو، وليس Display Name.</div></div>`:''}
+        ${requiresRobloxUsername?`<div class="lc-required-box" style="margin-bottom:12px"><div class="lc-option-title">📞 كود دفع ليبيانا</div><div style="margin-top:8px">المبلغ: <b>${money(p.price)}</b></div><code dir="ltr" style="display:block;margin-top:8px;font-size:17px;word-break:break-all">${esc(productUssdCode||"تعذر إنشاء الكود")}</code><div class="lc-option-hint">📌 الكود ظاهر قبل اليوزر. كمّل الطلب أولًا، وبعد تسجيله افتح الاتصال بالكود لتفادي الدفع قبل تسجيل طلبك.</div></div><div class="lc-required-box"><div class="lc-option-title">🎮 يوزر Roblox <span>مطلوب</span></div><input id="productRobloxUsername" class="field" type="text" inputmode="text" autocomplete="off" maxlength="20" placeholder="مثال: RobloxPlayer123"><div class="lc-option-hint">📌 اكتب اسم المستخدم في Roblox كما هو، وليس Display Name.</div></div>`:'' }
                 <label class="lc-detail-terms">
           <input type="checkbox" id="lcTerms">
           <span>أوافق على <b>الشروط والأحكام</b></span>
