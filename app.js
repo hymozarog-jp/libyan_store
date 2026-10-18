@@ -255,6 +255,9 @@ function renderStore(){
       <button class="lc-icon" id="lcSearch" aria-label="بحث">⌕</button>
       <button class="lc-icon" id="lcBell" aria-label="الإشعارات">♟</button>
       <div class="lc-wallet">💳 <b>${money(wallet?.balance)}</b><span class="wallet-text">المحفظة</span></div>
+      <button class="lc-account-avatar" id="lcAccountAvatar" type="button" aria-label="حسابي" title="${esc(profile?.full_name||session.user.email||'حسابي')}">
+        ${(session.user.user_metadata?.avatar_url||session.user.user_metadata?.picture)?'<img src="'+esc(session.user.user_metadata.avatar_url||session.user.user_metadata.picture)+'" alt="صورة الحساب" referrerpolicy="no-referrer">':'<span>'+esc((profile?.full_name||session.user.email||'ح').trim().slice(0,1).toUpperCase())+'</span>'}
+      </button>
       <div class="lc-logo"><span>Libyan Store</span><span class="lc-logo-mark">LS</span></div>
     </header>
     <div id="view"></div>
@@ -277,6 +280,7 @@ function renderStore(){
     </aside></div>
   </div>`;
   const close=()=>el('lcDrawer')?.classList.remove('open');
+  el('lcAccountAvatar').onclick=()=>{const accountBtn=document.querySelector('[data-view="account"]');if(accountBtn)accountBtn.click()};
   el('lcMenu').onclick=()=>el('lcDrawer').classList.add('open');el('lcBackdrop').onclick=close;el('lcDrawerClose').onclick=close;
   el('lcSearch').onclick=()=>{const q=prompt('ابحث عن منتج');if(!q)return;const found=products.find(p=>String(p.name||'').toLowerCase().includes(q.toLowerCase()));if(found)showProduct(found);else alert('لم يتم العثور على المنتج')};
   el('lcBell').onclick=()=>alert('لا توجد إشعارات جديدة حالياً.');
