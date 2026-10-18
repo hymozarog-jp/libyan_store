@@ -95,3 +95,16 @@ The migration branch now contains:
 These are source changes only. They have **not** been deployed to Firebase, and the backfill has **not** been run. A Firebase deployment requires an authorized Firebase CLI session and may require the project's Cloud Functions billing/plan prerequisites. The claim helper only addresses the JWT role claim; it does not resolve the database UUID ownership blocker described above.
 
 The frontend must remain on the existing Supabase Auth flow until a safe identity architecture is implemented and verified. Do not enable Firebase as the storefront's sole auth provider yet.
+
+
+## Guest package checkout with mobile-money instructions (2026-10-18)
+
+The migration branch now allows unauthenticated visitors to browse active products and open a guest checkout. The guest form collects name, contact number, payment method (Libyana or Almadar), sender phone, and optional transfer reference, then opens a prefilled WhatsApp message to the store's configured support number.
+
+- Libyana checkout prepares the existing USSD payment code using the order total and configured merchant number.
+- Almadar checkout displays the merchant transfer number.
+- The form does **not** claim that payment is verified and does not auto-deliver a package. The operator must review the payment/receipt and confirm delivery manually.
+- Guest orders are not persisted as rows in `public.orders`, because that table requires an authenticated Supabase user UUID and existing order-code delivery is tied to that identity. This implementation intentionally avoids fabricating an account, bypassing RLS, or misusing the wallet/order RPC.
+- The active product-options SELECT policy for `anon` was added and verified; it exposes only rows where `active = true`.
+
+The frontend changes are committed to `firebase-auth-migration` and have not been deployed. A full automatic guest order workflow would require a separate guest-order request table/backend, payment confirmation, anti-abuse controls, and a safe delivery/fulfilment path.
