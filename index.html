@@ -60,7 +60,7 @@
     }
     catch(e){ app.innerHTML='<div class="card" style="max-width:430px;margin:30px auto;text-align:center"><h2>⚠️ تعذر تشغيل المتجر</h2><p class="muted">حدثت مشكلة أثناء تحميل ملفات المتجر.</p><small class="muted">'+String(e.message||e)+'</small><button class="btn primary" style="width:100%;margin-top:14px" onclick="location.reload()">إعادة المحاولة</button></div>'; return; }
     for(var j=2;j<files.length;j++){
-      setLoadProgress(58+((j-1)/(files.length-1))*37,'نجهّز '+(['','', 'تجهيز الحساب والصورة','حالة التعبئة','صور الباقات','التصميم والتفاعلات','الدفع المباشر','اللمسات الأخيرة'][j]||'التفاصيل الأخيرة')+'...');
+      setLoadProgress(58+((j-1)/(files.length-1))*37,'نجهّز '+(['','', 'تجهيز الحساب والصورة','صور الباقات','التصميم والتفاعلات','اللمسات الأخيرة'][j]||'التفاصيل الأخيرة')+'...');
       try{await loadScript(files[j].src,8000)}catch(e){console.warn('Optional storefront script failed:',e.message||e)}
     }
     setLoadProgress(100,'اكتمل التحميل! أهلاً بيك 💜');
