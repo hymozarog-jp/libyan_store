@@ -32,3 +32,18 @@ button:hover,.grid>.card:hover{transform:none!important}
 
 /* Discount badge */
 .lc-package-media{position:relative}.lc-package-discount{position:absolute;top:10px;left:10px;padding:6px 10px;border-radius:999px;background:#ff5524;color:#fff;font-size:11px;font-weight:900;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+
+
+/* Roblox Robux catalog: square icon cards, two items per row, price below image */
+.lc-package-grid:has(.lc-robux-card){grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.lc-robux-card{min-width:0;border-radius:17px;background:linear-gradient(155deg,#191832,#111323);border:1px solid #39315e}
+.lc-robux-card .lc-package-main{height:100%;text-align:center}
+.lc-robux-media{width:100%;aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden;padding:10px;background:radial-gradient(ellipse at center,#5940a44d,transparent 72%),linear-gradient(145deg,#211c46,#11182a);border-bottom:1px solid #30294f}
+.lc-robux-media img{display:block;width:100%;height:100%;object-fit:contain}
+.lc-robux-content{display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 8px 14px}
+.lc-robux-content h3{margin:0;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.lc-robux-price{display:block;font-size:17px;line-height:1.35;font-weight:950;color:#c6b5ff}
+.lc-robux-status{font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px}
+.lc-robux-status.available{color:#79e0a8;background:#35c47718}
+.lc-robux-status.unavailable{color:#ff9a9a;background:#ff5b5b14}
+@media(max-width:390px){.lc-package-grid:has(.lc-robux-card){grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.lc-robux-media{padding:7px}.lc-robux-content{padding:10px 6px 12px}.lc-robux-content h3{font-size:12px}.lc-robux-price{font-size:15px}}
