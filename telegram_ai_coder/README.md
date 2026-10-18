@@ -16,7 +16,7 @@
 1. بوت من [@BotFather](https://t.me/BotFather).
 2. مفتاح Gemini من [Google AI Studio](https://aistudio.google.com/app/apikey)؛ حدود الخطة المجانية وتوفر النموذج قد يتغيران.
 3. GitHub fine-grained personal access token بصلاحيات Contents: Read and write وPull requests: Read and write للمستودع المحدد فقط. لا تستخدم صلاحيات إدارية واسعة.
-4. استضافة تدعم عامل Python طويل التشغيل. تأكد من الأسعار وحدود التشغيل الحالية قبل النشر؛ لا نفترض أن الاستضافة الدائمة مجانية.
+4. حساب Render. هذا المشروع يستخدم Webhook لأن Render Free يوقف خدمات الويب بعد 15 دقيقة من عدم النشاط؛ لذلك قد يتأخر أول رد بعد فترة خمول.
 
 ## إعداد المتغيرات السرية
 
@@ -44,9 +44,18 @@ python bot.py
 
 على Windows PowerShell، عيّن المتغيرات من إعدادات البيئة بدل أمر `source`.
 
-## النشر
+## النشر على Render Free
 
-اضبط Root Directory في منصة الاستضافة على `telegram_ai_coder`، ثم اختر تشغيل Python worker. أضف المتغيرات السرية في لوحة المنصة. لا تضع التوكنات داخل إعدادات GitHub أو ملفات المشروع إلا عبر مخزن الأسرار المخصص.
+1. افتح https://render.com/ وسجّل الدخول، ثم اربط مستودع GitHub.
+2. أنشئ Blueprint من المستودع الذي يحتوي `render.yaml`، أو أنشئ Web Service يدويًا بنفس الإعدادات. راجع الكود قبل دمج PR في `main`.
+3. تأكد أن الإعدادات تحدد `rootDir: telegram_ai_coder` وخطة `free` و`autoDeploy: false`.
+4. أضف القيم السرية في Environment داخل Render: `TELEGRAM_BOT_TOKEN`، `GEMINI_API_KEY`، `GITHUB_TOKEN`، `ALLOWED_TELEGRAM_USER_IDS`، `WEBHOOK_PATH`، و`TELEGRAM_WEBHOOK_SECRET`. لا تضعها في GitHub أو في المحادثة.
+5. أنشئ قيمتين عشوائيتين مختلفتين لـ `WEBHOOK_PATH` و`TELEGRAM_WEBHOOK_SECRET` على جهازك، مثلًا شغّل أمر Python هذا مرتين: `python -c "import secrets; print(secrets.token_urlsafe(32))"`.
+6. استخدم GitHub Fine-grained token بصلاحيات Contents: Read and write وPull requests: Read and write للمستودع المطلوب فقط.
+7. انشر الخدمة يدويًا من Render بعد إضافة المتغيرات. Render يوفّر `RENDER_EXTERNAL_URL` تلقائيًا، والبوت يضبط Telegram webhook عند بدء التشغيل.
+8. اختبر `/start` و`/id` و`/status` من حسابك. ابدأ بمهمة تجريبية ولا تسمح بالدمج أو النشر التلقائي.
+
+**حدود الخطة المجانية:** الخدمة تنام بعد 15 دقيقة بلا طلبات واردة، وقد يستغرق الاستيقاظ قرابة دقيقة؛ توجد 750 ساعة مجانية شهريًا على مستوى مساحة العمل، مع حدود للباندويث والبناء. قد تتأخر رسائل Telegram بعد الخمول، لذا هذا اختبار منخفض التكلفة وليس ضمان تشغيل 24/7.
 
 ## طريقة الاستخدام
 
