@@ -537,18 +537,38 @@ function renderGuestPaymentCheckout(){
  el('guestPayClose').onclick=()=>modal.remove();
  el('guestCopyDestination').onclick=()=>{const n=dest.textContent;if(!n||n==='تواصل مع الإدارة'||n.startsWith('الدفع بكود'))return alert('تعذر تجهيز كود الدفع. تواصل مع الإدارة.');if(navigator.clipboard?.writeText)navigator.clipboard.writeText(n).then(()=>alert('تم النسخ')).catch(()=>alert(n));else alert(n)};
  callPayment.onclick=()=>{const code=libyanaCode();if(!code)return alert('كود ليبيانا يحتاج إجماليًا بالدينار الصحيح.');window.location.href='tel:'+code.replace('#','%23')};
- el('guestSendPayment').onclick=()=>{
+ el('guestSendPayment').onclick=async()=>{
   const name=el('guestBuyerName').value.trim(),phone=el('guestBuyerPhone').value.trim(),sender=el('guestSenderPhone').value.trim(),ref=el('guestPaymentRef').value.trim(),provider=method.value==='libyana'?'ليبيانا':'المدار الجديد',recipient=dest.textContent;
   if(name.length<2)return alert('اكتب اسمك أولاً.');
   if(phone.replace(/\D/g,'').length<8)return alert('اكتب رقم هاتف صحيح.');
   if(sender.replace(/\D/g,'').length<8)return alert('اكتب رقم الهاتف الذي دفعت منه.');
   if(!recipient||recipient==='تواصل مع الإدارة'||recipient.startsWith('الدفع بكود'))return alert('بيانات الدفع غير مكتملة.');
-  const lines=items.map(item=>{const p=products.find(x=>x.id===item.product_id);return '- '+(p?.name||'حزمة')+' × '+item.quantity+' = '+money(Number(p?.price||0)*item.quantity)+(item.color?'، اللون '+item.color:'')+(item.roblox_username?'، Roblox '+item.roblox_username:'')+(item.whatsapp?'، واتساب '+item.whatsapp:'')}).join('\n');
-  const message=['طلب شراء جديد — Libyan Store','الاسم: '+name,'رقم التواصل: '+phone,'طريقة الدفع: '+provider,method.value==='libyana'?'كود ليبيانا المستخدم: '+recipient:'رقم المستلم: '+recipient,'رقم المرسل: '+sender,ref?'مرجع العملية: '+ref:'','المنتجات:\n'+lines,'الإجمالي: '+money(total),'يرجى مراجعة الدفع وتأكيده قبل تسليم الحزمة.'].filter(Boolean).join('\n');
   const digits=String(supportWhatsapp||'').replace(/\D/g,'').replace(/^0/,'218');
   if(!digits)return alert('رقم واتساب المتجر غير مضبوط.');
-  window.open('https://wa.me/'+digits+'?text='+encodeURIComponent(message),'_blank','noopener');
-  modal.remove();
+  const sendButton=el('guestSendPayment');
+  if(sendButton.dataset.busy==='1')return;
+  sendButton.dataset.busy='1';sendButton.disabled=true;sendButton.textContent='جارٍ تسجيل طلب الدفع...';
+  const waWindow=window.open('about:blank','_blank');
+  try{
+   const request=await sb.rpc('create_guest_purchase_request',{
+    p_items:items,p_customer_name:name,p_customer_phone:phone,p_payment_method:method.value,
+    p_sender_phone:sender,p_payment_reference:ref||null
+   });
+   if(request.error)throw request.error;
+   const data=request.data||{};
+   if(!data.id)throw new Error('تعذر الحصول على رقم الطلب.');
+   const confirmedTotal=Number(data.total||total);
+   const lines=items.map(item=>{const p=products.find(x=>x.id===item.product_id);return '- '+(p?.name||'حزمة')+' × '+item.quantity+' = '+money(Number(p?.price||0)*item.quantity)+(item.color?'، اللون '+item.color:'')+(item.roblox_username?'، Roblox '+item.roblox_username:'')+(item.whatsapp?'، واتساب '+item.whatsapp:'')}).join('\n');
+   const message=['طلب شراء جديد — Libyan Store','رقم الطلب: '+data.id,'الاسم: '+name,'رقم التواصل: '+phone,'طريقة الدفع: '+provider,method.value==='libyana'?'كود ليبيانا المستخدم: '+recipient:'رقم المستلم: '+recipient,'رقم المرسل: '+sender,ref?'مرجع العملية: '+ref:'','المنتجات:\n'+lines,'الإجمالي المعتمد من المتجر: '+money(confirmedTotal),'الطلب مسجل بانتظار مراجعة الدفع؛ يرجى تأكيد التحويل قبل تسليم الحزمة.'].filter(Boolean).join('\n');
+   const url='https://wa.me/'+digits+'?text='+encodeURIComponent(message);
+   if(waWindow){waWindow.location.href=url}else alert('تم تسجيل طلبك برقم '+data.id+'، لكن المتصفح منع فتح واتساب. افتح واتساب المتجر وأرسل رقم الطلب.');
+   modal.remove();
+  }catch(e){
+   if(waWindow)waWindow.close();
+   console.error('guest payment request failed:',e);
+   alert('تعذر تسجيل طلب الدفع: '+(e.message||'خطأ غير معروف'));
+   sendButton.dataset.busy='';sendButton.disabled=false;sendButton.textContent='إرسال تفاصيل الطلب عبر واتساب';
+  }
  };
 }
 
