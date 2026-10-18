@@ -248,6 +248,13 @@ function startStockRefresh(){
 }
 function startAdminTopupRealtime(){if(profile?.role!=='admin'||!sb)return;if(adminTopupChannel){sb.removeChannel(adminTopupChannel);adminTopupChannel=null}adminTopupChannel=sb.channel('admin-wallet-topups').on('postgres_changes',{event:'INSERT',schema:'public',table:'wallet_topups'},payload=>{const row=payload.new;if(row?.status==='pending')showTopupNotification(row)}).subscribe(status=>{if(status!=='SUBSCRIBED')console.log('Topup realtime status:',status)})}
 function showTopupNotification(row){const old=document.getElementById('topupToast');if(old)old.remove();const toast=document.createElement('div');toast.id='topupToast';toast.dir='rtl';toast.style.cssText='position:fixed;top:18px;right:18px;z-index:99999;max-width:360px;background:#17100c;border:1px solid #ff7a18;box-shadow:0 12px 35px rgba(0,0,0,.45);border-radius:16px;padding:15px;color:#fff;font-family:inherit';toast.innerHTML=`<div style="font-size:18px;font-weight:800">🔔 طلب تعبئة رصيد جديد</div><div style="margin-top:8px;color:#ffd9bd">المبلغ: <b>${money(row.amount)}</b></div><div style="margin-top:3px;color:#ffd9bd">الطريقة: <b>${esc(row.method)}</b></div><div style="margin-top:3px;color:#ffd9bd">رقم المحوّل: <b>${esc(row.sender_phone||'غير متوفر')}</b></div><button class="btn primary" id="closeTopupToast" style="width:100%;margin-top:12px">فتح طلبات الشحن</button>`;document.body.appendChild(toast);el('closeTopupToast').onclick=()=>{toast.remove();const adminBtn=document.querySelector('[data-view="admin"]');if(adminBtn)adminBtn.click()};try{const Ctx=window.AudioContext||window.webkitAudioContext;if(Ctx){const ctx=new Ctx(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.frequency.value=880;gain.gain.value=.05;osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.18);setTimeout(()=>ctx.close(),300)}}catch(e){}if('Notification'in window&&Notification.permission==='granted'){try{new Notification('طلب تعبئة رصيد جديد',{body:`${money(row.amount)} — ${row.method}`})}catch(e){}}}
+function getAccountAvatarUrl(){
+ const user=session?.user||{};
+ const identities=Array.isArray(user.identities)?user.identities:[];
+ const google=identities.find(x=>x.provider==='google')?.identity_data||{};
+ const meta=user.user_metadata||{};
+ return google.avatar_url||google.picture||google.photo_url||meta.avatar_url||meta.picture||meta.avatar||'';
+}
 function renderStore(){
   app.innerHTML=`<div class="shell lc-shell">
     <header class="lc-header">
@@ -256,7 +263,7 @@ function renderStore(){
       <button class="lc-icon" id="lcBell" aria-label="الإشعارات">♟</button>
       <div class="lc-wallet">💳 <b>${money(wallet?.balance)}</b><span class="wallet-text">المحفظة</span></div>
       <button class="lc-account-avatar" id="lcAccountAvatar" type="button" aria-label="حسابي" title="${esc(profile?.full_name||session.user.email||'حسابي')}">
-        ${(session.user.user_metadata?.avatar_url||session.user.user_metadata?.picture)?'<img src="'+esc(session.user.user_metadata.avatar_url||session.user.user_metadata.picture)+'" alt="صورة الحساب" referrerpolicy="no-referrer">':'<span>'+esc((profile?.full_name||session.user.email||'ح').trim().slice(0,1).toUpperCase())+'</span>'}
+        ${getAccountAvatarUrl()?'<img src="'+esc(getAccountAvatarUrl())+'" alt="صورة الحساب" referrerpolicy="no-referrer">':'<span>'+esc((profile?.full_name||session.user.email||'ح').trim().slice(0,1).toUpperCase())+'</span>'}
       </button>
       <div class="lc-logo"><span>Libyan Store</span><span class="lc-logo-mark">LS</span></div>
     </header>
@@ -617,8 +624,10 @@ function renderCart(){
 }
 async function renderAccount(){
   const current=profile||{};
-  el('view').innerHTML=`<div class="card"><h2>👤 حسابي</h2><label>الاسم الكامل</label><input id="accountName" class="field" style="margin-top:6px" value="${esc(current.full_name||'')}" placeholder="الاسم الكامل"><label style="display:block;margin-top:10px">رقم الهاتف</label><input id="accountPhone" class="field" style="margin-top:6px" value="${esc(current.phone||session.user.phone||'')}" placeholder="رقم الهاتف"><p class="muted" style="margin-top:10px">البريد: ${esc(session.user.email||'غير مرتبط')}</p><button class="btn primary" id="saveAccount" style="width:100%;margin-top:10px">حفظ البيانات</button><small id="accountMsg" class="muted" style="display:block;margin-top:8px"></small></div>`;
+  const hasGoogle=Array.isArray(session.user.identities)&&session.user.identities.some(x=>x.provider==='google');
+  el('view').innerHTML=`<div class="card"><h2>👤 حسابي</h2><label>الاسم الكامل</label><input id="accountName" class="field" style="margin-top:6px" value="${esc(current.full_name||'')}" placeholder="الاسم الكامل"><label style="display:block;margin-top:10px">رقم الهاتف</label><input id="accountPhone" class="field" style="margin-top:6px" value="${esc(current.phone||session.user.phone||'')}" placeholder="رقم الهاتف"><p class="muted" style="margin-top:10px">البريد: ${esc(session.user.email||'غير مرتبط')}</p><button class="btn primary" id="saveAccount" style="width:100%;margin-top:10px">حفظ البيانات</button><button class="btn" id="linkGoogleAvatar" style="width:100%;margin-top:10px;background:#fff;color:#1f2937;border:1px solid #d1d5db">${hasGoogle?'تم ربط حساب Google ✓':'ربط حساب Google لإظهار صورته'}</button><small id="accountMsg" class="muted" style="display:block;margin-top:8px">${hasGoogle?'صورة Google ستظهر بجانب رصيدك بعد تحديث الصفحة.':'اربط حساب Google مرة واحدة للسماح بعرض صورته مع بقاء تسجيل الدخول بالبريد وكلمة المرور.'}</small></div>`;
   el('saveAccount').onclick=async()=>{const full_name=el('accountName').value.trim(),phone=el('accountPhone').value.trim();if(!full_name)return el('accountMsg').textContent='أدخل الاسم';const r=await sb.from('profiles').update({full_name,phone}).eq('id',session.user.id);if(r.error)return el('accountMsg').textContent=r.error.message;profile={...profile,full_name,phone};el('accountMsg').textContent='تم حفظ البيانات بنجاح.';};
+  el('linkGoogleAvatar').onclick=async()=>{const msg=el('accountMsg');msg.textContent='جارٍ فتح Google لربط الصورة...';try{const r=await sb.auth.linkIdentity({provider:'google',options:{redirectTo:location.origin+'/',queryParams:{prompt:'select_account'}}});if(r.error)throw r.error;}catch(e){msg.textContent='تعذر ربط Google: '+(e.message||'تحقق من إعدادات تسجيل الدخول عبر Google في Supabase.');}};
 }
 async function renderWallet(){
  if(!session?.user){renderLogin('سجّل الدخول أولاً حتى تتمكن من شحن المحفظة.');return}
