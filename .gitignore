@@ -10,3 +10,10 @@ ios/App/DerivedData/
 *.jks
 *.p12
 *.mobileprovision
+
+# Firebase Functions local artifacts and credentials
+functions/node_modules/
+.firebase/
+.runtimeconfig.json
+service-account*.json
+*-service-account*.json
