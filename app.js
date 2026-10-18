@@ -318,11 +318,11 @@ function renderProducts(){
     const category=String(p.category||'رقمي').trim()||'رقمي';
     const desc=String(p.description||'').trim();
     if(isRobux){
-      return '<article class="lc-package-card lc-robux-card">'+
-        '<button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
-          '<div class="lc-robux-media">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">R$</div>')+'</div>'+
-          '<div class="lc-robux-content"><h3>'+esc(p.name)+'</h3><strong class="lc-robux-price">'+money(p.price)+'</strong><span class="lc-robux-status '+stockClass+'">'+esc(stockText)+'</span></div>'+
-        '</button></article>';
+      return '<article class="lc-package-card lc-robux-card '+(available?'is-available':'is-unavailable')+'">'+
+        '<div class="lc-robux-art"><button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
+          '<div class="lc-robux-media">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">R$</div>')+'<span class="lc-robux-value">R$</span></div></button>'+
+        '<div class="lc-robux-actions"><button type="button" class="lc-icon-action" data-product-info="'+p.id+'" aria-label="معلومات المنتج">?</button><button type="button" class="lc-icon-action" data-favorite="'+p.id+'" aria-label="المفضلة">☆</button></div></div>'+
+        '<div class="lc-robux-content"><h3>'+esc(p.name)+'</h3><strong class="lc-robux-price">'+money(p.price)+'</strong><span class="lc-robux-status '+stockClass+'">'+(available?'● متوفر':'غير متوفر')+'</span>'+(available?'<button type="button" class="lc-buy-button" data-product-open="'+p.id+'">شراء الآن ←</button>':'<span class="lc-out-button">غير متوفر</span>')+'</div></article>';
     }
     return '<article class="lc-package-card">'+
       '<button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
