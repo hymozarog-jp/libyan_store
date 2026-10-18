@@ -1,4 +1,23 @@
-<!doctype html><!-- deploy-check: 2026-09-20-diagnostic --><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#17133f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="manifest" href="manifest.webmanifest"><meta name="description" content="Libyan Store - متجر متخصص في بيع Robux"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Libyan Store | متجر Robux</title><script src="supabase-config.js?v=20260916-2"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><link rel="stylesheet" href="styles.css?v=20260924-3"><link rel="stylesheet" href="theme.css?v=20261018-wallet-violet-2"><link rel="stylesheet" href="rebuild.css?v=20261018-2"></head><body><main id="app"><div class="shell"><div class="card" style="text-align:center">جارٍ تحميل المتجر…</div></main><script>
+<!doctype html><!-- deploy-check: 2026-09-20-diagnostic --><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#17133f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="manifest" href="manifest.webmanifest"><meta name="description" content="Libyan Store - متجر متخصص في بيع Robux"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Libyan Store | متجر Robux</title><script src="supabase-config.js?v=20260916-2"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><link rel="stylesheet" href="styles.css?v=20260924-3"><link rel="stylesheet" href="theme.css?v=20261018-wallet-violet-2"><link rel="stylesheet" href="rebuild.css?v=20261018-2">
+<style>
+.ls-loader{min-height:100svh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 22px;text-align:center;direction:rtl;background:radial-gradient(ellipse at 50% 35%,#30205d 0%,#1b1740 42%,#0e1024 100%);color:#fff;overflow:hidden}
+.ls-loader-logo{width:76px;height:76px;display:grid;place-items:center;border-radius:25px;background:linear-gradient(145deg,#a58aff,#6341d6);font-size:43px;font-weight:1000;box-shadow:0 0 0 9px #9c7bff12,0 12px 45px #8b5cf655;animation:ls-float 2s ease-in-out infinite}
+.ls-loader-kicker{margin-top:24px;color:#c7b8ff;font-size:11px;font-weight:900;letter-spacing:4px;direction:ltr}
+.ls-loader h1{font-size:clamp(25px,6vw,34px);margin:10px 0 6px;letter-spacing:-.6px}
+.ls-loader-sub{margin:0;color:#b9b5d6;font-size:14px;line-height:1.9}
+.ls-loader-percent{margin-top:30px;font-size:35px;font-weight:950;color:#c7b5ff;font-variant-numeric:tabular-nums}
+.ls-loader-track{width:min(330px,82vw);height:9px;border-radius:999px;background:#ffffff16;overflow:hidden;margin-top:12px;border:1px solid #ffffff13}
+.ls-loader-fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#a78bfa,#6d4aff,#7ce7ff);box-shadow:0 0 18px #9273ff88;transition:width .35s ease}
+.ls-loader-stage{margin-top:15px;color:#e2dcff;font-size:13px;min-height:22px}
+.ls-loader-dots{display:flex;gap:7px;margin-top:18px}
+.ls-loader-dots i{width:7px;height:7px;border-radius:50%;background:#a78bfa;animation:ls-dot 1s ease-in-out infinite}
+.ls-loader-dots i:nth-child(2){animation-delay:.15s}.ls-loader-dots i:nth-child(3){animation-delay:.3s}
+.ls-loader-tip{margin-top:34px;padding:12px 16px;border:1px solid #a78bfa30;border-radius:14px;background:#ffffff08;color:#c9c2e8;font-size:12px;max-width:310px}
+@keyframes ls-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes ls-dot{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-6px);opacity:1}}
+@media(prefers-reduced-motion:reduce){.ls-loader-logo,.ls-loader-dots i{animation:none}.ls-loader-fill{transition:none}}
+</style>
+</head><body><main id="app"><div class="ls-loader" role="status" aria-live="polite"><div class="ls-loader-logo">L</div><div class="ls-loader-kicker">LIBYAN STORE</div><h1>نجهّز متجرك ✨</h1><p class="ls-loader-sub">لحظات ونفتح لك عالم Robux</p><div class="ls-loader-percent" id="lsLoaderPercent">0%</div><div class="ls-loader-track"><div class="ls-loader-fill" id="lsLoaderFill"></div></div><div class="ls-loader-stage" id="lsLoaderStage">نحضّر واجهة المتجر...</div><div class="ls-loader-dots"><i></i><i></i><i></i></div><div class="ls-loader-tip" id="lsLoaderTip">💜 تجربة تسوّق أسهل، خطوة بخطوة</div></div></main><script>
 (function(){
   window.mapCover = window.mapCover || function(){ return ''; };
   try{ if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(x){x.unregister()})}).catch(function(){}) } }catch(e){}
@@ -11,6 +30,17 @@
     if(box && (!box.dataset.ready || box.dataset.ready!=='1')) box.innerHTML='<div class="card" style="max-width:520px;margin:30px auto;text-align:center"><h2>⚠️ تعذر فتح المتجر</h2><p class="muted">'+String(msg)+'</p><button class="btn primary" style="width:100%;margin-top:14px" onclick="location.reload()">إعادة المحاولة</button></div>';
   });
   var app=document.getElementById('app');
+  var loaderTips=['💜 تجربة تسوّق أسهل، خطوة بخطوة','⚡ جهّز نفسك لاختيار باقة Robux المناسبة','🔒 نجهّز حسابك وتجربة التسوق'];
+  var loaderTipIndex=0;
+  function setLoadProgress(percent,stage){
+    var p=Math.max(0,Math.min(100,Math.round(percent)));
+    var number=document.getElementById('lsLoaderPercent'),fill=document.getElementById('lsLoaderFill'),label=document.getElementById('lsLoaderStage');
+    if(number)number.textContent=p+'%';
+    if(fill)fill.style.width=p+'%';
+    if(label)label.textContent=stage||'نجهّز متجرك...';
+  }
+  function showLoader(){setLoadProgress(3,'نحضّر واجهة المتجر...');}
+  showLoader();
   var files=[
     {src:'supabase.js?v=20260920-1',core:true},
     {src:'app.js?v=20261018-welcome-1',core:true},
@@ -25,9 +55,17 @@
     return new Promise(function(resolve,reject){var s=document.createElement('script'),done=false,t=setTimeout(function(){if(!done){done=true;s.remove();reject(new Error('timeout: '+src))}},timeout||8000);s.onload=function(){if(!done){done=true;clearTimeout(t);resolve()}};s.onerror=function(){if(!done){done=true;clearTimeout(t);s.remove();reject(new Error('load: '+src))}};s.src=src;document.head.appendChild(s);});
   }
   async function start(){
-    try{ await loadScript(files[0].src,8000); await loadScript(files[1].src,12000); }
+    try{
+      setLoadProgress(10,'الاتصال بخدمات المتجر...');
+      await loadScript(files[0].src,8000); setLoadProgress(28,'تحميل واجهة المتجر...');
+      await loadScript(files[1].src,12000); setLoadProgress(58,'تجهيز المنتجات والحساب...');
+    }
     catch(e){ app.innerHTML='<div class="card" style="max-width:430px;margin:30px auto;text-align:center"><h2>⚠️ تعذر تشغيل المتجر</h2><p class="muted">حدثت مشكلة أثناء تحميل ملفات المتجر.</p><small class="muted">'+String(e.message||e)+'</small><button class="btn primary" style="width:100%;margin-top:14px" onclick="location.reload()">إعادة المحاولة</button></div>'; return; }
-    for(var j=2;j<files.length;j++){ try{await loadScript(files[j].src,8000)}catch(e){console.warn('Optional storefront script failed:',e.message||e)} }
+    for(var j=2;j<files.length;j++){
+      setLoadProgress(58+((j-1)/(files.length-1))*37,'نجهّز '+(['','', 'تجهيز الحساب والصورة','حالة التعبئة','صور الباقات','التصميم والتفاعلات','المحفظة','اللمسات الأخيرة'][j]||'التفاصيل الأخيرة')+'...');
+      try{await loadScript(files[j].src,8000)}catch(e){console.warn('Optional storefront script failed:',e.message||e)}
+    }
+    setLoadProgress(100,'اكتمل التحميل! أهلاً بيك 💜');
     document.getElementById('app').dataset.ready='1';
   }
   start();
