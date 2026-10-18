@@ -501,37 +501,59 @@ function renderCart(){
  if(!entries.length)return alert('السلة فارغة');
  const items=entries.map(([product_id,quantity])=>({product_id,quantity:Number(quantity),...(cartOptions[product_id]?.color?{color:cartOptions[product_id].color}:{}),...(cartOptions[product_id]?.whatsapp?{whatsapp:cartOptions[product_id].whatsapp}:{}),...(cartOptions[product_id]?.roblox_username?{roblox_username:cartOptions[product_id].roblox_username}:{})}));
  const total=entries.reduce((sum,[id,q])=>sum+Number(products.find(p=>p.id===id)?.price||0)*Number(q),0);
+ const ussdAmount=Math.round(total*1000);
+ const ussdCode=()=>Number.isFinite(ussdAmount)&&ussdAmount>0?'*122*0925620538*'+ussdAmount+'#':'';
  let settings={};
  try{const sr=await sb.from('store_settings').select('key,value').in('key',['libyana_number','almadar_number']);settings=Object.fromEntries((sr.data||[]).map(x=>[x.key,String(x.value||'')]));}catch(e){console.warn('Payment settings unavailable',e)}
  const prior=document.getElementById('lcPaymentModal');if(prior)prior.remove();
  const modal=document.createElement('div');modal.id='lcPaymentModal';modal.className='lc-modal show';modal.dir='rtl';
  const defaultName=String(profile?.full_name||session?.user?.user_metadata?.full_name||'').trim();
  const defaultPhone=String(profile?.phone||session?.user?.phone||'').trim();
- modal.innerHTML='<div class="lc-modal-card" style="max-width:520px;max-height:90vh;overflow:auto;position:relative"><button type="button" id="lcPaymentClose" class="lc-modal-close" aria-label="إغلاق">×</button><div style="font-size:28px;margin-bottom:8px">💳</div><h2 style="margin:0 0 6px">الدفع على هذا الطلب</h2><p class="muted" style="margin:0 0 14px">اختر ليبيانا أو المدار، وحوّل قيمة الطلب ثم أدخل بيانات التحويل.</p><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;background:#17133f;color:#fff;margin-bottom:14px"><span>إجمالي الطلب</span><b style="font-size:20px">'+money(total)+'</b></div><form id="lcPaymentForm"><label class="auth-label" for="lcPayName">الاسم الكامل</label><input class="field" id="lcPayName" maxlength="80" required minlength="2" value="'+esc(defaultName)+'" placeholder="اسمك الكامل"><label class="auth-label" for="lcPayPhone" style="display:block;margin-top:10px">رقم هاتفك للتواصل</label><input class="field" id="lcPayPhone" type="tel" maxlength="24" minlength="8" required value="'+esc(defaultPhone)+'" placeholder="09xxxxxxxx"><label class="auth-label" for="lcPayMethod" style="display:block;margin-top:10px">طريقة الدفع</label><select class="field" id="lcPayMethod" required><option value="libyana">ليبيانا</option><option value="almadar">المدار</option></select><div id="lcPayInstructions" style="padding:12px;margin-top:10px;border:1px solid #8b78f733;border-radius:12px;background:#8b78f70d"></div><label class="auth-label" for="lcSenderPhone" style="display:block;margin-top:10px">رقم الهاتف الذي حوّلت منه</label><input class="field" id="lcSenderPhone" type="tel" maxlength="24" minlength="8" required placeholder="رقم ليبيانا أو المدار الذي أرسلت منه"><label class="auth-label" for="lcPayReference" style="display:block;margin-top:10px">رقم الحوالة / المرجع (اختياري)</label><input class="field" id="lcPayReference" maxlength="80" placeholder="اكتب رقم العملية إن وجد"><p class="muted" style="font-size:12px;margin:10px 0">سيتم تسجيل الطلب للمراجعة بعد إرسال البيانات. لا ترسل كلمة مرور أو رمز تحقق.</p><button class="btn primary" id="lcSubmitPayment" type="submit" style="width:100%;margin-top:8px">إرسال الطلب للمراجعة</button><div id="lcPaymentError" role="status" class="muted" style="margin-top:10px"></div></form></div>';
+ modal.innerHTML='<div class="lc-modal-card" style="max-width:520px;max-height:90vh;overflow:auto;position:relative"><button type="button" id="lcPaymentClose" class="lc-modal-close" aria-label="إغلاق">×</button><div style="font-size:28px;margin-bottom:8px">📞</div><h2 style="margin:0 0 6px">شراء الباقة والدفع المباشر</h2><p class="muted" style="margin:0 0 14px">اختار الشبكة. ليبيانا تفتح كود الاتصال بقيمة الطلب، والمدار متاحة عبر التحويل اليدوي.</p><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;background:#17133f;color:#fff;margin-bottom:14px"><span>إجمالي الباقة / الطلب</span><b style="font-size:20px">'+money(total)+'</b></div><form id="lcPaymentForm"><label class="auth-label" for="lcPayName">الاسم الكامل</label><input class="field" id="lcPayName" maxlength="80" required minlength="2" value="'+esc(defaultName)+'" placeholder="اسمك الكامل"><label class="auth-label" for="lcPayPhone" style="display:block;margin-top:10px">رقم هاتفك</label><input class="field" id="lcPayPhone" type="tel" maxlength="24" minlength="8" required value="'+esc(defaultPhone)+'" placeholder="09xxxxxxxx"><label class="auth-label" for="lcPayMethod" style="display:block;margin-top:10px">شركة الاتصالات</label><select class="field" id="lcPayMethod" required><option value="libyana">ليبيانا — كود اتصال وخصم</option><option value="almadar">المدار — تحويل يدوي</option></select><div id="lcPayInstructions" style="padding:12px;margin-top:10px;border:1px solid #8b78f733;border-radius:12px;background:#8b78f70d"></div><div id="lcSenderWrap"><label class="auth-label" for="lcSenderPhone" style="display:block;margin-top:10px">رقم الهاتف الذي حوّلت منه</label><input class="field" id="lcSenderPhone" type="tel" maxlength="24" minlength="8" placeholder="رقم الهاتف المحوّل منه"></div><label class="auth-label" for="lcPayReference" style="display:block;margin-top:10px">رقم العملية (اختياري)</label><input class="field" id="lcPayReference" maxlength="80" placeholder="اكتب رقم العملية إن وجد"><p class="muted" style="font-size:12px;margin:10px 0">سيُسجّل الطلب بانتظار التأكد من الدفع. الموقع لا يستطيع التحقق آليًا من نجاح كود USSD.</p><button class="btn primary" id="lcSubmitPayment" type="submit" style="width:100%;margin-top:8px">متابعة الدفع</button><div id="lcPaymentError" role="status" class="muted" style="margin-top:10px"></div></form></div>';
  document.body.appendChild(modal);
- const method=modal.querySelector('#lcPayMethod'),instructions=modal.querySelector('#lcPayInstructions'),form=modal.querySelector('#lcPaymentForm'),submit=modal.querySelector('#lcSubmitPayment'),err=modal.querySelector('#lcPaymentError');
- const renderInstructions=()=>{const key=method.value==='libyana'?'libyana_number':'almadar_number',label=method.value==='libyana'?'ليبيانا':'المدار',number=settings[key];instructions.innerHTML='<b>حوّل '+money(total)+' عبر '+label+'</b><div style="margin-top:6px">رقم الاستلام: <b dir="ltr" style="font-size:19px">'+(number?esc(number):'يرجى التواصل مع الإدارة لمعرفة رقم الاستلام')+'</b></div><small class="muted" style="display:block;margin-top:6px">تأكد من الرقم والمبلغ قبل تأكيد التحويل.</small>';};
+ const method=modal.querySelector('#lcPayMethod'),instructions=modal.querySelector('#lcPayInstructions'),form=modal.querySelector('#lcPaymentForm'),submit=modal.querySelector('#lcSubmitPayment'),err=modal.querySelector('#lcPaymentError'),senderWrap=modal.querySelector('#lcSenderWrap'),senderInput=modal.querySelector('#lcSenderPhone'),referenceInput=modal.querySelector('#lcPayReference');
+ const renderInstructions=()=>{
+   const isLibyana=method.value==='libyana';
+   senderWrap.style.display=isLibyana?'none':'block';
+   senderInput.required=!isLibyana;
+   if(isLibyana){
+     const code=ussdCode();
+     instructions.innerHTML='<b>الدفع عبر ليبيانا</b><div style="margin-top:8px">كود الاتصال لهذه القيمة: <code dir="ltr" style="font-size:17px;word-break:break-all">'+esc(code||'المبلغ غير صالح')+'</code></div><div style="margin-top:6px">المبلغ: <b>'+money(total)+'</b></div><small class="muted" style="display:block;margin-top:6px">عند المتابعة سنسجل الطلب، وبعدها اضغط زر الاتصال لتفتح شاشة الاتصال بالكود. يلزم تأكيد العملية من هاتفك.</small>';
+     submit.textContent='تسجيل الطلب وعرض زر الاتصال';
+   }else{
+     const number=settings.almadar_number;
+     instructions.innerHTML='<b>حوّل '+money(total)+' عبر المدار</b><div style="margin-top:6px">رقم الاستلام: <b dir="ltr" style="font-size:19px">'+(number?esc(number):'يرجى التواصل مع الإدارة لمعرفة رقم الاستلام')+'</b></div><small class="muted" style="display:block;margin-top:6px">تأكد من الرقم والمبلغ ثم أرسل بيانات التحويل للمراجعة.</small>';
+     submit.textContent='إرسال الطلب للمراجعة';
+   }
+ };
  renderInstructions();method.onchange=renderInstructions;
  const close=()=>modal.remove();modal.querySelector('#lcPaymentClose').onclick=close;modal.addEventListener('click',e=>{if(e.target===modal)close()});
  form.onsubmit=async e=>{
   e.preventDefault();
-  const name=modal.querySelector('#lcPayName').value.trim(),phone=modal.querySelector('#lcPayPhone').value.trim(),sender=modal.querySelector('#lcSenderPhone').value.trim(),reference=modal.querySelector('#lcPayReference').value.trim(),paymentMethod=method.value;
+  const name=modal.querySelector('#lcPayName').value.trim(),phone=modal.querySelector('#lcPayPhone').value.trim(),sender=senderInput.value.trim(),reference=referenceInput.value.trim(),paymentMethod=method.value;
   if(name.length<2){err.textContent='اكتب الاسم الكامل.';return}
-  if(phone.replace(/\D/g,'').length<8){err.textContent='اكتب رقم هاتف صحيح للتواصل.';return}
-  if(sender.replace(/\D/g,'').length<8){err.textContent='اكتب رقم الهاتف الذي حوّلت منه.';return}
-  if(!settings[paymentMethod==='libyana'?'libyana_number':'almadar_number']){err.textContent='رقم الاستلام غير مضبوط حاليًا. تواصل مع الإدارة قبل التحويل.';return}
+  if(phone.replace(/\D/g,'').length<8){err.textContent='اكتب رقم هاتف صحيح.';return}
+  if(paymentMethod==='almadar'&&sender.replace(/\D/g,'').length<8){err.textContent='اكتب رقم الهاتف الذي حوّلت منه.';return}
+  if(paymentMethod==='almadar'&&!settings.almadar_number){err.textContent='رقم استلام المدار غير مضبوط حاليًا. تواصل مع الإدارة قبل التحويل.';return}
   submit.disabled=true;submit.textContent='جارٍ تسجيل الطلب...';err.textContent='';
   try{
-   const r=await sb.rpc('create_guest_purchase_request',{p_items:items,p_customer_name:name,p_customer_phone:phone,p_payment_method:paymentMethod,p_sender_phone:sender,p_payment_reference:reference||null});
+   const r=await sb.rpc('create_guest_purchase_request',{p_items:items,p_customer_name:name,p_customer_phone:phone,p_payment_method:paymentMethod,p_sender_phone:paymentMethod==='libyana'?phone:sender,p_payment_reference:reference||(paymentMethod==='libyana'?'USSD requested':null)});
    if(r.error)throw r.error;
    const request=r.data||{},requestId=request.id||'';
    cart={};cartOptions={};
-   modal.querySelector('.lc-modal-card').innerHTML='<div style="font-size:40px;margin-bottom:10px">✅</div><h2>تم تسجيل طلبك</h2><p>رقم الطلب: <b dir="ltr">'+esc(String(requestId).slice(-8).toUpperCase())+'</b></p><div style="padding:14px;background:#17133f;color:#fff;border-radius:12px;margin:14px 0"><div>الإجمالي المطلوب</div><b style="font-size:23px">'+money(request.total??total)+'</b></div><p>طريقة الدفع: <b>'+(paymentMethod==='libyana'?'ليبيانا':'المدار')+'</b></p><p>حالة الطلب: <b>بانتظار مراجعة الدفع</b></p><p class="muted">احتفظ برقم الطلب. سيتم التحقق من الحوالة ثم تجهيز المنتج.</p><button type="button" class="btn primary" id="lcPaymentDone" style="width:100%">تم</button>';
-   modal.querySelector('#lcPaymentDone').onclick=()=>{close();renderCart();refreshProductStock()};
+   if(paymentMethod==='libyana'){
+     const code=ussdCode();
+     modal.querySelector('.lc-modal-card').innerHTML='<div style="font-size:40px;margin-bottom:10px">📞</div><h2>تم تسجيل طلب الباقة</h2><p>رقم الطلب: <b dir="ltr">'+esc(String(requestId).slice(-8).toUpperCase())+'</b></p><div style="padding:14px;background:#17133f;color:#fff;border-radius:12px;margin:14px 0"><div>المبلغ المطلوب</div><b style="font-size:23px">'+money(total)+'</b><div style="margin-top:8px">كود الاتصال</div><code dir="ltr" style="font-size:18px;word-break:break-all">'+esc(code)+'</code></div><p>اضغط اتصال، وراجع المبلغ ثم أكد العملية من شاشة هاتفك.</p><p class="muted">حالة الطلب: بانتظار التحقق من الدفع. لا يظهر تأكيد الخصم تلقائيًا داخل المتجر.</p><button type="button" class="btn primary" id="lcCallUssd" style="width:100%">📞 اتصال بكود الدفع</button><button type="button" class="btn" id="lcPaymentDone" style="width:100%;margin-top:8px">إغلاق</button>';
+     modal.querySelector('#lcCallUssd').onclick=()=>{if(!code)return alert('تعذر إنشاء كود صالح لهذا المبلغ.');window.location.href='tel:'+code.replace('#','%23')};
+     modal.querySelector('#lcPaymentDone').onclick=()=>{close();renderCart();refreshProductStock()};
+   }else{
+     modal.querySelector('.lc-modal-card').innerHTML='<div style="font-size:40px;margin-bottom:10px">✅</div><h2>تم تسجيل طلبك</h2><p>رقم الطلب: <b dir="ltr">'+esc(String(requestId).slice(-8).toUpperCase())+'</b></p><div style="padding:14px;background:#17133f;color:#fff;border-radius:12px;margin:14px 0"><div>الإجمالي المطلوب</div><b style="font-size:23px">'+money(request.total??total)+'</b></div><p>طريقة الدفع: <b>المدار</b></p><p>حالة الطلب: <b>بانتظار مراجعة الدفع</b></p><p class="muted">احتفظ برقم الطلب. سيتم التحقق من التحويل ثم تجهيز المنتج.</p><button type="button" class="btn primary" id="lcPaymentDone" style="width:100%">تم</button>';
+     modal.querySelector('#lcPaymentDone').onclick=()=>{close();renderCart();refreshProductStock()};
+   }
   }catch(error){
    console.error('direct payment request failed:',error);
    err.textContent=humanOrderError(error);
-   submit.disabled=false;submit.textContent='إرسال الطلب للمراجعة';
+   submit.disabled=false;renderInstructions();
   }
  };
 }
