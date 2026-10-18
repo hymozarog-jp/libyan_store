@@ -60,3 +60,7 @@ https://supabase.com/docs/guides/auth/third-party/firebase-auth
 ## Audit history (2026-10-18)
 
 Read-only review confirmed the current auth flow and live schema constraints. No auth code, production rows, database schema, RLS policies, secrets, or live deployment were changed by the audit.
+
+## Next action
+
+The Firebase Web SDK configuration has been received. Client configuration alone does not authorize changing production authentication. Validate the Supabase third-party provider configuration and identity ownership model before enabling Firebase sign-in.
