@@ -22,7 +22,8 @@
     {src:'topup-status.js?v=20260919-1'},
     {src:'product-images.js?v=20260924-11'},
     {src:'theme.js?v=20261018-wallet-1'},
-    {src:'restore-layout.js?v=1'}
+    {src:'restore-layout.js?v=1'},
+    {src:'direct-payment.js?v=20261018-1'}
   ];
   function loadScript(src,timeout){
     return new Promise(function(resolve,reject){var s=document.createElement('script'),done=false,t=setTimeout(function(){if(!done){done=true;s.remove();reject(new Error('timeout: '+src))}},timeout||8000);s.onload=function(){if(!done){done=true;clearTimeout(t);resolve()}};s.onerror=function(){if(!done){done=true;clearTimeout(t);s.remove();reject(new Error('load: '+src))}};s.src=src;document.head.appendChild(s);});
