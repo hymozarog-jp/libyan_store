@@ -307,74 +307,44 @@ const robuxOldPrices={'روبلوكس 100':20,'روبلوكس 200':40,'روبل�
 function renderProducts(){
   const view=el('view');if(!view)return;
   const imageFor=p=>typeof productImage==='function'?productImage(p.name):'';
-  const categoryTitle=category=>category==='Netflix'?'اشتراكات نتفلكس':category;
+  const categoryTitle=c=>c==='Netflix'?'اشتراكات نتفلكس':c;
   const categories=[...new Set(products.map(p=>String(p.category||'رقمي').trim()||'رقمي'))];
-  const packageCards=products.map(p=>{
-    const img=imageFor(p);
-    const isRobux=/roblox|robux|روبلوكس|روبوكس/i.test(String(p.name||'')+' '+String(p.category||''));
-    const available=Boolean(p.always_available)||Number(p.stock_count||0)>0;
-    const stockText=p.always_available?'متوفر دائمًا':available?'متوفر الآن':'غير متوفر حاليًا';
-    const stockClass=available?'available':'unavailable';
-    const category=String(p.category||'رقمي').trim()||'رقمي';
-    const desc=String(p.description||'').trim();
-    if(isRobux){
-      return '<article class="lc-package-card lc-robux-card '+(available?'is-available':'is-unavailable')+'">'+
-        '<div class="lc-robux-art">'+
-          '<button type="button" class="lc-package-main" data-product-open="'+p.id+'" aria-label="تفاصيل '+esc(p.name)+'">'+
-            '<div class="lc-robux-media">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">R$</div>')+'<span class="lc-robux-value">'+(String(p.name).match(/\\d[\\d,.]*/)?.[0]||'R
-    }
-    return '<article class="lc-package-card">'+
-      '<button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
-        '<div class="lc-package-media">'+
-          (img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>')+
-          '<span class="lc-package-category">'+esc(categoryTitle(category))+'</span><span class="lc-package-discount">خصم</span>'+
-        '</div>'+
-        '<div class="lc-package-content">'+
-          '<div class="lc-package-head"><h3>'+esc(p.name)+'</h3><span class="lc-package-status '+stockClass+'">'+esc(stockText)+'</span></div>'+
-          (desc?'<p class="lc-package-description">'+esc(desc)+'</p>':'<p class="lc-package-description">باقة رقمية جاهزة للشراء والتسليم.</p>')+
-          '<div class="lc-package-footer"><div class="lc-package-pricing"><span class="lc-package-old-price">'+money(robuxOldPrices[p.name]||0)+'</span><span class="lc-package-price">'+money(p.price)+'</span><small>السعر بعد الخصم</small></div><span class="lc-package-open">عرض الباقة ←</span></div>'+
-        '</div>'+
-      '</button>'+
-    '</article>';
-  }).join('');
-  const filters='<button type="button" class="lc-filter-chip active" data-package-filter="all">الكل <span>'+products.length+'</span></button>'+
-    categories.map(c=>'<button type="button" class="lc-filter-chip" data-package-filter="'+esc(c)+'">'+esc(categoryTitle(c))+' <span>'+products.filter(p=>String(p.category||'رقمي').trim()===c).length+'</span></button>').join('');
   const welcomeName=String(profile?.full_name||session?.user?.user_metadata?.full_name||session?.user?.email?.split('@')[0]||'عميلنا').trim();
   const avatarUrl=getAccountAvatarUrl();
-  view.innerHTML='<section class="lc-packages-page">'+
-    '<header class="ls-storebar">'+
-      '<button type="button" class="ls-account-chip" data-store-account aria-label="حسابي"><span class="ls-avatar">'+(avatarUrl?'<img src="'+esc(avatarUrl)+'" alt="" referrerpolicy="no-referrer">':esc(welcomeName.slice(0,1).toUpperCase()))+'</span><span><small>أهلاً بيك</small><b>'+esc(welcomeName)+'</b></span></button>'+
-      '<div class="ls-store-actions"><button type="button" class="ls-top-action" data-store-notifications aria-label="الإشعارات">♧<i>3</i></button><div class="ls-balance"><span>◉</span><b>0.000</b><small>د.ل</small></div><button type="button" class="ls-top-action ls-menu-button" data-store-menu aria-label="القائمة">☰</button></div>'+
-    '</header>'+
-    '<div class="ls-welcome-line"><span class="ls-live-dot"></span> متجرك للألعاب والشحن الرقمي</div>'+
-    '<div class="lc-packages-hero"><div><span class="lc-category-kicker">LIBYAN STORE</span><h1>اختار باقتك 🎮</h1><p>باقات Robux بأسعار واضحة وبخطوات شراء سهلة.</p></div><div class="lc-packages-count"><b>'+products.length+'</b><span>باقة</span></div></div>'+
-    '<div class="lc-package-filters" aria-label="فلترة الباقات">'+filters+'</div>'+
-    (packageCards?'<div class="lc-package-grid" id="packageGrid">'+packageCards+'</div>':'<div class="lc-empty">لا توجد باقات متاحة حاليًا.</div>')+
-    '<div id="cartBox" style="margin-top:18px"></div>'+
-  '</section>';
+  const packageCards=products.map(p=>{
+    const img=imageFor(p),isRobux=/roblox|robux|روبلوكس|روبوكس/i.test(String(p.name||'')+' '+String(p.category||''));
+    const available=Boolean(p.always_available)||Number(p.stock_count||0)>0;
+    const stockClass=available?'available':'unavailable';
+    const stockText=p.always_available?'متوفر دائمًا':available?'متوفر الآن':'غير متوفر حاليًا';
+    const category=String(p.category||'رقمي').trim()||'رقمي',desc=String(p.description||'').trim();
+    if(isRobux){
+      const match=String(p.name||'').match(/\d[\d,.]*/);
+      return `<article class="lc-package-card lc-robux-card ${available?'is-available':'is-unavailable'}">
+        <div class="lc-robux-art"><button type="button" class="lc-package-main" data-product-open="${p.id}" aria-label="تفاصيل ${esc(p.name)}">
+          <div class="lc-robux-media">${img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">R&#36;</div>'}<span class="lc-robux-value">${esc(match?.[0]||'R$')}</span></div>
+        </button><div class="lc-robux-actions"><button type="button" class="lc-icon-action" data-product-info="${p.id}" aria-label="معلومات المنتج">?</button><button type="button" class="lc-icon-action lc-favorite" data-favorite="${p.id}" aria-label="المفضلة">☆</button></div></div>
+        <div class="lc-robux-content"><h3>${esc(p.name)}</h3><strong class="lc-robux-price">${money(p.price)}</strong><span class="lc-robux-status ${stockClass}">${available?'● متوفر':'غير متوفر'}</span>${available?'<button type="button" class="lc-buy-button" data-product-open="'+p.id+'">شراء الآن ←</button>':'<span class="lc-out-button">غير متوفر</span>'}</div></article>`;
+    }
+    return `<article class="lc-package-card"><button type="button" class="lc-package-main" data-product-open="${p.id}">
+      <div class="lc-package-media">${img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>'}<span class="lc-package-category">${esc(categoryTitle(category))}</span></div>
+      <div class="lc-package-content"><div class="lc-package-head"><h3>${esc(p.name)}</h3><span class="lc-package-status ${stockClass}">${esc(stockText)}</span></div>
+      <p class="lc-package-description">${esc(desc||'باقة رقمية جاهزة للشراء والتسليم.')}</p><div class="lc-package-footer"><strong class="lc-package-price">${money(p.price)}</strong><span class="lc-package-open">عرض الباقة ←</span></div></div></button></article>`;
+  }).join('');
+  const filters='<button type="button" class="lc-filter-chip active" data-package-filter="all">الكل <span>'+products.length+'</span></button>'+categories.map(c=>'<button type="button" class="lc-filter-chip" data-package-filter="'+esc(c)+'">'+esc(categoryTitle(c))+' <span>'+products.filter(p=>String(p.category||'رقمي').trim()===c).length+'</span></button>').join('');
+  view.innerHTML=`<section class="lc-packages-page"><header class="ls-storebar">
+    <button type="button" class="ls-account-chip" data-store-account aria-label="حسابي"><span class="ls-avatar">${avatarUrl?'<img src="'+esc(avatarUrl)+'" alt="" referrerpolicy="no-referrer">':esc(welcomeName.slice(0,1).toUpperCase())}</span><span><small>أهلاً بيك</small><b>${esc(welcomeName)}</b></span></button>
+    <div class="ls-store-actions"><button type="button" class="ls-top-action" data-store-notifications aria-label="الإشعارات">♧<i>3</i></button><div class="ls-balance"><span>◉</span><b>0.000</b><small>د.ل</small></div><button type="button" class="ls-top-action" data-store-menu aria-label="القائمة">☰</button></div>
+    </header><div class="ls-welcome-line"><span class="ls-live-dot"></span> متجرك للألعاب والشحن الرقمي</div>
+    <div class="lc-packages-hero"><div><span class="lc-category-kicker">LIBYAN STORE</span><h1>اختار باقتك 🎮</h1><p>باقات Robux بأسعار واضحة وبخطوات شراء سهلة.</p></div><div class="lc-packages-count"><b>${products.length}</b><span>باقة</span></div></div>
+    <div class="lc-package-filters" aria-label="فلترة الباقات">${filters}</div>${packageCards?'<div class="lc-package-grid" id="packageGrid">'+packageCards+'</div>':'<div class="lc-empty">لا توجد باقات متاحة حاليًا.</div>'}<div id="cartBox" style="margin-top:18px"></div></section>`;
   const bindProducts=()=>document.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productOpen);if(p)showProduct(p)});
   bindProducts();
-  document.querySelectorAll('[data-favorite]').forEach(btn=>{
-    const key='libyan-store-favorites';
-    let fav=[];try{fav=JSON.parse(localStorage.getItem(key)||'[]')}catch(e){}
-    const id=btn.dataset.favorite;const active=fav.includes(id);
-    btn.classList.toggle('is-favorite',active);btn.textContent=active?'★':'☆';
-    btn.onclick=()=>{let list=[];try{list=JSON.parse(localStorage.getItem(key)||'[]')}catch(e){};const has=list.includes(id);list=has?list.filter(x=>x!==id):[...list,id];try{localStorage.setItem(key,JSON.stringify(list))}catch(e){}btn.classList.toggle('is-favorite',!has);btn.textContent=has?'☆':'★';btn.setAttribute('aria-label',has?'إضافة للمفضلة':'إزالة من المفضلة')};
-  });
-  document.querySelectorAll('[data-product-info]').forEach(btn=>btn.onclick=()=>{const p=products.find(x=>x.id===btn.dataset.productInfo);if(p)alert(p.name+'\\n\\n'+(p.description||'باقة Robux رقمية')+'\\nالسعر: '+money(p.price))});
-  document.querySelectorAll('[data-store-account]').forEach(btn=>btn.onclick=()=>{if(typeof renderAccount==='function')renderAccount();else if(typeof showAccount==='function')showAccount();else alert('سجّل الدخول أو افتح القائمة للوصول إلى حسابك.')});
+  document.querySelectorAll('[data-favorite]').forEach(btn=>{let fav=[];try{fav=JSON.parse(localStorage.getItem('libyan-store-favorites')||'[]')}catch(e){}const id=btn.dataset.favorite,active=fav.includes(id);btn.textContent=active?'★':'☆';btn.classList.toggle('is-favorite',active);btn.onclick=()=>{let list=[];try{list=JSON.parse(localStorage.getItem('libyan-store-favorites')||'[]')}catch(e){}const has=list.includes(id);list=has?list.filter(x=>x!==id):[...list,id];try{localStorage.setItem('libyan-store-favorites',JSON.stringify(list))}catch(e){}btn.textContent=has?'☆':'★';btn.classList.toggle('is-favorite',!has)}});
+  document.querySelectorAll('[data-product-info]').forEach(btn=>btn.onclick=()=>{const p=products.find(x=>x.id===btn.dataset.productInfo);if(p)alert(p.name+'\\n'+(p.description||'باقة رقمية')+'\\nالسعر: '+money(p.price))});
+  document.querySelectorAll('[data-store-account]').forEach(btn=>btn.onclick=()=>alert('استخدم القائمة للوصول إلى حسابك.'));
   document.querySelectorAll('[data-store-notifications]').forEach(btn=>btn.onclick=()=>alert('لا توجد إشعارات جديدة لعرضها الآن.'));
-  document.querySelectorAll('[data-store-menu]').forEach(btn=>btn.onclick=()=>{const nav=document.querySelector('.nav,.rb-nav');if(nav){nav.classList.toggle('ls-nav-open');nav.scrollIntoView({behavior:'smooth',block:'nearest'})}else alert('استخدم شريط التنقل أسفل الشاشة للوصول للأقسام.')});
-  document.querySelectorAll('[data-package-filter]').forEach(btn=>btn.onclick=()=>{
-    document.querySelectorAll('[data-package-filter]').forEach(x=>x.classList.remove('active'));
-    btn.classList.add('active');
-    const category=btn.dataset.packageFilter;
-    document.querySelectorAll('.lc-package-card').forEach(card=>{
-      const productId=card.querySelector('[data-product-open]')?.dataset.productOpen;
-      const p=products.find(x=>x.id===productId);
-      card.style.display=category==='all'||String(p?.category||'رقمي').trim()===category?'':'none';
-    });
-  });
+  document.querySelectorAll('[data-store-menu]').forEach(btn=>btn.onclick=()=>{const nav=document.querySelector('.nav,.rb-nav');if(nav)nav.scrollIntoView({behavior:'smooth',block:'nearest'});else alert('استخدم شريط التنقل أسفل الشاشة.')});
+  document.querySelectorAll('[data-package-filter]').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('[data-package-filter]').forEach(x=>x.classList.remove('active'));btn.classList.add('active');const category=btn.dataset.packageFilter;document.querySelectorAll('.lc-package-card').forEach(card=>{const id=card.querySelector('[data-product-open]')?.dataset.productOpen;const p=products.find(x=>x.id===id);card.style.display=category==='all'||String(p?.category||'رقمي').trim()===category?'':'none'})});
   renderCart();
 }
 function renderCategory(category){
