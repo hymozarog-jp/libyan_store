@@ -22,3 +22,56 @@ body:before{display:none!important}
 @media(max-width:390px){.rb-products{grid-template-columns:1fr}.rb-product{display:grid;grid-template-columns:110px 1fr}.rb-product-art{height:100%;min-height:170px;border-bottom:0;border-left:1px solid var(--rb-line)}.rb-product-art>span{font-size:32px}.rb-product-info{padding:12px}.rb-product p{min-height:0}.rb-price{margin:10px 0}}
 
 .rb-balance{display:flex;align-items:center;gap:10px;margin:0 0 18px;padding:13px 16px;border:1px solid #39315e;border-radius:16px;background:linear-gradient(110deg,#19172f,#131a2a);box-shadow:0 8px 24px #0002}.rb-balance span{color:var(--rb-muted);font-size:13px}.rb-balance strong{font-size:22px;letter-spacing:.5px;color:var(--rb-cyan);font-variant-numeric:tabular-nums}.rb-balance small{color:var(--rb-muted);font-size:12px}.rb-detail-view{padding-bottom:24px}.rb-detail-view .lc-back-btn{margin:12px 0}.rb-detail-view .lc-detail-card{margin-bottom:16px}
+
+
+/* Libyan Store black + green refresh */
+:root{--rb-bg:#070909;--rb-card:#101513;--rb-line:#26352b;--rb-violet:#38d96b;--rb-cyan:#7cff9a;--rb-text:#f5fff7;--rb-muted:#9baea0}
+html,body{background:#070909!important;color:#f5fff7!important}
+body{background:radial-gradient(ellipse at 50% -12%,#16341f 0,transparent 45%),#070909!important}
+.shell{padding-top:12px!important}
+.lc-packages-page{padding-top:2px}
+.ls-storebar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0 14px}
+.ls-account-chip{display:flex;align-items:center;gap:9px;min-width:0;padding:5px 10px 5px 5px;border:1px solid #26382c;border-radius:15px;background:#101713;color:#f5fff7;text-align:right}
+.ls-avatar{width:42px;height:42px;display:grid;place-items:center;overflow:hidden;border-radius:50%;background:#1b3825;color:#7cff9a;font-weight:900}
+.ls-avatar img{width:100%;height:100%;object-fit:cover}
+.ls-account-chip small,.ls-account-chip b{display:block}.ls-account-chip small{font-size:10px;color:#8fa395}.ls-account-chip b{max-width:105px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.ls-store-actions{display:flex;align-items:center;gap:7px}
+.ls-top-action{position:relative;width:39px;height:39px;border:1px solid #2b3b30;border-radius:13px;background:#111813;color:#e9fff0;font-size:20px}
+.ls-top-action i{position:absolute;top:-6px;right:-5px;display:grid;place-items:center;width:17px;height:17px;border-radius:50%;background:#39d66b;color:#051109;font-size:10px;font-style:normal;font-weight:950;border:2px solid #070909}
+.ls-balance{display:flex;align-items:center;gap:5px;padding:9px 10px;border:1px solid #285536;border-radius:13px;background:#102318;white-space:nowrap}
+.ls-balance span{color:#6cf18e}.ls-balance b{font-size:13px;color:#85ffa2;font-variant-numeric:tabular-nums}.ls-balance small{font-size:10px;color:#a4b9aa}
+.ls-welcome-line{display:flex;align-items:center;gap:7px;color:#9eb3a3;font-size:11px;margin:0 0 10px}
+.ls-live-dot{width:7px;height:7px;border-radius:50%;background:#42e978;box-shadow:0 0 9px #42e97877}
+.lc-packages-hero{margin:8px 0 13px!important;padding:20px 16px!important;border-color:#294a32!important;background:radial-gradient(ellipse at 100% 0%,#1b4929 0,transparent 50%),linear-gradient(135deg,#121b15,#0b100d)!important;border-radius:20px!important}
+.lc-packages-hero h1{color:#f4fff5!important;font-size:25px!important}.lc-packages-hero p{color:#9db3a2!important}.lc-packages-count{background:#173923!important;border-color:#2c7541!important;color:#87ffa2}
+.lc-package-filters{gap:7px}.lc-filter-chip{background:#101612!important;border-color:#2b3b30!important;color:#b5c6b9!important}.lc-filter-chip.active{background:#36d66a!important;border-color:#36d66a!important;color:#06120a!important}
+.lc-package-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important}
+.lc-package-card{background:#101411!important;border:1px solid #27362b!important;border-radius:17px!important;box-shadow:0 6px 18px #0004!important}
+.lc-robux-card{overflow:hidden}
+.lc-robux-art{position:relative;background:#030504}
+.lc-robux-card .lc-package-main{display:block}
+.lc-robux-media{position:relative!important;aspect-ratio:1/1!important;padding:14px!important;background:#030504!important;border:0!important}
+.lc-robux-media img{object-fit:contain!important;filter:none!important}
+.lc-robux-value{position:absolute;bottom:9px;left:9px;padding:3px 8px;border-radius:8px;background:#101b13e8;border:1px solid #4de87955;color:#8bffa5;font-weight:950;font-size:12px}
+.lc-robux-actions{position:absolute;top:8px;right:8px;display:flex;gap:6px}
+.lc-icon-action{width:28px;height:28px;display:grid;place-items:center;border:1px solid #ffffff26;border-radius:9px;background:#111711e8;color:#d8eadd;font-weight:900;font-size:15px}
+.lc-icon-action.is-favorite{background:#1b3f25;color:#8bffa5;border-color:#45db6d}
+.lc-robux-content{align-items:stretch!important;gap:7px!important;padding:11px 10px 12px!important;text-align:center}
+.lc-robux-content h3{font-size:13px!important;color:#f2fff4;min-height:2.7em;display:flex;align-items:center;justify-content:center}
+.lc-robux-price{font-size:17px!important;color:#8bffa5!important}
+.lc-robux-status{align-self:center;font-size:10px!important;padding:3px 8px!important}
+.lc-robux-status.available{background:#153c22!important;color:#81ffa0!important}
+.lc-robux-status.unavailable{background:#302020!important;color:#ff9d9d!important}
+.lc-buy-button,.lc-out-button{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:11px;padding:10px 7px;font-size:12px;font-weight:900}
+.lc-buy-button{background:#39d96b;color:#06130a}.lc-buy-button span{font-size:16px}.lc-out-button{background:#292d2a;color:#858d87}
+.lc-robux-card.is-unavailable .lc-robux-art img{opacity:.42;filter:grayscale(1)!important}
+.lc-robux-card.is-unavailable .lc-robux-content{opacity:.8}
+.lc-package-price,.lc-package-pricing .lc-package-price{color:#8bffa5!important}
+.lc-package-status.available{color:#81ffa0!important;background:#153c22!important}
+.lc-package-status.unavailable{color:#ff9d9d!important;background:#302020!important}
+.btn.primary{background:#39d96b!important;border-color:#39d96b!important;color:#06130a!important}
+.nav,.rb-nav{background:#0d130f!important;border-color:#27382c!important}
+.nav button.active,.rb-nav button.active{color:#83ffa0!important;background:#173221!important}
+.nav button:hover{background:#16241a!important;color:#fff!important}
+@media(max-width:699px){.shell{padding:10px 10px 100px!important}.lc-packages-hero h1{font-size:22px!important}.lc-package-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}.lc-robux-media{padding:8px!important}.lc-robux-content{padding:9px 7px 10px!important}.lc-robux-content h3{font-size:12px!important}.lc-robux-price{font-size:15px!important}.lc-buy-button,.lc-out-button{padding:9px 5px;font-size:11px}.ls-account-chip{gap:7px;padding-right:7px}.ls-avatar{width:36px;height:36px}.ls-account-chip b{max-width:74px;font-size:12px}.ls-top-action{width:34px;height:36px}.ls-balance{gap:4px;padding:8px 7px}.ls-balance b{font-size:11px}.ls-balance small{font-size:9px}}
+@media(max-width:360px){.ls-store-actions{gap:4px}.ls-top-action{width:30px}.ls-balance{padding:7px 5px}.lc-package-grid{gap:7px!important}.lc-robux-content h3{font-size:11px!important}}
