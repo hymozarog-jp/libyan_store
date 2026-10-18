@@ -2,22 +2,10 @@
   const robuxOnly = p => /roblox|robux|روبلوكس|روبوكس/i.test([p.name,p.category].join(' '));
   const imageFor = p => typeof productImage==='function' ? productImage(p.name) : '';
   window.renderStore = function(){
-    app.innerHTML = '<div class="rb-shell" dir="rtl"><header class="rb-header"><div class="rb-brand"><span class="rb-logo">R</span><div><b>Robux ليبيا</b><small>متجر شحن روبلوكس</small></div></div><button class="rb-menu" id="rbMenu">☰</button></header><section class="rb-balance"><span>رصيدي</span><strong id="rbBalanceAmount">0.0000</strong><small>د.ل</small></section><div id="rbStoreContent"><section class="rb-hero"><div class="rb-hero-tag">⚡ شحن سريع وبسيط</div><h1>عالمك في روبلوكس،<br><em>أقرب مما تتخيل</em></h1><p>اختار باقة Robux المناسبة ليك، وشوف السعر والتوفر قبل ما تطلب.</p><div class="rb-hero-stat"><span>باقات رقمية</span><b>Robux فقط</b></div><div class="rb-orb rb-orb-one"></div><div class="rb-orb rb-orb-two"></div></section><section class="rb-toolbar"><label class="rb-search">⌕ <input id="rbSearch" placeholder="دور على باقة Robux..." /></label><span id="rbCount" class="rb-count"></span></section><section id="rbProducts" class="rb-products"></section><div id="rbEmpty" class="rb-empty" hidden>ما فيش باقات Robux متوفرة حالياً.</div></div><div id="view" class="rb-detail-view" style="display:none"></div><nav class="rb-nav"><button data-rb-view="store" class="active">⌂<small>الرئيسية</small></button><button data-rb-view="orders">▤<small>طلباتي</small></button><button data-rb-view="wallet">◈<small>رصيدي</small></button><button data-rb-view="account">◉<small>حسابي</small></button></nav></div>';
-    const balanceAmount=document.getElementById('rbBalanceAmount');
-    const paintBalance=value=>{const formatted=Number(value).toFixed(4);const node=document.getElementById('rbBalanceAmount');if(node)node.textContent=formatted;};
-    if(balanceAmount) balanceAmount.textContent=(typeof wallet!=='undefined' && wallet && wallet.balance!=null && Number.isFinite(Number(wallet.balance))) ? Number(wallet.balance).toFixed(4) : '—';
-    // Fetch the signed-in customer's balance directly; do not rely on a stale global value.
-    (async()=>{try{
-      if(typeof sb==='undefined'||!sb||typeof session==='undefined'||!session?.user?.id)return;
-      const result=await sb.from('wallets').select('balance').eq('user_id',session.user.id).maybeSingle();
-      if(result.error){console.warn('Customer wallet refresh failed:',result.error);return;}
-      wallet=result.data||{balance:0};
-      const value=Number(wallet.balance);
-      if(Number.isFinite(value))paintBalance(value);else{const node=document.getElementById('rbBalanceAmount');if(node)node.textContent='—';}
-    }catch(error){console.warn('Customer wallet refresh failed:',error)}})();
+    app.innerHTML = '<div class="rb-shell" dir="rtl"><header class="rb-header"><div class="rb-brand"><span class="rb-logo">R</span><div><b>Robux ليبيا</b><small>متجر شحن روبلوكس</small></div></div><button class="rb-menu" id="rbMenu">☰</button></header><div id="rbStoreContent"><section class="rb-hero"><div class="rb-hero-tag">⚡ شحن سريع وبسيط</div><h1>عالمك في روبلوكس،<br><em>أقرب مما تتخيل</em></h1><p>اختار باقة Robux المناسبة ليك، وشوف السعر والتوفر قبل ما تطلب.</p><div class="rb-hero-stat"><span>باقات رقمية</span><b>Robux فقط</b></div><div class="rb-orb rb-orb-one"></div><div class="rb-orb rb-orb-two"></div></section><section class="rb-toolbar"><label class="rb-search">⌕ <input id="rbSearch" placeholder="دور على باقة Robux..." /></label><span id="rbCount" class="rb-count"></span></section><section id="rbProducts" class="rb-products"></section><div id="rbEmpty" class="rb-empty" hidden>ما فيش باقات Robux متوفرة حالياً.</div></div><div id="view" class="rb-detail-view" style="display:none"></div><nav class="rb-nav"><button data-rb-view="store" class="active">⌂<small>الرئيسية</small></button><button data-rb-view="orders">▤<small>طلباتي</small></button><button data-rb-view="account">◉<small>حسابي</small></button></nav></div>';
     const menu=document.getElementById('rbMenu');
-    menu.onclick=()=>{const choices=[['الرئيسية','store'],['طلباتي','orders'],['رصيدي','wallet'],['حسابي','account']];const answer=prompt('اكتب رقم الصفحة:\n1 الرئيسية\n2 طلباتي\n3 رصيدي\n4 حسابي');const v=choices[Number(answer)-1]?.[1];if(v==='store'){renderStore();return;}if(v){const store=document.getElementById('rbStoreContent'),view=document.getElementById('view');if(store)store.style.display='none';if(view)view.style.display='block';({orders:renderOrders,wallet:renderWallet,account:renderAccount}[v])?.();}};
-    document.querySelectorAll('[data-rb-view]').forEach(b=>b.onclick=()=>{const v=b.dataset.rbView;if(v==='store'){renderStore();return;}const store=document.getElementById('rbStoreContent'),view=document.getElementById('view');if(store)store.style.display='none';if(view)view.style.display='block';({wallet:renderWallet,cart:renderCartPage,orders:renderOrders,account:renderAccount}[v])?.();});
+    menu.onclick=()=>{const choices=[['الرئيسية','store'],['طلباتي','orders'],['حسابي','account']];const answer=prompt('اكتب رقم الصفحة:\n1 الرئيسية\n2 طلباتي\n3 حسابي');const v=choices[Number(answer)-1]?.[1];if(v==='store'){renderStore();return;}if(v){const store=document.getElementById('rbStoreContent'),view=document.getElementById('view');if(store)store.style.display='none';if(view)view.style.display='block';({orders:renderOrders,account:renderAccount}[v])?.();}};
+    document.querySelectorAll('[data-rb-view]').forEach(b=>b.onclick=()=>{const v=b.dataset.rbView;if(v==='store'){renderStore();return;}const store=document.getElementById('rbStoreContent'),view=document.getElementById('view');if(store)store.style.display='none';if(view)view.style.display='block';({cart:renderCartPage,orders:renderOrders,account:renderAccount}[v])?.();});
     window.renderProducts();
   };
   window.renderProducts=function(){
@@ -39,4 +27,4 @@
   };
   if(typeof products!=='undefined'&&products.length)window.renderStore();
 })();
-(function(){const originalCheckout=window.checkout;if(typeof originalCheckout==='function'){window.checkout=async function(){await originalCheckout();const amount=document.getElementById('rbBalanceAmount');if(amount)amount.textContent=Number(wallet?.balance||0).toFixed(4);};}})();
+
