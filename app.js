@@ -354,6 +354,8 @@ function renderProducts(){
   '</section>';
   const bindProducts=()=>document.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productOpen);if(p)showProduct(p)});
   bindProducts();
+  document.querySelectorAll('[data-favorite]').forEach(btn=>{let fav=[];try{fav=JSON.parse(localStorage.getItem('libyan-store-favorites')||'[]')}catch(e){}const id=btn.dataset.favorite;const active=fav.includes(id);btn.textContent=active?'★':'☆';btn.classList.toggle('is-favorite',active);btn.onclick=()=>{let list=[];try{list=JSON.parse(localStorage.getItem('libyan-store-favorites')||'[]')}catch(e){}const has=list.includes(id);list=has?list.filter(x=>x!==id):list.concat(id);try{localStorage.setItem('libyan-store-favorites',JSON.stringify(list))}catch(e){}btn.textContent=has?'☆':'★';btn.classList.toggle('is-favorite',!has)}});
+  document.querySelectorAll('[data-product-info]').forEach(btn=>btn.onclick=()=>{const p=products.find(x=>x.id===btn.dataset.productInfo);if(p)alert(p.name+'\\nالسعر: '+money(p.price)+'\\n'+(p.description||'باقة رقمية'))});
   document.querySelectorAll('[data-package-filter]').forEach(btn=>btn.onclick=()=>{
     document.querySelectorAll('[data-package-filter]').forEach(x=>x.classList.remove('active'));
     btn.classList.add('active');
