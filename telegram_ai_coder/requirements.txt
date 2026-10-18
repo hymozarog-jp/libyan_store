@@ -1,2 +1,2 @@
-python-telegram-bot==22.5
+python-telegram-bot[webhooks]==22.5
 httpx>=0.27,<1
