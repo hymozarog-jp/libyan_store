@@ -320,6 +320,16 @@ async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 def main() -> None:
+    # Render Free sleeps when idle, so use Telegram webhooks rather than long polling.
+    public_url = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("PUBLIC_URL", "")
+    webhook_path = os.getenv("WEBHOOK_PATH", "")
+    webhook_secret = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
+    if not public_url.startswith("https://"):
+        raise RuntimeError("Set RENDER_EXTERNAL_URL automatically via Render, or provide PUBLIC_URL with HTTPS.")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{16,128}", webhook_path):
+        raise RuntimeError("Set WEBHOOK_PATH to a random 16-128 character URL-safe secret.")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,256}", webhook_secret):
+        raise RuntimeError("Set TELEGRAM_WEBHOOK_SECRET to a URL-safe Telegram webhook secret.")
     app = Application.builder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("id", show_id))
     app.add_handler(CommandHandler("start", start))
@@ -328,7 +338,14 @@ def main() -> None:
     app.add_handler(CommandHandler("status", status))
     app.add_handler(CommandHandler("task", task))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.getenv("PORT", "10000")),
+        url_path=webhook_path,
+        webhook_url=f"{public_url.rstrip('/')}/{webhook_path}",
+        secret_token=webhook_secret,
+        allowed_updates=Update.ALL_TYPES,
+    )
 
 
 if __name__ == "__main__":
