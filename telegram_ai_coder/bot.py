@@ -1,4 +1,3 @@
-import asyncio
 import base64
 import json
 import logging
@@ -98,7 +97,8 @@ class GitHub:
         meta = await self.get(f"/repos/{repo}")
         branch = meta["default_branch"]
         ref = await self.get(f"/repos/{repo}/git/ref/heads/{branch}")
-        tree = await self.get(f"/repos/{repo}/git/trees/{ref['object']['sha']}?recursive=1")
+        commit = await self.get(f"/repos/{repo}/git/commits/{ref['object']['sha']}")
+        tree = await self.get(f"/repos/{repo}/git/trees/{commit['tree']['sha']}?recursive=1")
         candidates = [
             item for item in tree.get("tree", [])
             if item.get("type") == "blob"
@@ -187,6 +187,15 @@ async def ask_gemini(prompt: str) -> str:
         response.raise_for_status()
         data = response.json()
         return data["candidates"][0]["content"]["parts"][0]["text"]
+
+
+async def show_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Safe onboarding helper: reveals only the Telegram ID of the account invoking it.
+    user = update.effective_user
+    if user and update.effective_message:
+        await update.effective_message.reply_text(
+            f"Telegram ID: {user.id}\nأضف الرقم هذا إلى ALLOWED_TELEGRAM_USER_IDS في إعدادات الاستضافة."
+        )
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -312,6 +321,7 @@ async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 def main() -> None:
     app = Application.builder().token(TELEGRAM_TOKEN).build()
+    app.add_handler(CommandHandler("id", show_id))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("repo", set_repo))
