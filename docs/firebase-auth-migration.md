@@ -73,3 +73,12 @@ A read-only query confirmed UUID foreign-key ownership references to `profiles.i
 Supabase's current Firebase guide also requires a Firebase third-party integration in Supabase Authentication settings and a trusted server-side process to set the `role: authenticated` custom claim. The available project connector cannot configure that Dashboard integration, so it has not been enabled or verified.
 
 No production schema, rows, RLS policies, auth settings, or deployment were changed. Keep the current login flow intact until the identity bridge or full schema redesign is tested.
+
+
+## Identity-to-authorization implementation gate (verified 2026-10-18)
+
+The official Supabase third-party OIDC guide explicitly states that `auth.uid()` casts the JWT `sub` claim to UUID and fails when the provider subject is not a UUID: https://supabase.com/docs/guides/auth/third-party/custom-oidc
+
+This is a concrete blocker for Firebase UIDs. A mapping table alone is not enough: all effective RLS policies and security-definer routines currently using `auth.uid()` must resolve the authenticated Firebase subject to the existing profile UUID, while refusing unverified or ambiguous mappings. The browser cannot supply or choose that UUID. The Supabase third-party provider must also be enabled in the project settings and Firebase JWTs must carry `role: authenticated`.
+
+A read-only inspection found identity-sensitive security-definer routines including `create_wallet_order`, `create_wallet_topup`, `get_my_order_codes`, `is_admin`, `review_wallet_topup`, and `admin_set_setting`. Their authorization checks and transactional behavior must be migrated and tested together with RLS. No SQL migration has been applied, because the available connection cannot configure the required third-party provider and there is no verified identity mapping or isolated test environment. Applying a partial SQL change to production would risk locking users out or exposing other users' data.
