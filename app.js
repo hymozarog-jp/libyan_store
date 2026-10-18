@@ -194,9 +194,8 @@ async function loadStore(){
    const settingsMap=Object.fromEntries((settings?.data||[]).map(x=>[x.key,x.value]));
    if(String(settingsMap.whatsapp_number||'').trim())supportWhatsapp=String(settingsMap.whatsapp_number).trim();
 
-   const [p,w,stock]=await Promise.allSettled([
+   const [p,stock]=await Promise.allSettled([
     withTimeout(sb.from('profiles').select('full_name,phone,role').eq('id',uid).maybeSingle(),'بيانات الحساب'),
-    withTimeout(sb.from('wallets').select('balance').eq('user_id',uid).maybeSingle(),'المحفظة'),
     withTimeout(sb.rpc('get_active_product_stock'),'المخزون')
    ]);
 
@@ -205,10 +204,6 @@ async function loadStore(){
     else profile=p.value.data||{full_name:'',phone:'',role:'customer'};
    }else console.warn('profiles load failed:',p.reason);
 
-   if(w.status==='fulfilled'){
-    if(w.value.error)console.warn('wallet load:',w.value.error);
-    else wallet=w.value.data||{balance:0};
-   }else console.warn('wallet load failed:',w.reason);
 
    const stockMap=new Map();
    if(stock.status==='fulfilled' && !stock.value.error){
@@ -543,7 +538,7 @@ function renderCart(){
 async function renderAccount(){
   const current=profile||{};
   const hasGoogle=Array.isArray(session.user.identities)&&session.user.identities.some(x=>x.provider==='google');
-  el('view').innerHTML=`<div class="card"><h2>👤 حسابي</h2><label>الاسم الكامل</label><input id="accountName" class="field" style="margin-top:6px" value="${esc(current.full_name||'')}" placeholder="الاسم الكامل"><label style="display:block;margin-top:10px">رقم الهاتف</label><input id="accountPhone" class="field" style="margin-top:6px" value="${esc(current.phone||session.user.phone||'')}" placeholder="رقم الهاتف"><p class="muted" style="margin-top:10px">البريد: ${esc(session.user.email||'غير مرتبط')}</p><button class="btn primary" id="saveAccount" style="width:100%;margin-top:10px">حفظ البيانات</button><button class="btn" id="linkGoogleAvatar" style="width:100%;margin-top:10px;background:#fff;color:#1f2937;border:1px solid #d1d5db">${hasGoogle?'تم ربط حساب Google ✓':'ربط حساب Google لإظهار صورته'}</button><small id="accountMsg" class="muted" style="display:block;margin-top:8px">${hasGoogle?'صورة Google ستظهر بجانب رصيدك بعد تحديث الصفحة.':'اربط حساب Google مرة واحدة للسماح بعرض صورته مع بقاء تسجيل الدخول بالبريد وكلمة المرور.'}</small></div>`;
+  el('view').innerHTML=`<div class="card"><h2>👤 حسابي</h2><label>الاسم الكامل</label><input id="accountName" class="field" style="margin-top:6px" value="${esc(current.full_name||'')}" placeholder="الاسم الكامل"><label style="display:block;margin-top:10px">رقم الهاتف</label><input id="accountPhone" class="field" style="margin-top:6px" value="${esc(current.phone||session.user.phone||'')}" placeholder="رقم الهاتف"><p class="muted" style="margin-top:10px">البريد: ${esc(session.user.email||'غير مرتبط')}</p><button class="btn primary" id="saveAccount" style="width:100%;margin-top:10px">حفظ البيانات</button><button class="btn" id="linkGoogleAvatar" style="width:100%;margin-top:10px;background:#fff;color:#1f2937;border:1px solid #d1d5db">${hasGoogle?'تم ربط حساب Google ✓':'ربط حساب Google لإظهار صورته'}</button><small id="accountMsg" class="muted" style="display:block;margin-top:8px">${hasGoogle?'صورة Google ستظهر بجانب حسابك بعد تحديث الصفحة.':'اربط حساب Google مرة واحدة للسماح بعرض صورته مع بقاء تسجيل الدخول بالبريد وكلمة المرور.'}</small></div>`;
   el('saveAccount').onclick=async()=>{const full_name=el('accountName').value.trim(),phone=el('accountPhone').value.trim();if(!full_name)return el('accountMsg').textContent='أدخل الاسم';const r=await sb.from('profiles').update({full_name,phone}).eq('id',session.user.id);if(r.error)return el('accountMsg').textContent=r.error.message;profile={...profile,full_name,phone};el('accountMsg').textContent='تم حفظ البيانات بنجاح.';};
   el('linkGoogleAvatar').onclick=async()=>{const msg=el('accountMsg');msg.textContent='جارٍ فتح Google لربط الصورة...';try{const r=await sb.auth.linkIdentity({provider:'google',options:{redirectTo:location.origin+'/',queryParams:{prompt:'select_account'}}});if(r.error)throw r.error;}catch(e){msg.textContent='تعذر ربط Google: '+(e.message||'تحقق من إعدادات تسجيل الدخول عبر Google في Supabase.');}};
 }
