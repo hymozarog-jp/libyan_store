@@ -277,10 +277,9 @@ function renderStore(){
     <div id="view"></div>
     <nav class="lc-bottom">
       <button class="active" data-view="store">⌂<br>الرئيسية</button>
-      <button data-view="wallet">▱<br>الخدمات</button>
+      ${session?'<button data-view="wallet">▱<br>الخدمات</button>':''}
       <button data-view="cart">▣<span class="lc-badge" id="navCartCount">0</span><br>المشتريات</button>
-      <button data-view="orders">▤<br>البطاقات</button>
-      <button data-view="account">⚙<br>الإعدادات</button>
+      ${session?'<button data-view="orders">▤<br>البطاقات</button><button data-view="account">⚙<br>الإعدادات</button>':''}
     </nav>
     <div class="lc-drawer" id="lcDrawer"><div class="lc-drawer-backdrop" id="lcBackdrop"></div><aside class="lc-drawer-panel">
       <button class="lc-icon" id="lcDrawerClose">×</button><div class="lc-drawer-title">القائمة الرئيسية</div>
@@ -303,7 +302,7 @@ function renderStore(){
 function renderCartPage(){
   const entries=Object.entries(cart).filter(([id,q])=>Number(q)>0&&products.some(p=>p.id===id));  let total=0;
   const rows=entries.map(([id,q])=>{const p=products.find(x=>x.id===id);const t=Number(p.price)*Number(q);total+=t;return `<div style="padding:12px 0;border-bottom:1px solid #202b3a"><div style="display:flex;justify-content:space-between"><div><b>${esc(p.name)}</b><div class="muted">${money(p.price)} × ${q}</div></div><b>${money(t)}</b></div><div style="display:flex;gap:7px;margin-top:8px"><button class="btn" data-minus="${p.id}">−</button><span class="pill">${q}</span><button class="btn" data-plus="${p.id}">+</button><button class="btn" data-remove="${p.id}" style="margin-right:auto">🗑️ إزالة</button></div></div>`}).join('');
-  el('view').innerHTML=entries.length?`<h2>🛒 السلة</h2><div class="card">${rows}<hr style="border-color:#263345"><b>الإجمالي: ${money(total)}</b><button class="btn primary" id="pageBuy" style="width:100%;margin-top:12px">شراء من المحفظة</button></div>`:'<div class="card" style="text-align:center"><h2>🛒 السلة فارغة</h2><p class="muted">أضف منتجًا من المتجر ليظهر هنا.</p></div>';
+  el('view').innerHTML=entries.length?`<h2>🛒 السلة</h2><div class="card">${rows}<hr style="border-color:#263345"><b>الإجمالي: ${money(total)}</b><button class="btn primary" id="pageBuy" style="width:100%;margin-top:12px">${session?'شراء من المحفظة':'متابعة للدفع'}</button></div>`:'<div class="card" style="text-align:center"><h2>🛒 السلة فارغة</h2><p class="muted">أضف منتجًا من المتجر ليظهر هنا.</p></div>';
   document.querySelectorAll('[data-plus]').forEach(b=>b.onclick=()=>{const id=b.dataset.plus;cart[id]=(cart[id]||0)+1;renderCartPage()});
   document.querySelectorAll('[data-minus]').forEach(b=>b.onclick=()=>{const id=b.dataset.minus;if((cart[id]||0)>1)cart[id]--;else delete cart[id];renderCartPage()});
   document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{delete cart[b.dataset.remove];renderCartPage()});
