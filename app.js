@@ -318,11 +318,563 @@ function renderProducts(){
     const category=String(p.category||'رقمي').trim()||'رقمي';
     const desc=String(p.description||'').trim();
     if(isRobux){
-      return '<article class="lc-package-card lc-robux-card">'+
-        '<button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
-          '<div class="lc-robux-media">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">R$</div>')+'</div>'+
-          '<div class="lc-robux-content"><h3>'+esc(p.name)+'</h3><strong class="lc-robux-price">'+money(p.price)+'</strong><span class="lc-robux-status '+stockClass+'">'+esc(stockText)+'</span></div>'+
-        '</button></article>';
+      return '<article class="lc-package-card lc-robux-card '+(available?'is-available':'is-unavailable')+'">'+
+        '<div class="lc-robux-art"><button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
+          '<div class="lc-robux-media">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">R$</div>')+'<span class="lc-robux-value">'+esc(String(p.name).match(/\\d[\\d,.]*/)?.[0]||'R
+    }
+    return '<article class="lc-package-card">'+
+      '<button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
+        '<div class="lc-package-media">'+
+          (img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>')+
+          '<span class="lc-package-category">'+esc(categoryTitle(category))+'</span><span class="lc-package-discount">خصم</span>'+
+        '</div>'+
+        '<div class="lc-package-content">'+
+          '<div class="lc-package-head"><h3>'+esc(p.name)+'</h3><span class="lc-package-status '+stockClass+'">'+esc(stockText)+'</span></div>'+
+          (desc?'<p class="lc-package-description">'+esc(desc)+'</p>':'<p class="lc-package-description">باقة رقمية جاهزة للشراء والتسليم.</p>')+
+          '<div class="lc-package-footer"><div class="lc-package-pricing"><span class="lc-package-old-price">'+money(robuxOldPrices[p.name]||0)+'</span><span class="lc-package-price">'+money(p.price)+'</span><small>السعر بعد الخصم</small></div><span class="lc-package-open">عرض الباقة ←</span></div>'+
+        '</div>'+
+      '</button>'+
+    '</article>';
+  }).join('');
+  const filters='<button type="button" class="lc-filter-chip active" data-package-filter="all">الكل <span>'+products.length+'</span></button>'+
+    categories.map(c=>'<button type="button" class="lc-filter-chip" data-package-filter="'+esc(c)+'">'+esc(categoryTitle(c))+' <span>'+products.filter(p=>String(p.category||'رقمي').trim()===c).length+'</span></button>').join('');
+  const welcomeName=String(profile?.full_name||session?.user?.user_metadata?.full_name||session?.user?.email?.split('@')[0]||'عميلنا').trim();
+  const avatarUrl=getAccountAvatarUrl();
+  view.innerHTML='<section class="lc-packages-page">'+
+    '<header class="ls-storebar"><button type="button" class="ls-account-chip" data-store-account><span class="ls-avatar">'+(avatarUrl?'<img src="'+esc(avatarUrl)+'" alt="" referrerpolicy="no-referrer">':esc(welcomeName.slice(0,1).toUpperCase()))+'</span><span><small>أهلاً بيك</small><b>'+esc(welcomeName)+'</b></span></button>'+
+    '<div class="ls-store-actions"><button type="button" class="ls-top-action" data-store-notifications>♧<i>3</i></button><div class="ls-balance"><span>◉</span><b>0.000</b><small>د.ل</small></div><button type="button" class="ls-top-action" data-store-menu>☰</button></div></header>'+
+    '<div class="ls-welcome-line"><span class="ls-live-dot"></span> متجرك للألعاب والشحن الرقمي</div>'+
+    '<div class="lc-packages-hero"><div><span class="lc-category-kicker">Libyan Store</span><h1>الباقات المتاحة</h1><p>اختر الباقة المناسبة لك، وكل باقة موضحة بشكل مستقل.</p></div><div class="lc-packages-count"><b>'+products.length+'</b><span>باقة</span></div></div>'+
+    '<div class="lc-package-filters" aria-label="فلترة الباقات">'+filters+'</div>'+
+    (packageCards?'<div class="lc-package-grid" id="packageGrid">'+packageCards+'</div>':'<div class="lc-empty">لا توجد باقات متاحة حاليًا.</div>')+
+    '<div id="cartBox" style="margin-top:18px"></div>'+
+  '</section>';
+  const bindProducts=()=>document.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productOpen);if(p)showProduct(p)});
+  bindProducts();
+  document.querySelectorAll('[data-package-filter]').forEach(btn=>btn.onclick=()=>{
+    document.querySelectorAll('[data-package-filter]').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    const category=btn.dataset.packageFilter;
+    document.querySelectorAll('.lc-package-card').forEach(card=>{
+      const productId=card.querySelector('[data-product-open]')?.dataset.productOpen;
+      const p=products.find(x=>x.id===productId);
+      card.style.display=category==='all'||String(p?.category||'رقمي').trim()===category?'':'none';
+    });
+  });
+  renderCart();
+}
+function renderCategory(category){
+  const view=el('view');if(!view)return;
+  const list=products.filter(p=>String(p.category||'رقمي').trim()===String(category).trim());
+  const imageFor=p=>typeof productImage==='function'?productImage(p.name):'';
+  const cards=list.map(p=>{
+    const img=imageFor(p);
+    return '<button type="button" class="card lc-category-card" data-product-open="'+p.id+'">'+
+      '<div class="lc-category-image">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>')+'</div>'+
+      '<div class="lc-category-body"><h3>'+esc(p.name)+'</h3><span class="pill">'+money(p.price)+'</span><span class="lc-category-arrow">←</span></div>'+
+    '</button>';
+  }).join('');
+  view.innerHTML='<div class="lc-section-title"><button type="button" class="lc-back-btn" id="lcBackCategories">→ الفئات الرئيسية</button><h2>فئات '+esc(categoryTitle(category))+'</h2><span class="pill">'+list.length+' فئات</span></div>'+
+    (cards?'<div class="lc-products lc-categories">'+cards+'</div>':'<div class="lc-empty">لا توجد فئات في هذه المجموعة.</div>')+'<div id="cartBox" style="margin-top:15px"></div>';
+  el('lcBackCategories').onclick=renderProducts;
+  document.querySelectorAll('[data-product-open]').forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.productOpen);if(p)showProduct(p)});
+  renderCart();
+}
+
+function showProduct(p){
+  const view=el('view');if(!view)return;
+  const img=typeof productImage==='function'?productImage(p.name):'';
+  const available=Boolean(p.always_available)||Number(p.stock_count||0)>0;
+  const isDragon=String(p.name||'').trim()==='دراقون';
+  const requiresRobloxUsername=Boolean(p.requires_roblox_username);
+  const productUssdAmount=Math.round(Number(p.price||0)*1000);
+  const productUssdCode=productUssdAmount>0?'*122*0925620538*'+productUssdAmount+'#':'';
+  let selectedColor=isDragon?(cartOptions[p.id]?.color||''):'';
+  let selectedRobloxUsername=requiresRobloxUsername?(cartOptions[p.id]?.roblox_username||''):'';
+  const dragonColors=isDragon?productOptions.filter(o=>String(o.product_id)===String(p.id)&&o.option_type==='color'&&o.active).map(o=>o.option_name):[];
+  if(isDragon&&selectedColor&&!dragonColors.includes(selectedColor))selectedColor='';
+  const colorButtons=isDragon?(dragonColors.length?dragonColors.map(color=>'<button type="button" class="btn" data-dragon-color="'+esc(color)+'">'+esc(color)+'</button>').join(''):'<div class="lc-option-hint">⚠️ لا توجد ألوان متوفرة حاليًا.</div>'):'';
+  view.innerHTML=`<section class="lc-product-page">
+    <button type="button" class="lc-back-btn" id="lcBackToProducts">← العودة للمنتجات</button>
+    <article class="lc-detail-card">
+      <div class="lc-detail-image">${img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">⚡</div>'}</div>
+      <div class="lc-detail-content">
+        <h1>${esc(p.name)}</h1>
+        <div class="lc-detail-price">${money(p.price)} <span>⌄</span></div>
+        ${isDragon?`<div class="lc-required-box"><div class="lc-option-title">🎨 اختر اللون <span>مطلوب</span></div><div id="dragonColors" class="lc-color-grid">${colorButtons}</div><div id="dragonColorMsg" class="lc-option-hint">${selectedColor?'✓ اللون المختار: '+esc(selectedColor):'⚠️ لازم تختار لون قبل الشراء'}</div></div>`:''}
+        ${requiresRobloxUsername?`<div class="lc-required-box" style="margin-bottom:12px;border:1px solid #22c55e;background:linear-gradient(135deg,#052e16,#14532d);box-shadow:0 0 0 1px #22c55e33,0 8px 24px #16a34a22"><div class="lc-option-title" style="color:#bbf7d0">📞 الدفع عبر ليبيانا</div><div style="margin-top:8px;color:#dcfce7">المبلغ: <b>${money(p.price)}</b></div><button type="button" id="lcDirectPayUssd" class="btn primary" style="width:100%;margin-top:12px;background:linear-gradient(135deg,#22c55e,#15803d);border:1px solid #86efac;color:#fff;font-weight:800;box-shadow:0 5px 0 #166534,0 8px 20px #22c55e33;transition:transform .15s,filter .15s,box-shadow .15s">📲 الدفع مباشرة</button><div class="lc-option-hint" style="color:#bbf7d0;margin-top:10px">اضغط الزر لفتح شاشة الاتصال بكود الدفع، ثم راجع المبلغ وأكّد العملية من هاتفك.</div></div><div class="lc-required-box"><div class="lc-option-title">🎮 يوزر Roblox <span>مطلوب</span></div><input id="productRobloxUsername" class="field" type="text" inputmode="text" autocomplete="off" maxlength="20" placeholder="مثال: RobloxPlayer123"><div class="lc-option-hint">📌 اكتب اسم المستخدم في Roblox كما هو، وليس Display Name.</div></div>`:''}
+                <label class="lc-detail-terms">
+          <input type="checkbox" id="lcTerms">
+          <span>أوافق على <b>الشروط والأحكام</b></span>
+        </label>
+        <div class="lc-detail-divider"></div>
+        <div class="lc-detail-total"><span>الإجمالي:</span><strong>${money(p.price)}</strong></div>
+        <button class="btn primary lc-detail-buy" id="lcBuyNow" type="button" ${(!available||(isDragon&&!selectedColor)||(requiresRobloxUsername&&!String(cartOptions[p.id]?.roblox_username||'').trim()))?'disabled':''}>${available?'اشترِ الآن':'نفد المخزون'}</button>
+      </div>
+    </article>
+  </section>`;
+  el('lcBackToProducts').onclick=()=>renderProducts();
+  const buy=el('lcBuyNow');
+  const updateBuyState=()=>{
+    const robloxUsername=requiresRobloxUsername?(el('productRobloxUsername')?.value.trim()||''):'';
+    const ready=available&&(!isDragon||dragonColors.includes(selectedColor))&&(!requiresRobloxUsername||/^[A-Za-z0-9]+(_[A-Za-z0-9]+)?$/.test(robloxUsername)&&robloxUsername.length>=3&&robloxUsername.length<=20);
+    if(buy){
+      buy.disabled=!ready;
+      if(ready)buy.textContent='اشترِ الآن';
+      else if(available)buy.textContent='أكمل البيانات المطلوبة';
+    }
+  };
+  if(isDragon){
+    document.querySelectorAll('[data-dragon-color]').forEach(btn=>{
+      if(btn.dataset.dragonColor===selectedColor)btn.classList.add('active');
+      btn.onclick=()=>{
+        selectedColor=btn.dataset.dragonColor;
+        document.querySelectorAll('[data-dragon-color]').forEach(x=>x.classList.toggle('active',x===btn));
+        const msg=el('dragonColorMsg');if(msg)msg.textContent='✓ اللون المختار: '+selectedColor;
+        cartOptions[p.id]={...(cartOptions[p.id]||{}),color:selectedColor};
+        updateBuyState();
+      };
+    });
+  }
+  const directPayButton=el('lcDirectPayUssd');
+  if(directPayButton){
+    directPayButton.onmouseenter=()=>{directPayButton.style.filter='brightness(1.12)';directPayButton.style.transform='translateY(-2px)';directPayButton.style.boxShadow='0 7px 0 #166534,0 12px 24px #22c55e44'};
+    directPayButton.onmouseleave=()=>{directPayButton.style.filter='';directPayButton.style.transform='';directPayButton.style.boxShadow='0 5px 0 #166534,0 8px 20px #22c55e33'};
+    directPayButton.onpointerdown=()=>{directPayButton.style.transform='translateY(2px)';directPayButton.style.boxShadow='0 2px 0 #166534'};
+    directPayButton.onpointerup=()=>{directPayButton.style.transform='';directPayButton.style.boxShadow='0 5px 0 #166534,0 8px 20px #22c55e33'};
+    directPayButton.onclick=()=>{if(!productUssdCode)return alert('تعذر إنشاء كود صالح لهذا المبلغ.');window.location.href='tel:'+productUssdCode.replace('#','%23')};
+  }
+  const robloxInput=el('productRobloxUsername');
+  if(robloxInput){
+    robloxInput.value=selectedRobloxUsername;
+    robloxInput.addEventListener('input',()=>{
+      selectedRobloxUsername=robloxInput.value.trim();
+      cartOptions[p.id]={...(cartOptions[p.id]||{}),roblox_username:selectedRobloxUsername};
+      updateBuyState();
+    });
+  }
+  updateBuyState();
+  if(buy)buy.onclick=async()=>{
+    if(!available)return alert('❌ هذا المنتج غير متوفر حاليًا. أضف المخزون من البوت ثم حاول الشراء مرة أخرى.');
+    if(isDragon&&!selectedColor)return alert('⚠️ اختر اللون أولاً من الخيارات الظاهرة فوق زر الشراء.');
+    const robloxUsername=requiresRobloxUsername?(el('productRobloxUsername')?.value.trim()||''):'';
+    if(requiresRobloxUsername&&(!/^[A-Za-z0-9]+(_[A-Za-z0-9]+)?$/.test(robloxUsername)||robloxUsername.length<3||robloxUsername.length>20))return alert('⚠️ اكتب يوزر Roblox صحيحًا (3-20 حرفًا/رقمًا، ويمكن استخدام _ مرة واحدة).');
+    if(!el('lcTerms').checked)return alert('وافق على الشروط والأحكام أولاً');
+    buy.disabled=true;buy.textContent='جارٍ تنفيذ الشراء...';
+    try{
+      cart[p.id]=Math.min((cart[p.id]||0)+1,Number(p.stock_count||1));
+      cartOptions[p.id]={...(cartOptions[p.id]||{}),...(isDragon?{color:selectedColor}:{}),...(requiresRobloxUsername?{roblox_username:robloxUsername}:{})};
+      await checkout();
+    }catch(e){
+      console.error('purchase failed:',e);
+      alert(humanOrderError(e));
+      buy.disabled=false;buy.textContent='اشترِ الآن';
+    }
+  };
+}
+function renderCart(){
+  const entries=Object.entries(cart).filter(([id,q])=>Number(q)>0&&products.some(p=>p.id===id));
+  const badge=el('cartCount');
+  const navBadge=el('navCartCount');
+  const count=entries.reduce((sum,[id,q])=>sum+Number(q),0);
+  if(badge)badge.textContent=count;
+  if(navBadge)navBadge.textContent=count;
+  const box=el('cartBox');
+  if(!box)return;
+  if(!entries.length){
+    box.innerHTML='<div class="card"><h3>🛒 السلة <span class="pill">0</span></h3><p class="muted">السلة فارغة</p></div>';
+    return;
+  }
+  let total=0;
+  const rows=entries.map(([id,q])=>{
+    const p=products.find(x=>x.id===id);
+    const itemTotal=Number(p.price)*Number(q);
+    total+=itemTotal;
+    return `<div style="padding:12px 0;border-bottom:1px solid #202b3a"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>${esc(p.name)}</b><div class="muted">${money(p.price)} × ${q}</div></div><b>${money(itemTotal)}</b></div><div style="display:flex;gap:7px;margin-top:9px"><button class="btn" data-minus="${p.id}">−</button><span class="pill">${q}</span><button class="btn" data-plus="${p.id}">+</button><button class="btn" data-remove="${p.id}" style="margin-right:auto">🗑️ إزالة</button></div></div>`;
+  }).join('');
+  box.innerHTML=`<div class="card"><div class="topbar"><h3>🛒 السلة</h3><span class="pill">${count} منتج</span></div>${rows}<hr style="border-color:#263345"><b>الإجمالي: ${money(total)}</b><button class="btn primary" id="buy" style="width:100%;margin-top:12px">الدفع لهذا الطلب</button></div>`;
+  document.querySelectorAll('[data-plus]').forEach(btn=>btn.onclick=()=>{const id=btn.dataset.plus,p=products.find(x=>x.id===id);if(!p||p.stock_count<1)return;cart[id]=Math.min((cart[id]||0)+1,p.stock_count);renderCart()});
+  document.querySelectorAll('[data-minus]').forEach(btn=>btn.onclick=()=>{const id=btn.dataset.minus;if((cart[id]||0)>1)cart[id]--;else delete cart[id];renderCart()});
+  document.querySelectorAll('[data-remove]').forEach(btn=>btn.onclick=()=>{delete cart[btn.dataset.remove];renderCart()});
+  el('buy').onclick=checkout;
+}async function checkout(){
+ const entries=Object.entries(cart).filter(([id,q])=>Number(q)>0&&products.some(p=>p.id===id));
+ if(!entries.length)return alert('السلة فارغة');
+ const items=entries.map(([product_id,quantity])=>({product_id,quantity:Number(quantity),...(cartOptions[product_id]?.color?{color:cartOptions[product_id].color}:{}),...(cartOptions[product_id]?.roblox_username?{roblox_username:cartOptions[product_id].roblox_username}:{})}));
+ const total=entries.reduce((sum,[id,q])=>sum+Number(products.find(p=>p.id===id)?.price||0)*Number(q),0);
+ const ussdAmount=Math.round(total*1000);
+ const ussdCode=()=>Number.isFinite(ussdAmount)&&ussdAmount>0?'*122*0925620538*'+ussdAmount+'#':'';
+ let settings={};
+ try{const sr=await sb.from('store_settings').select('key,value').in('key',['libyana_number','almadar_number']);settings=Object.fromEntries((sr.data||[]).map(x=>[x.key,String(x.value||'')]));}catch(e){console.warn('Payment settings unavailable',e)}
+ const prior=document.getElementById('lcPaymentModal');if(prior)prior.remove();
+ const modal=document.createElement('div');modal.id='lcPaymentModal';modal.className='lc-modal show';modal.dir='rtl';
+ const defaultName=String(profile?.full_name||session?.user?.user_metadata?.full_name||'').trim();
+ const defaultPhone=String(profile?.phone||session?.user?.phone||'').trim();
+ modal.innerHTML='<div class="lc-modal-card" style="max-width:520px;max-height:90vh;overflow:auto;position:relative"><button type="button" id="lcPaymentClose" class="lc-modal-close" aria-label="إغلاق">×</button><div style="font-size:28px;margin-bottom:8px">📞</div><h2 style="margin:0 0 6px">شراء الباقة والدفع المباشر</h2><p class="muted" style="margin:0 0 14px">اختار الشبكة. ليبيانا تفتح كود الاتصال بقيمة الطلب، والمدار متاحة عبر التحويل اليدوي.</p><div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;background:#17133f;color:#fff;margin-bottom:14px"><span>إجمالي الباقة / الطلب</span><b style="font-size:20px">'+money(total)+'</b></div><form id="lcPaymentForm"><label class="auth-label" for="lcPayName">الاسم الكامل</label><input class="field" id="lcPayName" maxlength="80" required minlength="2" value="'+esc(defaultName)+'" placeholder="اسمك الكامل"><label class="auth-label" for="lcPayPhone" style="display:block;margin-top:10px">رقم هاتفك</label><input class="field" id="lcPayPhone" type="tel" maxlength="24" minlength="8" required value="'+esc(defaultPhone)+'" placeholder="09xxxxxxxx"><label class="auth-label" for="lcPayMethod" style="display:block;margin-top:10px">شركة الاتصالات</label><select class="field" id="lcPayMethod" required><option value="libyana">ليبيانا — كود اتصال وخصم</option><option value="almadar">المدار — تحويل يدوي</option></select><div id="lcPayInstructions" style="padding:12px;margin-top:10px;border:1px solid #8b78f733;border-radius:12px;background:#8b78f70d"></div><div id="lcSenderWrap"><label class="auth-label" for="lcSenderPhone" style="display:block;margin-top:10px">رقم الهاتف الذي حوّلت منه</label><input class="field" id="lcSenderPhone" type="tel" maxlength="24" minlength="8" placeholder="رقم الهاتف المحوّل منه"></div><label class="auth-label" for="lcPayReference" style="display:block;margin-top:10px">رقم العملية (اختياري)</label><input class="field" id="lcPayReference" maxlength="80" placeholder="اكتب رقم العملية إن وجد"><p class="muted" style="font-size:12px;margin:10px 0">سيُسجّل الطلب بانتظار التأكد من الدفع. الموقع لا يستطيع التحقق آليًا من نجاح كود USSD.</p><button class="btn primary" id="lcSubmitPayment" type="submit" style="width:100%;margin-top:8px">متابعة الدفع</button><div id="lcPaymentError" role="status" class="muted" style="margin-top:10px"></div></form></div>';
+ document.body.appendChild(modal);
+ const method=modal.querySelector('#lcPayMethod'),instructions=modal.querySelector('#lcPayInstructions'),form=modal.querySelector('#lcPaymentForm'),submit=modal.querySelector('#lcSubmitPayment'),err=modal.querySelector('#lcPaymentError'),senderWrap=modal.querySelector('#lcSenderWrap'),senderInput=modal.querySelector('#lcSenderPhone'),referenceInput=modal.querySelector('#lcPayReference');
+ const renderInstructions=()=>{
+   const isLibyana=method.value==='libyana';
+   senderWrap.style.display=isLibyana?'none':'block';
+   senderInput.required=!isLibyana;
+   if(isLibyana){
+     const code=ussdCode();
+     instructions.innerHTML='<b>الدفع عبر ليبيانا</b><div style="margin-top:8px">كود الاتصال لهذه القيمة: <code dir="ltr" style="font-size:17px;word-break:break-all">'+esc(code||'المبلغ غير صالح')+'</code></div><div style="margin-top:6px">المبلغ: <b>'+money(total)+'</b></div><small class="muted" style="display:block;margin-top:6px">عند المتابعة سنسجل الطلب، وبعدها اضغط زر الاتصال لتفتح شاشة الاتصال بالكود. يلزم تأكيد العملية من هاتفك.</small>';
+     submit.textContent='تسجيل الطلب وعرض زر الاتصال';
+   }else{
+     const number=settings.almadar_number;
+     instructions.innerHTML='<b>حوّل '+money(total)+' عبر المدار</b><div style="margin-top:6px">رقم الاستلام: <b dir="ltr" style="font-size:19px">'+(number?esc(number):'يرجى التواصل مع الإدارة لمعرفة رقم الاستلام')+'</b></div><small class="muted" style="display:block;margin-top:6px">تأكد من الرقم والمبلغ ثم أرسل بيانات التحويل للمراجعة.</small>';
+     submit.textContent='إرسال الطلب للمراجعة';
+   }
+ };
+ renderInstructions();method.onchange=renderInstructions;
+ const close=()=>modal.remove();modal.querySelector('#lcPaymentClose').onclick=close;modal.addEventListener('click',e=>{if(e.target===modal)close()});
+ form.onsubmit=async e=>{
+  e.preventDefault();
+  const name=modal.querySelector('#lcPayName').value.trim(),phone=modal.querySelector('#lcPayPhone').value.trim(),sender=senderInput.value.trim(),reference=referenceInput.value.trim(),paymentMethod=method.value;
+  if(name.length<2){err.textContent='اكتب الاسم الكامل.';return}
+  if(phone.replace(/\D/g,'').length<8){err.textContent='اكتب رقم هاتف صحيح.';return}
+  if(paymentMethod==='almadar'&&sender.replace(/\D/g,'').length<8){err.textContent='اكتب رقم الهاتف الذي حوّلت منه.';return}
+  if(paymentMethod==='almadar'&&!settings.almadar_number){err.textContent='رقم استلام المدار غير مضبوط حاليًا. تواصل مع الإدارة قبل التحويل.';return}
+  submit.disabled=true;submit.textContent='جارٍ تسجيل الطلب...';err.textContent='';
+  try{
+   const r=await sb.rpc('create_guest_purchase_request',{p_items:items,p_customer_name:name,p_customer_phone:phone,p_payment_method:paymentMethod,p_sender_phone:paymentMethod==='libyana'?phone:sender,p_payment_reference:reference||(paymentMethod==='libyana'?'USSD requested':null)});
+   if(r.error)throw r.error;
+   const request=r.data||{},requestId=request.id||'';
+   cart={};cartOptions={};
+   if(paymentMethod==='libyana'){
+     const code=ussdCode();
+     modal.querySelector('.lc-modal-card').innerHTML='<div style="font-size:40px;margin-bottom:10px">📞</div><h2>تم تسجيل طلب الباقة</h2><p>رقم الطلب: <b dir="ltr">'+esc(String(requestId).slice(-8).toUpperCase())+'</b></p><div style="padding:14px;background:#17133f;color:#fff;border-radius:12px;margin:14px 0"><div>المبلغ المطلوب</div><b style="font-size:23px">'+money(total)+'</b><div style="margin-top:8px">كود الاتصال</div><code dir="ltr" style="font-size:18px;word-break:break-all">'+esc(code)+'</code></div><p>اضغط اتصال، وراجع المبلغ ثم أكد العملية من شاشة هاتفك.</p><p class="muted">حالة الطلب: بانتظار التحقق من الدفع. لا يظهر تأكيد الخصم تلقائيًا داخل المتجر.</p><button type="button" class="btn primary" id="lcCallUssd" style="width:100%">📞 اتصال بكود الدفع</button><button type="button" class="btn" id="lcPaymentDone" style="width:100%;margin-top:8px">إغلاق</button>';
+     const openUssd=()=>{if(!code)return alert('تعذر إنشاء كود صالح لهذا المبلغ.');window.location.href='tel:'+code.replace('#','%23')};modal.querySelector('#lcCallUssd').onclick=openUssd;openUssd();
+     modal.querySelector('#lcPaymentDone').onclick=()=>{close();renderCart();refreshProductStock()};
+   }else{
+     modal.querySelector('.lc-modal-card').innerHTML='<div style="font-size:40px;margin-bottom:10px">✅</div><h2>تم تسجيل طلبك</h2><p>رقم الطلب: <b dir="ltr">'+esc(String(requestId).slice(-8).toUpperCase())+'</b></p><div style="padding:14px;background:#17133f;color:#fff;border-radius:12px;margin:14px 0"><div>الإجمالي المطلوب</div><b style="font-size:23px">'+money(request.total??total)+'</b></div><p>طريقة الدفع: <b>المدار</b></p><p>حالة الطلب: <b>بانتظار مراجعة الدفع</b></p><p class="muted">احتفظ برقم الطلب. سيتم التحقق من التحويل ثم تجهيز المنتج.</p><button type="button" class="btn primary" id="lcPaymentDone" style="width:100%">تم</button>';
+     modal.querySelector('#lcPaymentDone').onclick=()=>{close();renderCart();refreshProductStock()};
+   }
+  }catch(error){
+   console.error('direct payment request failed:',error);
+   err.textContent=humanOrderError(error);
+   submit.disabled=false;renderInstructions();
+  }
+ };
+}
+async function renderAccount(){
+  const current=profile||{};
+  const hasGoogle=Array.isArray(session.user.identities)&&session.user.identities.some(x=>x.provider==='google');
+  el('view').innerHTML=`<div class="card"><h2>👤 حسابي</h2><label>الاسم الكامل</label><input id="accountName" class="field" style="margin-top:6px" value="${esc(current.full_name||'')}" placeholder="الاسم الكامل"><label style="display:block;margin-top:10px">رقم الهاتف</label><input id="accountPhone" class="field" style="margin-top:6px" value="${esc(current.phone||session.user.phone||'')}" placeholder="رقم الهاتف"><p class="muted" style="margin-top:10px">البريد: ${esc(session.user.email||'غير مرتبط')}</p><button class="btn primary" id="saveAccount" style="width:100%;margin-top:10px">حفظ البيانات</button><button class="btn" id="linkGoogleAvatar" style="width:100%;margin-top:10px;background:#fff;color:#1f2937;border:1px solid #d1d5db">${hasGoogle?'تم ربط حساب Google ✓':'ربط حساب Google لإظهار صورته'}</button><small id="accountMsg" class="muted" style="display:block;margin-top:8px">${hasGoogle?'صورة Google ستظهر بجانب حسابك بعد تحديث الصفحة.':'اربط حساب Google مرة واحدة للسماح بعرض صورته مع بقاء تسجيل الدخول بالبريد وكلمة المرور.'}</small></div>`;
+  el('saveAccount').onclick=async()=>{const full_name=el('accountName').value.trim(),phone=el('accountPhone').value.trim();if(!full_name)return el('accountMsg').textContent='أدخل الاسم';const r=await sb.from('profiles').update({full_name,phone}).eq('id',session.user.id);if(r.error)return el('accountMsg').textContent=r.error.message;profile={...profile,full_name,phone};el('accountMsg').textContent='تم حفظ البيانات بنجاح.';};
+  el('linkGoogleAvatar').onclick=async()=>{const msg=el('accountMsg');msg.textContent='جارٍ فتح Google لربط الصورة...';try{const r=await sb.auth.linkIdentity({provider:'google',options:{redirectTo:location.origin+'/',queryParams:{prompt:'select_account'}}});if(r.error)throw r.error;}catch(e){msg.textContent='تعذر ربط Google: '+(e.message||'تحقق من إعدادات تسجيل الدخول عبر Google في Supabase.');}};
+}
+async function renderWallet(){
+ if(!session?.user){renderLogin('سجّل الدخول أولاً حتى تتمكن من شحن المحفظة.');return}
+ const [r,tx,settings,walletRes]=await Promise.all([
+  sb.from('wallet_topups').select('id,amount,method,status,created_at').eq('user_id',session.user.id).order('created_at',{ascending:false}).limit(20),
+  sb.from('wallet_transactions').select('id,type,amount,balance_after,note,created_at').eq('user_id',session.user.id).order('created_at',{ascending:false}).limit(30),
+  sb.from('store_settings').select('key,value').in('key',['libyana_number','almadar_number']),
+  sb.from('wallets').select('balance').eq('user_id',session.user.id).maybeSingle()
+ ]);
+ if(!walletRes.error) wallet=walletRes.data||{balance:0};
+ const topupTotal=(r.data||[]).filter(x=>x.status==='approved').reduce((s,x)=>s+Number(x.amount||0),0);
+ const nums=Object.fromEntries((settings.data||[]).map(x=>[x.key,x.value]));
+ const txRows=(tx.data||[]).map(x=>{
+   const positive=['topup','refund','adjustment'].includes(x.type);
+   const label={topup:'شحن',purchase:'شراء',refund:'استرجاع',adjustment:'تعديل / هدية'}[x.type]||x.type;
+   return '<div style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #202b3a"><div><b>'+label+'</b><div class="muted" style="font-size:12px">'+new Date(x.created_at).toLocaleString('ar-LY')+(x.note?' — '+esc(x.note):'')+'</div></div><div style="text-align:left"><b style="color:'+(positive?'#63d48c':'#ff8b7b')+'">'+(positive?'+':'−')+money(Math.abs(Number(x.amount||0)))+'</b><div class="muted" style="font-size:12px">الرصيد بعد العملية: '+money(x.balance_after)+'</div></div></div>';
+ }).join('')||'<span class="muted">لا توجد حركات مالية بعد.</span>';
+  el('view').innerHTML=`<div class="wallet-flow">
+    <section class="card wallet-balance-card" style="text-align:center;padding:24px">
+      <div style="font-size:13px;opacity:.8">رصيد محفظتك الحالي</div>
+      <div style="font-size:36px;font-weight:900;margin:8px 0;color:#f5b942" id="walletPageBalance">${money(wallet?.balance??0)}</div>
+      <div class="muted">اختار شركة الاتصالات لبدء تعبئة الرصيد</div>
+    </section>
+    <section class="card" style="margin-top:12px">
+      <h2 style="margin-top:0">➕ اختار طريقة الشحن</h2>
+      <p class="muted">اضغط على ليبيانا أو المدار، وبعدها اختار قيمة الشحن.</p>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:16px">
+        <button type="button" class="wallet-method-card wallet-provider" data-method="libyana" style="display:flex;align-items:center;gap:16px;text-align:right;width:100%;background:#fff;border:1px solid #e9edf4;border-radius:18px;padding:16px;color:#222;cursor:pointer;font:inherit;box-shadow:0 5px 18px rgba(0,0,0,.08)">
+          <span style="flex:1"><b style="display:block;font-size:17px">ليبيانا</b><small style="display:block;color:#64748b;margin-top:5px">اختيار قيمة الشحن ←</small></span>
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Libyana_mobile_phone_logo.png" alt="شعار ليبيانا" style="display:block;width:130px;height:58px;object-fit:contain">
+        </button>
+        <button type="button" class="wallet-method-card wallet-provider" data-method="almadar" style="display:flex;align-items:center;gap:16px;text-align:right;width:100%;background:#fff;border:1px solid #e9edf4;border-radius:18px;padding:16px;color:#222;cursor:pointer;font:inherit;box-shadow:0 5px 18px rgba(0,0,0,.08)">
+          <span style="flex:1"><b style="display:block;font-size:17px">المدار الجديد</b><small style="display:block;color:#64748b;margin-top:5px">اختيار قيمة الشحن ←</small></span>
+          <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Almadar_Aljadid_Logo.png" alt="شعار المدار الجديد" style="display:block;width:130px;height:58px;object-fit:contain">
+        </button>
+      </div>
+    </section>
+    <section class="card" style="margin-top:12px"><h3>طلبات الشحن</h3>${(r.data||[]).map(x=>`<div style="padding:9px 0;border-bottom:1px solid #202b3a">${money(x.amount)} — ${esc(x.method)} — <span class="pill">${esc(x.status)}</span></div>`).join('')||'<span class="muted">لا توجد طلبات</span>'}</section>
+    <section class="card" style="margin-top:12px"><h3>📒 سجل الحركات المالية</h3><p class="muted" style="margin-top:0">كل شحن وشراء وهدية يظهر هنا مع الرصيد بعد العملية.</p>${txRows}</section>
+  </div>`;
+  document.querySelectorAll('.wallet-provider').forEach(card=>{card.onclick=()=>renderWalletTopupPage(card.dataset.method,nums)});
+}
+
+async function renderWalletTopupPage(method, nums={}){
+  const isLibyana=method==='libyana';
+  const provider=isLibyana?'ليبيانا':'المدار الجديد';
+  const destination=nums[isLibyana?'libyana_number':'almadar_number']||'غير محدد';
+  const logo=isLibyana?'https://commons.wikimedia.org/wiki/Special:FilePath/Libyana_mobile_phone_logo.png':'https://commons.wikimedia.org/wiki/Special:FilePath/Almadar_Aljadid_Logo.png';
+  const accent=isLibyana?'#e74d5b':'#7c3aed';
+  el('view').innerHTML=`<div class="wallet-topup-step">
+    <button class="btn" id="backWalletProviders" style="margin-bottom:12px">→ رجوع لطرق الشحن</button>
+    <section class="card" style="text-align:center;padding:20px">
+      <img src="${logo}" alt="شعار ${provider}" style="width:190px;height:78px;object-fit:contain;background:#fff;border-radius:14px;padding:8px">
+      <h2 style="margin:12px 0 4px">الشحن عبر ${provider}</h2>
+      <p class="muted" style="margin:0">اختار قيمة الشحن المناسبة ليك</p>
+    </section>
+    <section class="card" style="margin-top:12px">
+      <label style="font-weight:800;display:block;margin-bottom:12px">قيمة الشحن بالدينار الليبي</label>
+      <div id="walletAmountChoices" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px">
+        ${[5,10,20,30,50,100].map(n=>`<button type="button" class="wallet-amount-option" data-amount="${n}" style="border:1px solid #39465b;border-radius:13px;padding:14px 6px;background:rgba(255,255,255,.04);color:inherit;font:inherit;font-weight:800;cursor:pointer">${n} د.ل</button>`).join('')}
+      </div>
+      <label for="walletCustomAmount" style="display:block;margin:16px 0 7px">أو اكتب مبلغًا آخر</label>
+      <input id="walletCustomAmount" class="field" type="number" min="1" step="1" inputmode="numeric" placeholder="المبلغ بالدينار">
+      <div style="margin-top:16px;padding:15px;border-radius:14px;background:rgba(245,185,66,.09);border:1px solid rgba(245,185,66,.28);display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <span class="muted">المبلغ المختار</span><b id="walletChosenAmount" style="font-size:23px;color:#f5b942">— د.ل</b>
+      </div>
+    </section>
+    ${isLibyana ? `<section class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">📱 الدفع عبر كود ليبيانا</h3>
+      <p class="muted">بعد اختيار المبلغ اضغط اتصال، وستفتح شاشة الاتصال بالكود جاهزًا. راجع الكود وأكّد الاتصال من هاتفك.</p>
+      <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px">رقم ليبيانا: <b style="font-size:18px">0925620538</b></div>
+      <div style="padding:12px;border-radius:12px;background:rgba(245,185,66,.09);border:1px solid rgba(245,185,66,.28);margin-bottom:12px">كود الدفع: <code id="walletUssdPreview">اختار المبلغ أولاً</code></div>
+      <button class="btn primary" id="walletCallTopup" style="width:100%" disabled>📞 اتصال لتأكيد الدفع</button>
+      <p class="muted" style="font-size:12px;margin-bottom:0">اضغط «اتصال لتأكيد الدفع» لفتح شاشة الاتصال بالكود، ثم أكّد الاتصال من هاتفك. الاتصال وحده لا يضيف الرصيد تلقائيًا.</p>
+    </section>` : `<section class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">📱 بيانات التحويل</h3>
+      <p class="muted">حوّل قيمة الشحن إلى الرقم الموضح، ثم اكتب رقم الهاتف الذي تم التحويل منه وأرسل الطلب للمراجعة.</p>
+      <div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px">رقم ${provider}: <b style="font-size:18px">${esc(destination)}</b></div>
+      <label for="walletSenderPhone" style="display:block;margin-bottom:7px">رقم الهاتف المحوّل منه</label>
+      <input id="walletSenderPhone" class="field" type="tel" inputmode="tel" placeholder="09xxxxxxxx" autocomplete="tel">
+      <button class="btn primary" id="walletSubmitTopup" style="width:100%;margin-top:14px" disabled>إرسال طلب الشحن</button>
+      <p class="muted" style="font-size:12px;margin-bottom:0">سيتم إضافة الرصيد بعد مراجعة الطلب واعتماده من الإدارة. هذه الخطوة لا تنفّذ دفعًا تلقائيًا.</p>
+    </section>`}
+  </div>`;
+  el('backWalletProviders').onclick=renderWallet;
+  let selectedAmount=0;
+  const amountButtons=[...document.querySelectorAll('.wallet-amount-option')];
+  const custom=el('walletCustomAmount'),submit=el('walletSubmitTopup'),callButton=el('walletCallTopup');
+  const ussdCode=()=>selectedAmount>0&&Number.isInteger(selectedAmount)?'*122*0925620538*'+(selectedAmount*1000)+'#':'';
+  const refreshAmount=()=>{
+    const customValue=Number(custom.value);
+    if(custom.value.trim()){
+      selectedAmount=customValue;
+      amountButtons.forEach(b=>{b.style.background='rgba(255,255,255,.04)';b.style.borderColor='#39465b';b.style.color='inherit'});
+    }
+    el('walletChosenAmount').textContent=selectedAmount>0?money(selectedAmount):'— د.ل';
+    const validAmount=selectedAmount>0&&Number.isFinite(selectedAmount)&&Number.isInteger(selectedAmount);
+    if(isLibyana){
+      el('walletUssdPreview').textContent=validAmount?ussdCode():'اختار المبلغ أولاً';
+      callButton.disabled=!validAmount;
+    }else{
+      submit.disabled=!(validAmount&&el('walletSenderPhone').value.trim().length>=5);
+    }
+  };
+  if(isLibyana)callButton.onclick=()=>{
+    const code=ussdCode();
+    if(!code)return alert('اختار مبلغ الشحن أولاً');
+    window.location.href='tel:'+code.replace('#','%23');
+  };
+  amountButtons.forEach(b=>b.onclick=()=>{
+    selectedAmount=Number(b.dataset.amount);custom.value='';
+    amountButtons.forEach(x=>{const active=x===b;x.style.background=active?accent:'rgba(255,255,255,.04)';x.style.borderColor=active?accent:'#39465b';x.style.color=active?'#fff':'inherit'});
+    refreshAmount();
+  });
+  custom.addEventListener('input',refreshAmount);
+  if(!isLibyana){
+    el('walletSenderPhone').addEventListener('input',refreshAmount);
+    submit.onclick=async()=>{
+      if(submit.disabled||submit.dataset.busy==='1')return;
+      if(!session?.user){renderLogin('سجّل الدخول أولاً حتى تتمكن من شحن المحفظة.');return}
+      submit.dataset.busy='1';submit.disabled=true;const original=submit.textContent;submit.textContent='جارٍ إرسال طلب الشحن...';
+      try{
+        const x=await sb.from('wallet_topups').insert({user_id:session.user.id,amount:selectedAmount,method:method,sender_phone:el('walletSenderPhone').value.trim(),status:'pending'}).select('id').single();
+        if(x.error){console.error('topup insert:',x.error);alert('تعذر تسجيل طلب الشحن: '+(x.error.message||'خطأ غير معروف'));return}
+        let notifyFailed=false;
+        try{const n=await sb.functions.invoke('discord-notify',{body:{type:'topup',id:x.data.id}});if(n.error)notifyFailed=true}catch(e){notifyFailed=true;console.warn('Discord topup notification failed:',e)}
+        alert(notifyFailed?'تم إرسال طلب الشحن، لكن تعذر إرسال إشعار الإدارة.':'تم إرسال طلب الشحن بنجاح. يرجى الانتظار حتى تتم مراجعة الطلب واعتماده.');
+        await renderWallet();
+      }catch(e){alert('تعذر إرسال طلب الشحن: '+(e.message||'خطأ غير معروف'))}
+      finally{if(el('walletSubmitTopup')){submit.dataset.busy='';submit.textContent=original;refreshAmount()}}
+    };
+  }
+}
+
+async function renderOrders(){
+  const view=el('view');
+  view.innerHTML='<div class="lc-orders-page"><div class="lc-orders-loading"><div>⏳</div><b>جارٍ تحميل طلباتك...</b><span>نسترجع آخر مشترياتك وأكوادك بأمان.</span></div></div>';
+  try{
+    const r=await sb.from('orders')
+      .select('id,total,status,payment_method,customer_name,customer_phone,created_at,updated_at,order_items(id,product_id,quantity,unit_price,color,whatsapp,roblox_username,products(name,category))')
+      .eq('user_id',session.user.id)
+      .order('created_at',{ascending:false})
+      .limit(50);
+    if(r.error)throw r.error;
+    const orders=r.data||[];
+    const codeResults=await Promise.all(orders.map(o=>sb.rpc('get_my_order_codes',{p_order_id:o.id})));
+    const codeMap=new Map();
+    orders.forEach((o,i)=>codeMap.set(o.id,codeResults[i]?.data||[]));
+    window.__LIBYAN_ORDERS=orders;
+    window.__LIBYAN_ORDER_CODES=codeMap;
+
+    const counts={all:orders.length,paid:0,processing:0,completed:0,pending:0,cancelled:0,refunded:0};
+    orders.forEach(o=>{if(counts[o.status]!==undefined)counts[o.status]++});
+    const totalSpent=orders.filter(o=>['paid','processing','completed'].includes(o.status)).reduce((s,o)=>s+Number(o.total||0),0);
+    const statusLabel={pending:'قيد الانتظار',paid:'مدفوع',processing:'جارٍ التجهيز',completed:'مكتمل',cancelled:'ملغى',refunded:'مسترجع'};
+    const statusClass={pending:'pending',paid:'paid',processing:'processing',completed:'completed',cancelled:'cancelled',refunded:'refunded'};
+
+    const filterButtons=[
+      ['all','الكل',counts.all],
+      ['paid','مدفوعة',counts.paid],
+      ['processing','قيد التجهيز',counts.processing],
+      ['completed','مكتملة',counts.completed],
+      ['cancelled','ملغاة',counts.cancelled]
+    ];
+    view.innerHTML=`
+      <div class="lc-orders-page">
+        <div class="lc-orders-hero">
+          <div><span class="lc-orders-kicker">سجل المشتريات</span><h1>📦 طلباتي</h1><p>تابع طلباتك، تفاصيل المنتجات، والأكواد التي اشتريتها.</p></div>
+          <div class="lc-orders-total"><span>إجمالي المشتريات</span><b>${money(totalSpent)}</b></div>
+        </div>
+        <div class="lc-orders-summary">
+          <div><b>${counts.all}</b><span>كل الطلبات</span></div>
+          <div><b>${counts.completed}</b><span>مكتملة</span></div>
+          <div><b>${counts.processing+counts.paid}</b><span>قيد المعالجة</span></div>
+        </div>
+        <div class="lc-orders-filters" id="orderFilters">
+          ${filterButtons.map(([key,label,count])=>`<button class="${key==='all'?'active':''}" data-order-filter="${key}">${label}<span>${count}</span></button>`).join('')}
+        </div>
+        <div id="ordersList"></div>
+      </div>`;
+
+    const renderList=(filter='all')=>{
+      const list=orders.filter(o=>filter==='all'||o.status===filter);
+      const listEl=el('ordersList');
+      if(!list.length){
+        listEl.innerHTML=`<div class="lc-orders-empty"><div>🧾</div><h3>لا توجد طلبات هنا</h3><p>عندما تقوم بشراء منتج سيظهر طلبك هنا مع تفاصيله.</p><button class="btn primary" id="goStoreFromOrders">تصفح المنتجات</button></div>`;
+        el('goStoreFromOrders')?.addEventListener('click',()=>renderProducts());
+        return;
+      }
+      listEl.innerHTML=list.map(o=>{
+        const items=o.order_items||[];
+        const codes=codeMap.get(o.id)||[];
+        const codeCount=codes.length;
+        const itemCount=items.reduce((n,x)=>n+Number(x.quantity||0),0);
+        const names=items.map(x=>x.products?.name).filter(Boolean);
+        const title=names.length===1?names[0]:(names.length>1?`${names[0]} + ${names.length-1} منتجات أخرى`:'طلب رقمي');
+        return `
+          <article class="lc-order-card">
+            <div class="lc-order-head">
+              <div><span class="lc-order-id">طلب #${esc(o.id.slice(0,8).toUpperCase())}</span><div class="lc-order-date">${new Date(o.created_at).toLocaleString('ar-LY')}</div></div>
+              <span class="lc-order-status ${statusClass[o.status]||''}">${statusLabel[o.status]||esc(o.status)}</span>
+            </div>
+            <div class="lc-order-main">
+              <div class="lc-order-icon">⚡</div>
+              <div class="lc-order-info"><h3>${esc(title)}</h3><p>${itemCount} منتج • ${codeCount} كود • الدفع بالمحفظة</p></div>
+              <strong class="lc-order-price">${money(o.total)}</strong>
+            </div>
+            <div class="lc-order-footer">
+              <span>${o.status==='completed'?'✅ تم التسليم':o.status==='cancelled'?'↩️ تم الإلغاء':o.status==='refunded'?'💸 تم الاسترجاع':codeCount?'🔑 الأكواد متاحة':'⏳ بانتظار التسليم'}</span>
+              <button class="btn" data-order-details="${o.id}">عرض التفاصيل</button>
+            </div>
+          </article>`;
+      }).join('');
+      listEl.querySelectorAll('[data-order-details]').forEach(b=>b.onclick=()=>showOrderDetails(b.dataset.orderDetails));
+    };
+    renderList();
+    document.querySelectorAll('[data-order-filter]').forEach(b=>b.onclick=()=>{
+      document.querySelectorAll('[data-order-filter]').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');renderList(b.dataset.orderFilter);
+    });
+  }catch(e){
+    console.error('renderOrders failed:',e);
+    view.innerHTML=`<div class="lc-orders-empty"><div>⚠️</div><h3>تعذر تحميل الطلبات</h3><p class="muted">${esc(e.message||'حدث خطأ غير متوقع')}</p><button class="btn primary" id="retryOrders">إعادة المحاولة</button></div>`;
+    el('retryOrders')?.addEventListener('click',renderOrders);
+  }
+}
+function parseCredential(code){
+  const raw=String(code??'').trim();
+  if(raw.startsWith('{')&&raw.endsWith('}')){try{const obj=JSON.parse(raw);const login=String(obj.login??obj.email??obj.username??'').trim();const password=String(obj.password??'').trim();const accountNumber=String(obj.account_number??obj.accountNumber??'').trim();const accountCode=String(obj.account_code??obj.accountCode??'').trim();if(login&&password)return {login,loginLabel:obj.login_type==='username'?'username':'email',password,accountNumber,accountCode};}catch(e){}}
+  const parts=raw.split(/\s*\\|\s*/).map(x=>x.trim()).filter(Boolean);
+  if(parts.length===2){
+    const clean=v=>v.replace(/^(email|e-mail|username|user|يوزر|الإيميل|البريد|password|pass|كلمة السر|كلمه السر)\s*[:=]\s*/i,'').trim();
+    const leftLabel=/^(email|e-mail|الإيميل|البريد)\s*[:=]/i.test(parts[0])?'email':/^(username|user|يوزر)\s*[:=]/i.test(parts[0])?'username':'';
+    const rightLabel=/^(email|e-mail|الإيميل|البريد)\s*[:=]/i.test(parts[1])?'email':/^(username|user|يوزر)\s*[:=]/i.test(parts[1])?'username':'';
+    const leftPass=/^(password|pass|كلمة السر|كلمه السر)\s*[:=]/i.test(parts[0]);
+    const rightPass=/^(password|pass|كلمة السر|كلمه السر)\s*[:=]/i.test(parts[1]);
+    if(leftPass||rightPass||leftLabel||rightLabel){
+      return {login:leftPass?clean(parts[1]):clean(parts[0]),loginLabel:leftLabel||rightLabel||'email',password:leftPass?clean(parts[0]):clean(parts[1])};
+    }
+    return {login:parts[0],loginLabel:'email',password:parts[1]};
+  }
+  const m=raw.match(/^(?:email|e-mail|الإيميل|البريد|username|user|يوزر)\s*[:=]\s*(.*?)\s*[|,;]\s*(?:password|pass|كلمة السر|كلمه السر)\s*[:=]\s*(.+)$/i);
+  if(m){const label=/^(?:username|user|يوزر)/i.test(raw)?'username':'email';return {login:m[1].trim(),loginLabel:label,password:m[2].trim()}}
+  return null;
+}
+function credentialHtml(code){
+  const parsed=parseCredential(code);
+  if(!parsed)return '<div class="lc-secret-box"><button type="button" class="lc-secret-action" data-copy-code="'+esc(code)+'" aria-label="نسخ">▣</button><button type="button" class="lc-secret-action" data-toggle-code aria-label="إظهار">◉</button><span class="lc-secret-value" data-code-value="'+esc(code)+'">'+('•'.repeat(Math.min(14,Math.max(8,String(code).length))))+'</span></div>';
+  const rows=[{label:parsed.loginLabel==='username'?'اليوزر':'الإيميل',value:parsed.login},{label:'كلمة السر',value:parsed.password},{label:'رقم الحساب',value:parsed.accountNumber},{label:'رمز الحساب',value:parsed.accountCode}].filter(row=>row.value);
+  return '<div class="lc-credential-grid">'+rows.map((row,i)=>'<div class="lc-credential-row"><span>'+row.label+'</span><div class="lc-credential-value"><button type="button" class="lc-secret-action" data-copy-credential="'+esc(row.value)+'">▣</button><button type="button" class="lc-secret-action" data-toggle-credential>◉</button><code data-credential-value="'+esc(row.value)+'">'+('•'.repeat(Math.min(18,Math.max(8,String(row.value).length))))+'</code></div></div>').join('')+'</div>';
+}
+function showOrderDetails(orderId){
+  const orders=window.__LIBYAN_ORDERS||[];
+  const codeMap=window.__LIBYAN_ORDER_CODES||new Map();
+  const o=orders.find(x=>x.id===orderId);if(!o)return;
+  const statusLabel={pending:'قيد الانتظار',paid:'مدفوع',processing:'جارٍ التجهيز',completed:'مكتمل',cancelled:'ملغى',refunded:'مسترجع'};
+  const statusClass={pending:'pending',paid:'paid',processing:'processing',completed:'completed',cancelled:'cancelled',refunded:'refunded'};
+  const codes=codeMap.get(o.id)||[];
+  const items=o.order_items||[];
+  const grouped={};
+  codes.forEach(x=>(grouped[x.product_id]??=[]).push(x.code));
+  const itemRows=items.map(item=>{
+    const name=item.products?.name||'منتج رقمي';
+    const productCodes=grouped[item.product_id]||[];
+    return `<div class="lc-detail-order-item"><div><b>${esc(name)}</b><span>${Number(item.quantity)} × ${money(item.unit_price)}${item.color?' • اللون: '+esc(item.color):''}${item.roblox_username?' • يوزر Roblox: '+esc(item.roblox_username):''}</span></div><strong>${money(Number(item.unit_price)*Number(item.quantity))}</strong>${productCodes.length?`<div class="lc-detail-order-codes">${productCodes.map(code=>`<div class="lc-order-code"><span>🔑</span><code>${esc(code)}</code><button type="button" data-copy-code="${esc(code)}">نسخ</button></div>`).join('')}`:'<small class="muted">سيظهر الكود هنا عند تسليم الطلب.</small>'}</div>`;
+  }).join('');
+  const modal=document.createElement('div');
+  modal.className='lc-order-modal';
+  modal.innerHTML=`<div class="lc-order-modal-backdrop"></div><section class="lc-order-modal-card" role="dialog" aria-modal="true" aria-label="تفاصيل الطلب">
+    <button type="button" class="lc-order-modal-close" aria-label="إغلاق">×</button>
+    <div class="lc-order-modal-head"><div><span class="lc-order-kicker">تفاصيل الطلب</span><h2>طلب #${esc(o.id.slice(0,8).toUpperCase())}</h2><p>${new Date(o.created_at).toLocaleString('ar-LY')}</p></div><span class="lc-order-status ${statusClass[o.status]||''}">${statusLabel[o.status]||esc(o.status)}</span></div>
+    <div class="lc-detail-order-items">${itemRows||'<div class="muted">لا توجد تفاصيل منتجات.</div>'}</div>
+    <div class="lc-order-detail-total"><span>الإجمالي</span><strong>${money(o.total)}</strong></div>
+    <div class="lc-order-detail-meta"><div><span>طريقة الدفع</span><b>المحفظة</b></div><div><span>عدد المنتجات</span><b>${items.reduce((n,x)=>n+Number(x.quantity||0),0)}</b></div></div>
+  </section>`;
+  document.body.appendChild(modal);
+  const close=()=>{if(modal.isConnected)modal.remove()};
+  modal.querySelector('.lc-order-modal-backdrop').onclick=close;
+  modal.querySelector('.lc-order-modal-close').onclick=close;
+  modal.querySelectorAll('[data-copy-code]').forEach(btn=>btn.onclick=async()=>{try{await navigator.clipboard.writeText(btn.dataset.copyCode);btn.textContent='تم النسخ ✓';setTimeout(()=>{if(btn.isConnected)btn.textContent='نسخ'},1200)}catch(e){alert('تعذر نسخ الكود تلقائيًا')}})
+  const onKey=e=>{if(e.key==='Escape'){close();document.removeEventListener('keydown',onKey)}};
+  document.addEventListener('keydown',onKey);
+}
+async function renderAdmin(){if(profile?.role!=='admin')return;const [pr,top,orders,codes,settings,opts,requests]=await Promise.all([sb.from('products').select('*').order('created_at',{ascending:false}),sb.from('wallet_topups').select('*').order('created_at',{ascending:false}).limit(50),sb.from('orders').select('*').order('created_at',{ascending:false}).limit(50),sb.from('product_codes').select('id,product_id,code,status,order_id').order('created_at',{ascending:false}).limit(200),sb.from('store_settings').select('key,value').in('key',['libyana_number','almadar_number']),sb.from('product_options').select('id,product_id,option_type,option_name,active').eq('option_type','color').order('created_at'),sb.from('guest_purchase_requests').select('*').order('created_at',{ascending:false}).limit(50)]);
+ const plist=pr.data||[]; const clist=codes.data||[]; const colorOpts=opts.data||[]; const dragonProduct=plist.find(p=>String(p.name||'').trim()==='دراقون'); const counts={};clist.forEach(c=>counts[c.product_id]=(counts[c.product_id]||0)+1);
+ el('view').innerHTML=`<div class="topbar"><h2>⚙️ لوحة الإدارة</h2><span class="pill">مدير</span></div><div class="grid">
+ <div class="card"><h3>➕ إضافة منتج</h3><input id="pn" class="field" placeholder="اسم المنتج"><input id="pc" class="field" style="margin-top:8px" placeholder="التصنيف"><input id="pp" class="field" style="margin-top:8px" type="number" min="0" step="0.01" placeholder="السعر بالدينار"><textarea id="pd" class="field" style="margin-top:8px;min-height:80px" placeholder="وصف المنتج"></textarea><button class="btn primary" id="addProduct" style="width:100%;margin-top:10px">إضافة المنتج</button></div>
+ <div class="card"><h3>📦 المنتجات</h3>${plist.map(p=>`<div style="padding:10px 0;border-bottom:1px solid #202b3a"><b>${esc(p.name)}</b><div class="muted">${money(p.price)} — ${esc(p.category||'رقمي')} — ${counts[p.id]||0} كود</div><div style="margin-top:7px"><button class="btn" data-edit-product="${p.id}">تعديل</button> <button class="btn" data-toggle-product="${p.id}" data-active="${p.active}">${p.active?'إيقاف':'تفعيل'}</button></div></div>`).join('')||'<span class="muted">لا توجد منتجات</span>'}</div>
+  <div class="card"><h3>🎨 ألوان دراقون</h3>${dragonProduct ? colorOpts.filter(o=>o.product_id===dragonProduct.id).map(o=>'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #202b3a"><b>'+esc(o.option_name)+'</b><button class="btn '+(o.active?'primary':'')+'" data-toggle-dragon-color="'+o.id+'" data-active="'+o.active+'">'+(o.active?'متوفر':'غير متوفر')+'</button></div>').join('') : '<span class="muted">منتج دراقون غير موجود</span>'}<small class="muted" style="display:block;margin-top:8px">اضغط على الزر لتحديد الألوان التي تظهر للزبون ويمكن شراؤها.</small></div>
+ <div class="card"><h3>🔑 إضافة مخزون</h3><select id="codeProduct" class="field">${plist.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select><div id="credentialEntry" class="lc-admin-credential" style="display:none"><label class="muted">الإيميل أو اليوزر</label><input id="accountLogin" class="field" autocomplete="off" placeholder="example@gmail.com أو username"><label class="muted">كلمة السر</label><input id="accountPassword" class="field" type="password" autocomplete="new-password" placeholder="كلمة السر"><label class="muted">رقم الحساب</label><input id="accountNumber" class="field" inputmode="numeric" autocomplete="off" placeholder="رقم الحساب (اختياري)"><label class="muted">رمز الحساب</label><input id="accountCode" class="field" autocomplete="off" placeholder="رمز الحساب (اختياري)"><button class="btn primary" id="addAccount" style="width:100%;margin-top:10px">إضافة الحساب للمخزون</button></div><div id="normalCodeEntry"><label class="muted">الأكواد — كود في كل سطر</label><textarea id="codesText" class="field" style="margin-top:8px;min-height:120px" placeholder="اكتب كودًا في كل سطر"></textarea><button class="btn primary" id="addCodes" style="width:100%;margin-top:10px">حفظ الأكواد</button></div><small id="codeMsg" class="muted" style="display:block;margin-top:8px"></small></div>
+ <div class="card"><h3>🧾 مخزون الأكواد</h3>${clist.slice(0,100).map(c=>{const p=plist.find(x=>x.id===c.product_id);return `<div style="padding:7px 0;border-bottom:1px solid #202b3a"><div>${credentialHtml(c.code)}</div><span class="muted">${esc(p?.name||'منتج محذوف')} — ${esc(c.status)}</span>${c.status==='available'?` <button class="btn" data-delete-code="${c.id}" style="float:left">حذف</button>`:''}</div>`}).join('')||'<span class="muted">لا توجد أكواد. أضف أكواد من البطاقة السابقة.</span>'}</div>
+ <div class="card"><h3>📲 أرقام الشحن</h3><input id="libyanaNum" class="field" value="${esc((settings.data||[]).find(x=>x.key==='libyana_number')?.value||'')}" placeholder="رقم ليبيانا"><input id="almadarNum" class="field" style="margin-top:8px" value="${esc((settings.data||[]).find(x=>x.key==='almadar_number')?.value||'')}" placeholder="رقم المدار"><button class="btn primary" id="saveNumbers" style="width:100%;margin-top:10px">حفظ أرقام الشحن</button></div>
+ <div class="card"><h3>💳 طلبات الشحن</h3>${(top.data||[]).map(t=>`<div style="padding:8px 0;border-bottom:1px solid #202b3a">${money(t.amount)} — ${esc(t.method)} — ${esc(t.sender_phone||'')}<br><span class="pill">${esc(t.status)}</span>${t.status==='pending'?`<div style="margin-top:7px"><button class="btn primary" data-approve="${t.id}">اعتماد</button> <button class="btn" data-reject="${t.id}">رفض</button></div>`:''}</div>`).join('')||'<span class="muted">لا توجد طلبات</span>'}</div>
+ <div class="card"><h3>💳 طلبات الدفع المباشر</h3>${(requests.data||[]).map(t=>`<div style="padding:10px 0;border-bottom:1px solid #202b3a"><b>${money(t.total)}</b> — ${esc(t.payment_method==='libyana'?'ليبيانا':'المدار')}<br><span class="muted">${esc(t.customer_name)} — ${esc(t.customer_phone)}</span><br><span class="muted">رقم المحوّل: ${esc(t.sender_phone)}${t.payment_reference?' — المرجع: '+esc(t.payment_reference):''}</span><br><span class="pill">${esc(t.status)}</span><details style="margin-top:7px"><summary>تفاصيل المنتجات</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(JSON.stringify(t.items,null,2))}</pre></details>${['pending_payment','payment_review'].includes(t.status)?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn" data-request-status="payment_review" data-request-id="${t.id}">قيد مراجعة الدفع</button><button class="btn primary" data-request-status="paid" data-request-id="${t.id}">تأكيد الدفع</button><button class="btn" data-request-status="rejected" data-request-id="${t.id}">رفض</button></div>`:''}${t.status==='paid'?`<button class="btn primary" data-request-status="fulfilled" data-request-id="${t.id}" style="margin-top:8px">تم التسليم</button>`:''} </div>`).join('')||'<span class="muted">لا توجد طلبات دفع مباشر</span>'}</div><div class="card"><h3>🛒 الطلبات القديمة</h3>${(orders.data||[]).map(o=>`<div style="padding:8px 0;border-bottom:1px solid #202b3a">${money(o.total)} — <span class="pill">${esc(o.status)}</span><br><span class="muted">${esc(o.customer_name||'')} — ${esc(o.customer_phone||'')}</span></div>`).join('')||'<span class="muted">لا توجد طلبات</span>'}</div></div>`;
+ el('addProduct').onclick=addProduct;el('addCodes').onclick=addCodes;el('addAccount').onclick=addAccount;el('codeProduct').onchange=toggleCredentialEntry;toggleCredentialEntry();el('saveNumbers').onclick=saveNumbers;document.querySelectorAll('[data-edit-product]').forEach(b=>b.onclick=()=>editProduct(b.dataset.editProduct,plist));document.querySelectorAll('[data-toggle-product]').forEach(b=>b.onclick=()=>toggleProduct(b.dataset.toggleProduct,b.dataset.active==='true'));document.querySelectorAll('[data-toggle-dragon-color]').forEach(b=>b.onclick=()=>toggleDragonColor(b.dataset.toggleDragonColor,b.dataset.active==='true'));document.querySelectorAll('[data-delete-code]').forEach(b=>b.onclick=()=>deleteCode(b.dataset.deleteCode));document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>reviewTopup(b.dataset.approve,true));document.querySelectorAll('[data-reject]').forEach(b=>b.onclick=()=>reviewTopup(b.dataset.reject,false));document.querySelectorAll('[data-request-status]').forEach(b=>b.onclick=()=>updateGuestPurchaseStatus(b.dataset.requestId,b.dataset.requestStatus));}
+async function updateGuestPurchaseStatus(id,status){if(!['payment_review','paid','fulfilled','rejected'].includes(status))return;const labels={payment_review:'نقل الطلب إلى مراجعة الدفع؟',paid:'تأكيد استلام الدفع لهذا الطلب؟',fulfilled:'تأكيد تسليم المنتج؟',rejected:'رفض طلب الدفع؟'};if(!confirm(labels[status]||'تأكيد تغيير الحالة؟'))return;const r=await sb.from('guest_purchase_requests').update({status,reviewed_at:new Date().toISOString(),reviewed_by:session?.user?.id||null}).eq('id',id);if(r.error)return alert('تعذر تحديث الطلب: '+r.error.message);renderAdmin()}
+async function addProduct(){const name=el('pn').value.trim(),category=el('pc').value.trim()||'رقمي',price=Number(el('pp').value),description=el('pd').value.trim();if(!name||!(price>=0))return alert('أدخل اسم المنتج والسعر');const r=await sb.from('products').insert({name,category,price,description,active:true}).select().single();if(r.error)return alert(r.error.message);alert('تمت إضافة المنتج');renderAdmin()}
+async function editProduct(id,list){const p=list.find(x=>x.id===id);if(!p)return;const name=prompt('اسم المنتج',p.name);if(name===null)return;const priceText=prompt('السعر بالدينار',p.price);if(priceText===null)return;const price=Number(priceText);if(!name.trim()||!(price>=0))return alert('بيانات غير صحيحة');const category=prompt('التصنيف',p.category||'رقمي');if(category===null)return;const description=prompt('الوصف',p.description||'');if(description===null)return;const r=await sb.from('products').update({name:name.trim(),price,category:category.trim()||'رقمي',description:description.trim()}).eq('id',id);if(r.error)return alert(r.error.message);renderAdmin()}
+async function toggleProduct(id,active){const r=await sb.from('products').update({active:!active}).eq('id',id);if(r.error)return alert(r.error.message);renderAdmin()}
+async function toggleDragonColor(id,active){const r=await sb.from('product_options').update({active:!active,updated_at:new Date().toISOString()}).eq('id',id).eq('option_type','color');if(r.error)return alert(r.error.message);renderAdmin()}
+function isCredentialProduct(product){const n=String(product?.name||'').toLowerCase();const c=String(product?.category||'').toLowerCase();return /netflix|نتفلكس|نتفليكس|shahid|شاهد/.test(n+' '+c)}
+function toggleCredentialEntry(){const select=el('codeProduct');const label=select?.options?.[select.selectedIndex]?.textContent||'';const credential=isCredentialProduct({name:label,category:''});if(el('credentialEntry'))el('credentialEntry').style.display=credential?'grid':'none';if(el('normalCodeEntry'))el('normalCodeEntry').style.display=credential?'none':'block'}
+async function addAccount(){const productId=el('codeProduct').value;const login=el('accountLogin').value.trim();const password=el('accountPassword').value;const accountNumber=el('accountNumber').value.trim();const accountCode=el('accountCode').value.trim();const msg=el('codeMsg');if(!productId||!login||!password)return alert('اختر المنتج واكتب الإيميل/اليوزر وكلمة السر');const select=el('codeProduct');const productLabel=select?.options?.[select.selectedIndex]?.textContent||'';if(!isCredentialProduct({name:productLabel,category:''}))return alert('هذا المنتج لا يستخدم نظام الحسابات');msg.textContent='جارٍ إضافة الحساب...';const code=JSON.stringify({login,password,account_number:accountNumber,account_code:accountCode,login_type:/@/.test(login)?'email':'username'});const r=await sb.rpc('admin_upsert_product_code',{p_product_id:productId,p_code:code});if(r.error){msg.textContent='';return alert(r.error.message)}el('accountLogin').value='';el('accountPassword').value='';el('accountNumber').value='';el('accountCode').value='';msg.textContent='تمت إضافة الحساب للمخزون ✓';renderAdmin()}
+async function addCodes(){const productId=el('codeProduct').value;const raw=el('codesText').value;const codes=[...new Set(raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];if(!productId||!codes.length)return alert('اختر المنتج وأدخل كودًا واحدًا على الأقل');el('codeMsg').textContent=`جارٍ حفظ ${codes.length} كود...`;let ok=0,fail=0;for(const code of codes){const r=await sb.rpc('admin_upsert_product_code',{p_product_id:productId,p_code:code});if(r.error)fail++;else ok++}el('codeMsg').textContent=`تم حفظ ${ok} كود${fail?`، وتعذر حفظ ${fail}`:''}.`;if(ok)el('codesText').value='';renderAdmin()}
+async function deleteCode(id){if(!confirm('حذف هذا الكود من المخزون؟'))return;const r=await sb.rpc('admin_delete_product_code',{p_code_id:id});if(r.error)return alert(r.error.message);renderAdmin()}
+async function saveNumbers(){const a=el('libyanaNum').value.trim(),b=el('almadarNum').value.trim();const r1=await sb.rpc('admin_set_setting',{p_key:'libyana_number',p_value:a}),r2=await sb.rpc('admin_set_setting',{p_key:'almadar_number',p_value:b});if(r1.error||r2.error)return alert((r1.error||r2.error).message);alert('تم حفظ أرقام الشحن');renderAdmin()}
+async function reviewTopup(id,approve){const note=prompt(approve?'ملاحظة الاعتماد (اختياري)':'سبب الرفض (اختياري)')||'';const r=await sb.rpc('review_wallet_topup',{p_topup_id:id,p_approve:approve,p_note:note});if(r.error)return alert(r.error.message);renderAdmin()}
+boot();)+'</span></div>'+
+        '</button><div class="lc-robux-actions"><button type="button" class="lc-icon-action" data-product-info="'+p.id+'" aria-label="معلومات المنتج">?</button><button type="button" class="lc-icon-action" data-favorite="'+p.id+'" aria-label="المفضلة">☆</button></div></div>'+
+        '<div class="lc-robux-content"><h3>'+esc(p.name)+'</h3><strong class="lc-robux-price">'+money(p.price)+'</strong><span class="lc-robux-status '+stockClass+'">'+(available?'● متوفر':'غير متوفر')+'</span>'+
+        (available?'<button type="button" class="lc-buy-button" data-product-open="'+p.id+'">شراء الآن ←</button>':'<span class="lc-out-button">غير متوفر</span>')+'</div></article>';
     }
     return '<article class="lc-package-card">'+
       '<button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
