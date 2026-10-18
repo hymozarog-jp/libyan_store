@@ -15,6 +15,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check supabase.js
+          node --check worker.js
+          node --check theme.js
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
