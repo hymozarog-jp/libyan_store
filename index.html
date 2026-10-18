@@ -1,6 +1,6 @@
 <!doctype html><!-- deploy-check: 2026-09-20-diagnostic --><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#17133f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="manifest" href="manifest.webmanifest"><meta name="description" content="Libyan Store - متجر متخصص في بيع Robux"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>Libyan Store | متجر Robux</title><script src="supabase-config.js?v=20260916-2"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><link rel="stylesheet" href="styles.css?v=20260924-3"><link rel="stylesheet" href="theme.css?v=20261018-wallet-violet-2"><link rel="stylesheet" href="rebuild.css?v=20261018-2">
 <style>
-.ls-loader{min-height:100svh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 22px;text-align:center;direction:rtl;background:radial-gradient(ellipse at 50% 35%,#30205d 0%,#1b1740 42%,#0e1024 100%);color:#fff;overflow:hidden}
+.ls-loader{position:fixed;inset:0;z-index:99999;min-height:100svh;transition:opacity .3s ease;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 22px;text-align:center;direction:rtl;background:radial-gradient(ellipse at 50% 35%,#30205d 0%,#1b1740 42%,#0e1024 100%);color:#fff;overflow:hidden}
 .ls-loader-logo{width:76px;height:76px;display:grid;place-items:center;border-radius:25px;background:linear-gradient(145deg,#a58aff,#6341d6);font-size:43px;font-weight:1000;box-shadow:0 0 0 9px #9c7bff12,0 12px 45px #8b5cf655;animation:ls-float 2s ease-in-out infinite}
 .ls-loader-kicker{margin-top:24px;color:#c7b8ff;font-size:11px;font-weight:900;letter-spacing:4px;direction:ltr}
 .ls-loader h1{font-size:clamp(25px,6vw,34px);margin:10px 0 6px;letter-spacing:-.6px}
@@ -17,7 +17,7 @@
 @keyframes ls-dot{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-6px);opacity:1}}
 @media(prefers-reduced-motion:reduce){.ls-loader-logo,.ls-loader-dots i{animation:none}.ls-loader-fill{transition:none}}
 </style>
-</head><body><main id="app"><div class="ls-loader" role="status" aria-live="polite"><div class="ls-loader-logo">L</div><div class="ls-loader-kicker">LIBYAN STORE</div><h1>نجهّز متجرك ✨</h1><p class="ls-loader-sub">لحظات ونفتح لك عالم Robux</p><div class="ls-loader-percent" id="lsLoaderPercent">0%</div><div class="ls-loader-track"><div class="ls-loader-fill" id="lsLoaderFill"></div></div><div class="ls-loader-stage" id="lsLoaderStage">نحضّر واجهة المتجر...</div><div class="ls-loader-dots"><i></i><i></i><i></i></div><div class="ls-loader-tip" id="lsLoaderTip">💜 تجربة تسوّق أسهل، خطوة بخطوة</div></div></main><script>
+</head><body><div id="lsLoader" class="ls-loader" role="status" aria-live="polite"><div class="ls-loader-logo">L</div><div class="ls-loader-kicker">LIBYAN STORE</div><h1>نجهّز متجرك ✨</h1><p class="ls-loader-sub">لحظات ونفتح لك عالم Robux</p><div class="ls-loader-percent" id="lsLoaderPercent">0%</div><div class="ls-loader-track"><div class="ls-loader-fill" id="lsLoaderFill"></div></div><div class="ls-loader-stage" id="lsLoaderStage">نحضّر واجهة المتجر...</div><div class="ls-loader-dots"><i></i><i></i><i></i></div><div class="ls-loader-tip" id="lsLoaderTip">💜 تجربة تسوّق أسهل، خطوة بخطوة</div></div><main id="app"><div class="shell"><div class="card" style="text-align:center">جارٍ تحميل المتجر…</div></div></main><script>
 (function(){
   window.mapCover = window.mapCover || function(){ return ''; };
   try{ if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(x){x.unregister()})}).catch(function(){}) } }catch(e){}
@@ -67,6 +67,7 @@
     }
     setLoadProgress(100,'اكتمل التحميل! أهلاً بيك 💜');
     document.getElementById('app').dataset.ready='1';
+    var loader=document.getElementById('lsLoader');if(loader){loader.style.opacity='0';loader.style.pointerEvents='none';setTimeout(function(){loader.remove()},350);}
   }
   start();
 })();
