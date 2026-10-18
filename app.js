@@ -42,7 +42,7 @@ function renderVerifyEmail(email,msg=''){
 }
 async function verifyEmailCode(email){
  if(authBusy)return;
- const token=String(el('emailCode')?.value||'').replace(/\\D/g,'');
+ const token=String(el('emailCode')?.value||'').replace(/\D/g,'');
  const msg=el('msg');
  if(token.length!==6){msg.textContent='اكتب رمز التحقق المكوّن من 6 أرقام.';return}
  authBusy=true;msg.textContent='جارٍ التحقق من الرمز...';el('verifyCode').disabled=true;
@@ -88,7 +88,7 @@ async function auth(signup){
  const msg=el('msg'),button=signup?el('signup'):el('login');
  const email=emailInput(),password=el('pass')?.value||'';
  if(!email)return msg.textContent='اكتب البريد الإلكتروني أولاً';
- if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return msg.textContent='تأكد من كتابة بريد إلكتروني صحيح.';
+ if(!/^[^\s@]+@[^\s@]+\\.[^\s@]+$/.test(email))return msg.textContent='تأكد من كتابة بريد إلكتروني صحيح.';
  if(password.length<6)return msg.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';
  let fullName='',phone='';
  if(signup){
@@ -248,7 +248,7 @@ function renderStore(){
   el('lcSearch').onclick=()=>{const q=prompt('ابحث عن منتج');if(!q)return;const found=products.find(p=>String(p.name||'').toLowerCase().includes(q.toLowerCase()));if(found)showProduct(found);else alert('لم يتم العثور على المنتج')};
   el('lcBell').onclick=()=>alert('لا توجد إشعارات جديدة حالياً.');
   el('heroBrowse')?.addEventListener('click',()=>el('view')?.scrollIntoView({behavior:'smooth',block:'start'}));
-  el('lcLogout').onclick=()=>alert('المتجر يعمل بدون تسجيل دخول.');
+  el('lcLogout').onclick=async()=>{if(!confirm('هل تريد تسجيل الخروج؟'))return;try{const r=await sb.auth.signOut();if(r.error)throw r.error;session=null;profile=null;wallet=null;renderLogin('تم تسجيل الخروج بنجاح.',false)}catch(e){alert(humanAuthError(e))}};
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{const viewName=b.dataset.view;if(viewName==='wallet'&&!session?.user){close();return}document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');({store:renderProducts,cart:renderCartPage,wallet:renderWallet,orders:renderOrders,account:renderAccount,admin:renderAdmin}[viewName])();close()});
   renderProducts();
 }
@@ -811,19 +811,19 @@ async function renderOrders(){
 function parseCredential(code){
   const raw=String(code??'').trim();
   if(raw.startsWith('{')&&raw.endsWith('}')){try{const obj=JSON.parse(raw);const login=String(obj.login??obj.email??obj.username??'').trim();const password=String(obj.password??'').trim();const accountNumber=String(obj.account_number??obj.accountNumber??'').trim();const accountCode=String(obj.account_code??obj.accountCode??'').trim();if(login&&password)return {login,loginLabel:obj.login_type==='username'?'username':'email',password,accountNumber,accountCode};}catch(e){}}
-  const parts=raw.split(/\\s*\\|\\s*/).map(x=>x.trim()).filter(Boolean);
+  const parts=raw.split(/\s*\\|\s*/).map(x=>x.trim()).filter(Boolean);
   if(parts.length===2){
-    const clean=v=>v.replace(/^(email|e-mail|username|user|يوزر|الإيميل|البريد|password|pass|كلمة السر|كلمه السر)\\s*[:=]\\s*/i,'').trim();
-    const leftLabel=/^(email|e-mail|الإيميل|البريد)\\s*[:=]/i.test(parts[0])?'email':/^(username|user|يوزر)\\s*[:=]/i.test(parts[0])?'username':'';
-    const rightLabel=/^(email|e-mail|الإيميل|البريد)\\s*[:=]/i.test(parts[1])?'email':/^(username|user|يوزر)\\s*[:=]/i.test(parts[1])?'username':'';
-    const leftPass=/^(password|pass|كلمة السر|كلمه السر)\\s*[:=]/i.test(parts[0]);
-    const rightPass=/^(password|pass|كلمة السر|كلمه السر)\\s*[:=]/i.test(parts[1]);
+    const clean=v=>v.replace(/^(email|e-mail|username|user|يوزر|الإيميل|البريد|password|pass|كلمة السر|كلمه السر)\s*[:=]\s*/i,'').trim();
+    const leftLabel=/^(email|e-mail|الإيميل|البريد)\s*[:=]/i.test(parts[0])?'email':/^(username|user|يوزر)\s*[:=]/i.test(parts[0])?'username':'';
+    const rightLabel=/^(email|e-mail|الإيميل|البريد)\s*[:=]/i.test(parts[1])?'email':/^(username|user|يوزر)\s*[:=]/i.test(parts[1])?'username':'';
+    const leftPass=/^(password|pass|كلمة السر|كلمه السر)\s*[:=]/i.test(parts[0]);
+    const rightPass=/^(password|pass|كلمة السر|كلمه السر)\s*[:=]/i.test(parts[1]);
     if(leftPass||rightPass||leftLabel||rightLabel){
       return {login:leftPass?clean(parts[1]):clean(parts[0]),loginLabel:leftLabel||rightLabel||'email',password:leftPass?clean(parts[0]):clean(parts[1])};
     }
     return {login:parts[0],loginLabel:'email',password:parts[1]};
   }
-  const m=raw.match(/^(?:email|e-mail|الإيميل|البريد|username|user|يوزر)\\s*[:=]\\s*(.*?)\\s*[|,;]\\s*(?:password|pass|كلمة السر|كلمه السر)\\s*[:=]\\s*(.+)$/i);
+  const m=raw.match(/^(?:email|e-mail|الإيميل|البريد|username|user|يوزر)\s*[:=]\s*(.*?)\s*[|,;]\s*(?:password|pass|كلمة السر|كلمه السر)\s*[:=]\s*(.+)$/i);
   if(m){const label=/^(?:username|user|يوزر)/i.test(raw)?'username':'email';return {login:m[1].trim(),loginLabel:label,password:m[2].trim()}}
   return null;
 }
