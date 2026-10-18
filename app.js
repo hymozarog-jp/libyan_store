@@ -311,11 +311,19 @@ function renderProducts(){
   const categories=[...new Set(products.map(p=>String(p.category||'رقمي').trim()||'رقمي'))];
   const packageCards=products.map(p=>{
     const img=imageFor(p);
+    const isRobux=/roblox|robux|روبلوكس|روبوكس/i.test(String(p.name||'')+' '+String(p.category||''));
     const available=Boolean(p.always_available)||Number(p.stock_count||0)>0;
     const stockText=p.always_available?'متوفر دائمًا':available?'متوفر الآن':'غير متوفر حاليًا';
     const stockClass=available?'available':'unavailable';
     const category=String(p.category||'رقمي').trim()||'رقمي';
     const desc=String(p.description||'').trim();
+    if(isRobux){
+      return '<article class="lc-package-card lc-robux-card">'+
+        '<button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
+          '<div class="lc-robux-media">'+(img?'<img src="'+img+'" alt="'+esc(p.name)+'">':'<div class="lc-product-placeholder">R$</div>')+'</div>'+
+          '<div class="lc-robux-content"><h3>'+esc(p.name)+'</h3><strong class="lc-robux-price">'+money(p.price)+'</strong><span class="lc-robux-status '+stockClass+'">'+esc(stockText)+'</span></div>'+
+        '</button></article>';
+    }
     return '<article class="lc-package-card">'+
       '<button type="button" class="lc-package-main" data-product-open="'+p.id+'">'+
         '<div class="lc-package-media">'+
