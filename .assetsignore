@@ -6,5 +6,8 @@ wrangler.json
 wrangler.jsonc
 wrangler.toml
 .assetsignore
+worker.js
+package.json
+package-lock.json
 README.md
 MOBILE_APP.md
