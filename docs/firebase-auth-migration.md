@@ -64,3 +64,12 @@ Read-only review confirmed the current auth flow and live schema constraints. No
 ## Next action
 
 The Firebase Web SDK configuration has been received. Client configuration alone does not authorize changing production authentication. Validate the Supabase third-party provider configuration and identity ownership model before enabling Firebase sign-in.
+
+
+### Additional live-schema audit (2026-10-18)
+
+A read-only query confirmed UUID foreign-key ownership references to `profiles.id` from `wallets.user_id`, `orders.user_id`, `wallet_topups.user_id`, `wallet_transactions.user_id`, exchange requests/messages/ratings/reports, and privileged attribution fields such as `store_settings.updated_by` and `wallet_topups.reviewed_by`. This confirms that switching the browser to Firebase Auth alone would not preserve the current ownership model.
+
+Supabase's current Firebase guide also requires a Firebase third-party integration in Supabase Authentication settings and a trusted server-side process to set the `role: authenticated` custom claim. The available project connector cannot configure that Dashboard integration, so it has not been enabled or verified.
+
+No production schema, rows, RLS policies, auth settings, or deployment were changed. Keep the current login flow intact until the identity bridge or full schema redesign is tested.
