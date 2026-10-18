@@ -29,23 +29,49 @@ async function boot(){
  }
 }
 function renderLogin(msg='',signupMode=false){
- app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">⚡</div><h1>Libyan Store</h1><p class="muted">أنشئ حسابك أو سجّل الدخول بالبريد الإلكتروني</p><div class="card" style="display:grid;gap:10px;text-align:right">
- ${signupMode?'<input id="fullName" class="field" autocomplete="name" placeholder="الاسم الكامل"><input id="phone" class="field" type="tel" inputmode="tel" autocomplete="tel" placeholder="رقم الهاتف">':''}
- <label for="email">البريد الإلكتروني</label><input id="email" class="field" type="email" autocomplete="email" placeholder="name@example.com" value="">
- <label for="pass">كلمة المرور</label><input id="pass" class="field" type="password" autocomplete="${signupMode?'new-password':'current-password'}" placeholder="6 أحرف على الأقل">
- <button class="btn primary" id="login">${signupMode?'متابعة تسجيل الدخول':'تسجيل الدخول'}</button>
- <button class="btn" id="signup">${signupMode?'إنشاء الحساب وإرسال رمز التحقق':'إنشاء حساب جديد'}</button>
- <button class="btn" id="forgot">نسيت كلمة المرور؟</button>
- <small id="msg" class="muted" role="status">${esc(msg)}</small></div></div>`;
- el('login').onclick=()=>signupMode?renderLogin('',false):auth(false);
+ const modeLabel=signupMode?'إنشاء حساب جديد':'مرحبًا بعودتك';
+ app.innerHTML=`<section class="auth-page" dir="rtl">
+  <div class="auth-glow auth-glow-one"></div><div class="auth-glow auth-glow-two"></div>
+  <div class="auth-layout">
+   <aside class="auth-welcome">
+    <div class="auth-brand"><span class="auth-brand-mark">L</span><span><b>Libyan Store</b><small>متجرك الرقمي بكل سهولة</small></span></div>
+    <div class="auth-welcome-copy"><span class="auth-eyebrow"><i></i> تجربة تسوّق أسهل</span><h1>كل اللي تحتاجه،<br><em>في مكان واحد.</em></h1><p>سجّل دخولك وتابع مشترياتك ورصيدك، أو أنشئ حسابًا جديدًا في خطوات بسيطة.</p>
+     <div class="auth-benefits"><div><span>✓</span><div><b>حسابك في أمان</b><small>تسجيل دخول وتحقق بالبريد</small></div></div><div><span>↗</span><div><b>تجربة سلسة</b><small>واجهة واضحة على الهاتف والكمبيوتر</small></div></div></div>
+    </div><div class="auth-aside-foot"><span class="auth-live-dot"></span> متجر ليبي، تجربة رقمية حديثة</div>
+   </aside>
+   <section class="auth-panel">
+    <div class="auth-mobile-brand"><span class="auth-brand-mark">L</span><b>Libyan Store</b></div>
+    <div class="auth-form-head"><span class="auth-form-icon">${signupMode?'✦':'↗'}</span><span class="auth-eyebrow">أهلًا بيك</span><h2>${modeLabel}</h2><p>${signupMode?'أنشئ حسابك وابدأ تجربتك معانا.':'سجّل دخولك للمتابعة إلى متجرك.'}</p></div>
+    <div class="auth-tabs" role="tablist" aria-label="نوع الحساب"><button type="button" id="authTabLogin" class="${signupMode?'':'active'}" aria-selected="${!signupMode}">تسجيل الدخول</button><button type="button" id="authTabSignup" class="${signupMode?'active':''}" aria-selected="${signupMode}">حساب جديد</button></div>
+    <form id="authForm" class="auth-form" novalidate>
+     ${signupMode?'<label class="auth-label" for="fullName">الاسم الكامل</label><div class="auth-input-wrap"><span class="auth-input-icon">♙</span><input id="fullName" class="field auth-field" autocomplete="name" placeholder="اكتب اسمك الكامل" required></div><label class="auth-label" for="phone">رقم الهاتف</label><div class="auth-input-wrap"><span class="auth-input-icon">⌕</span><input id="phone" class="field auth-field" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xxxxxxxx" required></div>':''}
+     <label class="auth-label" for="email">البريد الإلكتروني</label><div class="auth-input-wrap"><span class="auth-input-icon">✉</span><input id="email" class="field auth-field" type="email" autocomplete="email" placeholder="name@example.com" required dir="ltr"></div>
+     <label class="auth-label" for="pass">كلمة المرور</label><div class="auth-input-wrap"><span class="auth-input-icon">⌑</span><input id="pass" class="field auth-field" type="password" autocomplete="${signupMode?'new-password':'current-password'}" placeholder="6 أحرف على الأقل" required minlength="6" dir="auto"><button class="auth-show-pass" id="togglePass" type="button" aria-label="إظهار كلمة المرور" aria-pressed="false">إظهار</button></div>
+     <div class="auth-form-tools">${signupMode?'<span class="auth-hint">استخدم 6 أحرف على الأقل</span>':'<button type="button" id="forgot" class="auth-link">نسيت كلمة المرور؟</button>'}</div>
+     <button class="btn primary auth-submit" id="login" type="submit"><span>${signupMode?'متابعة تسجيل الدخول':'تسجيل الدخول'}</span><span class="auth-submit-arrow">←</span></button>
+     <button class="btn auth-secondary" id="signup" type="button">${signupMode?'إنشاء الحساب وإرسال رمز التحقق':'إنشاء حساب جديد'} <span>＋</span></button>
+     <div class="auth-message ${msg?'has-message':''}" id="msg" role="status" aria-live="polite">${esc(msg)}</div>
+    </form>
+    <p class="auth-terms">بالمتابعة، أنت تستخدم خدمات <b>Libyan Store</b> بأمان.</p>
+   </section>
+  </div>
+ </section>`;
+ el('authTabLogin').onclick=()=>{if(signupMode)renderLogin('',false)};
+ el('authTabSignup').onclick=()=>{if(!signupMode)renderLogin('',true)};
+ el('authForm').onsubmit=e=>{e.preventDefault();auth(signupMode)};
+ el('login').onclick=e=>{e.preventDefault();auth(signupMode)};
  el('signup').onclick=()=>signupMode?auth(true):renderLogin('',true);
- el('forgot').onclick=resetPassword;
+ const toggle=el('togglePass');
+ toggle.onclick=()=>{const input=el('pass'),visible=input.type==='password';input.type=visible?'text':'password';toggle.textContent=visible?'إخفاء':'إظهار';toggle.setAttribute('aria-pressed',String(visible));toggle.setAttribute('aria-label',visible?'إخفاء كلمة المرور':'إظهار كلمة المرور');input.focus()};
+ if(el('forgot'))el('forgot').onclick=resetPassword;
 }
 function renderVerifyEmail(email,msg=''){
- app.innerHTML=`<div style="max-width:430px;margin:35px auto;text-align:center"><div style="font-size:48px">✉️</div><h1>تحقق من بريدك</h1><p class="muted">أرسلنا رمز تحقق إلى <b dir="ltr">${esc(email)}</b>. اكتب الرمز المكوّن من 6 أرقام لإكمال إنشاء الحساب.</p><div class="card" style="display:grid;gap:12px;text-align:right"><label for="emailCode">رمز التحقق</label><input id="emailCode" class="field" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" dir="ltr" style="text-align:center;letter-spacing:8px;font-size:24px"><button class="btn primary" id="verifyCode">تأكيد البريد الإلكتروني</button><button class="btn" id="resendCode">إعادة إرسال الرمز</button><button class="btn" id="backToLogin">العودة لتسجيل الدخول</button><small id="msg" class="muted" role="status">${esc(msg)}</small></div></div>`;
+ app.innerHTML=`<section class="auth-page" dir="rtl"><div class="auth-glow auth-glow-one"></div><div class="auth-glow auth-glow-two"></div><div class="auth-layout auth-verify-layout"><aside class="auth-welcome"><div class="auth-brand"><span class="auth-brand-mark">L</span><span><b>Libyan Store</b><small>متجرك الرقمي بكل سهولة</small></span></div><div class="auth-welcome-copy"><span class="auth-eyebrow"><i></i> خطوة أخيرة</span><h1>بريدك هو<br><em>مفتاح حسابك.</em></h1><p>أكّد بريدك الإلكتروني باش نحافظوا على أمان حسابك ونكملوا التسجيل.</p></div></aside><section class="auth-panel"><div class="auth-form-head"><span class="auth-form-icon">✉</span><span class="auth-eyebrow">تأكيد البريد</span><h2>تحقق من بريدك</h2><p>أرسلنا رمزًا إلى <b dir="ltr">${esc(email)}</b>. أدخل الرمز المكوّن من 6 أرقام.</p></div><div class="auth-form"><label class="auth-label" for="emailCode">رمز التحقق</label><input id="emailCode" class="field auth-field auth-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" dir="ltr"><button class="btn primary auth-submit" id="verifyCode" type="button"><span>تأكيد البريد الإلكتروني</span><span class="auth-submit-arrow">←</span></button><button class="btn auth-secondary" id="resendCode" type="button">إعادة إرسال الرمز</button><button class="btn auth-text-button" id="backToLogin" type="button">العودة لتسجيل الدخول</button><div id="msg" class="auth-message ${msg?'has-message':''}" role="status" aria-live="polite">${esc(msg)}</div></div></section></div></section>`;
  el('verifyCode').onclick=()=>verifyEmailCode(email);
  el('resendCode').onclick=()=>resendEmailCode(email);
  el('backToLogin').onclick=()=>renderLogin('',false);
+ el('emailCode').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\\D/g,'').slice(0,6)});
+ el('emailCode').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();verifyEmailCode(email)}});
 }
 async function verifyEmailCode(email){
  if(authBusy)return;
