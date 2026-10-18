@@ -88,7 +88,7 @@ async function auth(signup){
  const msg=el('msg'),button=signup?el('signup'):el('login');
  const email=emailInput(),password=el('pass')?.value||'';
  if(!email)return msg.textContent='اكتب البريد الإلكتروني أولاً';
- if(!/^[^\s@]+@[^\s@]+\\.[^\s@]+$/.test(email))return msg.textContent='تأكد من كتابة بريد إلكتروني صحيح.';
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return msg.textContent='تأكد من كتابة بريد إلكتروني صحيح.';
  if(password.length<6)return msg.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';
  let fullName='',phone='';
  if(signup){
