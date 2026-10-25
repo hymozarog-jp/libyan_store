@@ -270,6 +270,7 @@ function renderStore(){
       <button class="active" data-view="store">⌂<br>الرئيسية</button>
       
       <button data-view="cart">▣<span class="lc-badge" id="navCartCount">0</span><br>المشتريات</button>
+      <button data-view="wallet">💰<br>المحفظة</button>
       <button data-view="orders">▤<br>البطاقات</button>
       <button data-view="account">⚙<br>الإعدادات</button>
     </nav>
@@ -278,7 +279,7 @@ function renderStore(){
       <div class="lc-profile"><div class="lc-profile-avatar">●</div><div style="font-size:21px;font-weight:900">${esc(profile?.full_name||session.user.email||'العميل')}</div><div class="muted">${esc(session.user.email||'')}</div></div>
       <button class="lc-drawer-btn" data-view="store">⌂ &nbsp; الرئيسية</button>
       <button class="lc-drawer-btn" data-view="orders">▤ &nbsp; طلباتي</button>
-      
+      <button class="lc-drawer-btn" data-view="wallet">💰 &nbsp; المحفظة وشحن الرصيد</button>
       <button class="lc-drawer-btn" data-view="account">● &nbsp; المعلومات الشخصية</button>
       ${profile?.role==='admin'?'<button class="lc-drawer-btn" data-view="admin">⚙ &nbsp; الإدارة</button>':''}
       <button class="lc-drawer-btn" id="lcLogout" style="color:#ff776f;margin-top:18px">⇥ &nbsp; تسجيل الخروج</button>
@@ -291,7 +292,7 @@ function renderStore(){
   el('lcBell').onclick=()=>alert('لا توجد إشعارات جديدة حالياً.');
   el('heroBrowse')?.addEventListener('click',()=>el('view')?.scrollIntoView({behavior:'smooth',block:'start'}));
   el('lcLogout').onclick=async()=>{if(!confirm('هل تريد تسجيل الخروج؟'))return;try{const r=await sb.auth.signOut();if(r.error)throw r.error;session=null;profile=null;wallet=null;renderLogin('تم تسجيل الخروج بنجاح.',false)}catch(e){alert(humanAuthError(e))}};
-  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{const viewName=b.dataset.view;if(viewName==='wallet'){close();return}document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));b.classList.add('active');({store:renderProducts,cart:renderCartPage,wallet:renderWallet,orders:renderOrders,account:renderAccount,admin:renderAdmin}[viewName])();close()});
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{const viewName=b.dataset.view;document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));document.querySelectorAll('[data-view="'+viewName+'"]').forEach(x=>x.classList.add('active'));({store:renderProducts,cart:renderCartPage,wallet:renderWallet,orders:renderOrders,account:renderAccount,admin:renderAdmin}[viewName])?.();close()});
   renderProducts();
 }
 function renderCartPage(){
