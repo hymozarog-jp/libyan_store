@@ -612,56 +612,93 @@ async function renderWallet(){
   document.querySelectorAll('.wallet-provider').forEach(card=>{card.onclick=()=>renderWalletTopupPage(card.dataset.method,nums)});
 }
 
-async function renderWalletTopupPage(method, nums={}){
-  const isLibyana=method==='libyana';
-  const provider=isLibyana?'ليبيانا':'المدار الجديد';
-  const fallbackNumber=isLibyana?'218925629538':'218910005566';
-  const rawDestination=String(nums[isLibyana?'libyana_number':'almadar_number']||'').replace(/\D/g,'');
-  const destination=rawDestination||fallbackNumber;
-  const logo=isLibyana?'https://commons.wikimedia.org/wiki/Special:FilePath/Libyana_mobile_phone_logo.png':'https://commons.wikimedia.org/wiki/Special:FilePath/Almadar_Aljadid_Logo.png';
-  const accent=isLibyana?'#7c3aed':'#16a34a';
-  const displayPhone=destination.startsWith('218')?'+'+destination:destination;
-  el('view').innerHTML=`<div class="wallet-topup-step">
+async function renderWalletTopupPage(method, nums={}) {
+  const isLibyana = method === 'libyana';
+  const provider = isLibyana ? 'ليبيانا' : 'المدار الجديد';
+  const fallbackNumber = isLibyana ? '218925629538' : '218910005566';
+  const rawDestination = String(nums[isLibyana ? 'libyana_number' : 'almadar_number'] || '').replace(/\\D/g, '');
+  const destination = rawDestination || fallbackNumber;
+  const logo = isLibyana ? 'https://commons.wikimedia.org/wiki/Special:FilePath/Libyana_mobile_phone_logo.png' : 'https://commons.wikimedia.org/wiki/Special:FilePath/Almadar_Aljadid_Logo.png';
+  const accent = isLibyana ? '#7c3aed' : '#16a34a';
+  const displayPhone = destination.startsWith('218') ? '+' + destination : destination;
+  el('view').innerHTML = `<div class="wallet-topup-step">
     <button class="btn" id="backWalletProviders" style="margin-bottom:12px">→ رجوع لطرق الشحن</button>
     <section class="card" style="text-align:center;padding:20px">
       <img src="${logo}" alt="شعار ${provider}" style="width:190px;height:78px;object-fit:contain;background:#fff;border-radius:14px;padding:8px">
       <h2 style="margin:12px 0 4px">تحويل رصيد عبر ${provider}</h2>
-      <p class="muted" style="margin:0">اكتب المبلغ اللي تبي تحوّله، ثم اضغط اتصال</p>
+      <p class="muted" style="margin:0">اكتب المبلغ اللي تبي تحوّله، وسيظهر كود التحويل حسب المبلغ</p>
     </section>
     <section class="card" style="margin-top:12px">
       <label for="walletCustomAmount" style="font-weight:800;display:block;margin-bottom:8px">المبلغ بالدينار الليبي</label>
-      <input id="walletCustomAmount" class="field" type="number" min="0.01" step="any" inputmode="decimal" placeholder="اكتب أي مبلغ تبيه">
-      <div style="margin-top:14px;padding:15px;border-radius:14px;background:${isLibyana?'rgba(124,58,237,.10)':'rgba(22,163,74,.10)'};border:1px solid ${accent};display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <input id="walletCustomAmount" class="field" type="number" min="0.001" step="0.001" inputmode="decimal" placeholder="اكتب أي مبلغ تبيه">
+      <div style="margin-top:14px;padding:15px;border-radius:14px;background:${isLibyana ? 'rgba(124,58,237,.10)' : 'rgba(22,163,74,.10)'};border:1px solid ${accent};display:flex;justify-content:space-between;align-items:center;gap:10px">
         <span class="muted">المبلغ المختار</span><b id="walletChosenAmount" style="font-size:23px;color:${accent}">— د.ل</b>
       </div>
     </section>
     <section class="card" style="margin-top:12px">
-      <h3 style="margin-top:0">📱 رقم التحويل</h3>
-      <p class="muted">بعد ما تراجع المبلغ، اضغط اتصال لفتح تطبيق الهاتف والاتصال بالرقم التالي.</p>
+      <h3 style="margin-top:0">📱 ${isLibyana ? 'كود تحويل ليبيانا' : 'رقم التحويل'}</h3>
+      ${isLibyana ? `<p class="muted">الكود يتغيّر حسب المبلغ. راجع الكود قبل فتح تطبيق الاتصال.</p>
+      <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px;text-align:center">
+        <code id="walletGeneratedCode" dir="ltr" style="font-size:20px;word-break:break-all;display:block">اكتب المبلغ لعرض الكود</code>
+      </div>
+      <button class="btn" id="walletCopyCode" style="width:100%;margin-bottom:10px;border-color:${accent};color:${accent}" disabled>📋 نسخ كود التحويل</button>
+      <button class="btn primary" id="walletCallTopup" style="width:100%;background:${accent};border-color:${accent}" disabled>📞 فتح الكود في الاتصال</button>` : `
+      <p class="muted">بعد ما تراجع المبلغ، اضغط اتصال لفتح تطبيق الهاتف.</p>
       <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px;text-align:center">
         <div class="muted" style="font-size:12px;margin-bottom:5px">رقم ${provider}</div>
         <b style="font-size:22px;direction:ltr;display:block">${esc(displayPhone)}</b>
       </div>
-      <button class="btn primary" id="walletCallTopup" style="width:100%;background:${accent};border-color:${accent}" disabled>📞 اتصال بـ ${provider}</button>
-      <p class="muted" style="font-size:12px;margin-bottom:0">مهم: زر الاتصال يفتح المكالمة فقط، ولا يحوّل المبلغ تلقائيًا ولا يشحن المحفظة. تأكد من إتمام التحويل، وسيُراجع الشحن قبل إضافة الرصيد.</p>
+      <button class="btn primary" id="walletCallTopup" style="width:100%;background:${accent};border-color:${accent}" disabled>📞 اتصال بـ ${provider}</button>`}
+      <p class="muted" style="font-size:12px;margin-bottom:0">مهم: الزر يفتح تطبيق الاتصال فقط. راجع الكود والمبلغ وأكمل العملية بنفسك؛ لن تُضاف أموال للمحفظة تلقائيًا بمجرد فتح الاتصال.</p>
     </section>
   </div>`;
-  el('backWalletProviders').onclick=renderWallet;
-  const custom=el('walletCustomAmount');
-  const callButton=el('walletCallTopup');
-  let selectedAmount=0;
-  const refreshAmount=()=>{
-    const raw=custom.value.trim();
-    selectedAmount=raw===''?0:Number(raw);
-    const valid=Number.isFinite(selectedAmount)&&selectedAmount>0;
-    el('walletChosenAmount').textContent=valid?money(selectedAmount):'— د.ل';
-    callButton.disabled=!valid;
+  el('backWalletProviders').onclick = renderWallet;
+  const custom = el('walletCustomAmount');
+  const callButton = el('walletCallTopup');
+  const codeEl = isLibyana ? el('walletGeneratedCode') : null;
+  const copyButton = isLibyana ? el('walletCopyCode') : null;
+  let selectedAmount = 0;
+  let generatedCode = '';
+  const refreshAmount = () => {
+    const raw = custom.value.trim();
+    selectedAmount = raw === '' ? 0 : Number(raw);
+    const valid = Number.isFinite(selectedAmount) && selectedAmount > 0;
+    el('walletChosenAmount').textContent = valid ? money(selectedAmount) : '— د.ل';
+    if (isLibyana) {
+      generatedCode = valid ? '*122*0925620538*' + String(Math.round(selectedAmount * 1000)) + '#' : '';
+      codeEl.textContent = generatedCode || 'اكتب المبلغ لعرض الكود';
+      copyButton.disabled = !valid;
+    }
+    callButton.disabled = !valid;
   };
-  custom.addEventListener('input',refreshAmount);
-  callButton.onclick=()=>{
+  custom.addEventListener('input', refreshAmount);
+  if (copyButton) copyButton.onclick = async () => {
     refreshAmount();
-    if(!(Number.isFinite(selectedAmount)&&selectedAmount>0)){alert('اكتب مبلغًا صحيحًا أولاً');return}
-    window.location.href='tel:+'+destination;
+    if (!generatedCode) return;
+    try {
+      await navigator.clipboard.writeText(generatedCode);
+      alert('تم نسخ كود التحويل');
+    } catch (_) {
+      const temp = document.createElement('textarea');
+      temp.value = generatedCode;
+      document.body.appendChild(temp);
+      temp.select();
+      const copied = document.execCommand('copy');
+      temp.remove();
+      alert(copied ? 'تم نسخ كود التحويل' : 'تعذّر النسخ تلقائيًا؛ اضغط مطولًا على الكود لنسخه');
+    }
+  };
+  callButton.onclick = () => {
+    refreshAmount();
+    if (!(Number.isFinite(selectedAmount) && selectedAmount > 0)) {
+      alert('اكتب مبلغًا صحيحًا أولاً');
+      return;
+    }
+    if (isLibyana) {
+      window.location.href = 'tel:' + generatedCode.replace(/#/g, '%23');
+    } else {
+      window.location.href = 'tel:+' + destination;
+    }
   };
 }
 
