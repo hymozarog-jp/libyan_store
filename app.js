@@ -621,18 +621,18 @@ async function renderWalletTopupPage(method, nums={}) {
   const logo = isLibyana ? 'https://commons.wikimedia.org/wiki/Special:FilePath/Libyana_mobile_phone_logo.png' : 'https://commons.wikimedia.org/wiki/Special:FilePath/Almadar_Aljadid_Logo.png';
   const accent = isLibyana ? '#7c3aed' : '#16a34a';
   const displayPhone = destination.startsWith('218') ? '+' + destination : destination;
-  el('view').innerHTML = \`<div class="wallet-topup-step">
+  el('view').innerHTML = `<div class="wallet-topup-step">
     <button class="btn" id="backWalletProviders" style="margin-bottom:12px">→ رجوع لطرق الشحن</button>
     <section class="card" style="text-align:center;padding:20px">
-      <img src="\${logo}" alt="شعار \${provider}" style="width:190px;height:78px;object-fit:contain;background:#fff;border-radius:14px;padding:8px">
-      <h2 style="margin:12px 0 4px">تحويل رصيد عبر \${provider}</h2>
+      <img src="${logo}" alt="شعار ${provider}" style="width:190px;height:78px;object-fit:contain;background:#fff;border-radius:14px;padding:8px">
+      <h2 style="margin:12px 0 4px">تحويل رصيد عبر ${provider}</h2>
       <p class="muted" style="margin:0">اكتب المبلغ اللي تبي تحوّله، وبعد التحويل أرسل طلب للإدارة لمراجعة العملية</p>
     </section>
     <section class="card" style="margin-top:12px">
       <label for="walletCustomAmount" style="font-weight:800;display:block;margin-bottom:8px">المبلغ بالدينار الليبي</label>
       <input id="walletCustomAmount" class="field" type="number" min="0.001" step="0.001" inputmode="decimal" placeholder="اكتب أي مبلغ تبيه">
-      <div style="margin-top:14px;padding:15px;border-radius:14px;background:\${isLibyana ? 'rgba(124,58,237,.10)' : 'rgba(22,163,74,.10)'};border:1px solid \${accent};display:flex;justify-content:space-between;align-items:center;gap:10px">
-        <span class="muted">المبلغ المختار</span><b id="walletChosenAmount" style="font-size:23px;color:\${accent}">— د.ل</b>
+      <div style="margin-top:14px;padding:15px;border-radius:14px;background:${isLibyana ? 'rgba(124,58,237,.10)' : 'rgba(22,163,74,.10)'};border:1px solid ${accent};display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <span class="muted">المبلغ المختار</span><b id="walletChosenAmount" style="font-size:23px;color:${accent}">— د.ل</b>
       </div>
     </section>
     <section class="card" style="margin-top:12px">
@@ -641,24 +641,24 @@ async function renderWalletTopupPage(method, nums={}) {
       <p class="muted" style="font-size:12px">اكتب رقمك اللي استخدمته في التحويل حتى تقدر الإدارة تراجع العملية.</p>
     </section>
     <section class="card" style="margin-top:12px">
-      <h3 style="margin-top:0">📱 \${isLibyana ? 'كود تحويل ليبيانا' : 'رقم التحويل'}</h3>
-      \${isLibyana ? \`<p class="muted">الكود يتغيّر حسب المبلغ. راجع الكود قبل فتح تطبيق الاتصال.</p>
+      <h3 style="margin-top:0">📱 ${isLibyana ? 'كود تحويل ليبيانا' : 'رقم التحويل'}</h3>
+      ${isLibyana ? `<p class="muted">الكود يتغيّر حسب المبلغ. راجع الكود قبل فتح تطبيق الاتصال.</p>
       <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px;text-align:center">
         <code id="walletGeneratedCode" dir="ltr" style="font-size:20px;word-break:break-all;display:block">اكتب المبلغ لعرض الكود</code>
       </div>
-      <button class="btn" id="walletCopyCode" style="width:100%;margin-bottom:10px;border-color:\${accent};color:\${accent}" disabled>📋 نسخ كود التحويل</button>
-      <button class="btn primary" id="walletCallTopup" style="width:100%;background:\${accent};border-color:\${accent}" disabled>📞 فتح الكود في الاتصال</button>\` : \`
+      <button class="btn" id="walletCopyCode" style="width:100%;margin-bottom:10px;border-color:${accent};color:${accent}" disabled>📋 نسخ كود التحويل</button>
+      <button class="btn primary" id="walletCallTopup" style="width:100%;background:${accent};border-color:${accent}" disabled>📞 فتح الكود في الاتصال</button>` : `
       <p class="muted">بعد ما تراجع المبلغ، اضغط اتصال لفتح تطبيق الهاتف.</p>
       <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px;text-align:center">
-        <div class="muted" style="font-size:12px;margin-bottom:5px">رقم \${provider}</div>
-        <b style="font-size:22px;direction:ltr;display:block">\${esc(displayPhone)}</b>
+        <div class="muted" style="font-size:12px;margin-bottom:5px">رقم ${provider}</div>
+        <b style="font-size:22px;direction:ltr;display:block">${esc(displayPhone)}</b>
       </div>
-      <button class="btn primary" id="walletCallTopup" style="width:100%;background:\${accent};border-color:\${accent}" disabled>📞 اتصال بـ \${provider}</button>\`}
-      <button class="btn primary" id="walletSubmitTopup" style="width:100%;margin-top:12px;background:\${accent};border-color:\${accent}" disabled>✓ تم التحويل — إرسال طلب للإدارة</button>
+      <button class="btn primary" id="walletCallTopup" style="width:100%;background:${accent};border-color:${accent}" disabled>📞 اتصال بـ ${provider}</button>`}
+      <button class="btn primary" id="walletSubmitTopup" style="width:100%;margin-top:12px;background:${accent};border-color:${accent}" disabled>✓ تم التحويل — إرسال طلب للإدارة</button>
       <p class="muted" style="font-size:12px;margin-bottom:0">إرسال الطلب لا يضيف الرصيد مباشرة. الإدارة ستراجع التحويل؛ سيُضاف الرصيد بعد اعتماد الطلب فقط.</p>
       <p id="walletTopupMsg" class="muted" role="status" aria-live="polite" style="margin-bottom:0"></p>
     </section>
-  </div>\`;
+  </div>`;
   el('backWalletProviders').onclick = renderWallet;
   const custom = el('walletCustomAmount');
   const senderInput = el('walletSenderPhone');
