@@ -616,45 +616,54 @@ async function renderWalletTopupPage(method, nums={}) {
   const isLibyana = method === 'libyana';
   const provider = isLibyana ? 'ليبيانا' : 'المدار الجديد';
   const fallbackNumber = isLibyana ? '218925629538' : '218910005566';
-  const rawDestination = String(nums[isLibyana ? 'libyana_number' : 'almadar_number'] || '').replace(/\\D/g, '');
+  const rawDestination = String(nums[isLibyana ? 'libyana_number' : 'almadar_number'] || '').replace(/\D/g, '');
   const destination = rawDestination || fallbackNumber;
   const logo = isLibyana ? 'https://commons.wikimedia.org/wiki/Special:FilePath/Libyana_mobile_phone_logo.png' : 'https://commons.wikimedia.org/wiki/Special:FilePath/Almadar_Aljadid_Logo.png';
   const accent = isLibyana ? '#7c3aed' : '#16a34a';
   const displayPhone = destination.startsWith('218') ? '+' + destination : destination;
-  el('view').innerHTML = `<div class="wallet-topup-step">
+  el('view').innerHTML = \`<div class="wallet-topup-step">
     <button class="btn" id="backWalletProviders" style="margin-bottom:12px">→ رجوع لطرق الشحن</button>
     <section class="card" style="text-align:center;padding:20px">
-      <img src="${logo}" alt="شعار ${provider}" style="width:190px;height:78px;object-fit:contain;background:#fff;border-radius:14px;padding:8px">
-      <h2 style="margin:12px 0 4px">تحويل رصيد عبر ${provider}</h2>
-      <p class="muted" style="margin:0">اكتب المبلغ اللي تبي تحوّله، وسيظهر كود التحويل حسب المبلغ</p>
+      <img src="\${logo}" alt="شعار \${provider}" style="width:190px;height:78px;object-fit:contain;background:#fff;border-radius:14px;padding:8px">
+      <h2 style="margin:12px 0 4px">تحويل رصيد عبر \${provider}</h2>
+      <p class="muted" style="margin:0">اكتب المبلغ اللي تبي تحوّله، وبعد التحويل أرسل طلب للإدارة لمراجعة العملية</p>
     </section>
     <section class="card" style="margin-top:12px">
       <label for="walletCustomAmount" style="font-weight:800;display:block;margin-bottom:8px">المبلغ بالدينار الليبي</label>
       <input id="walletCustomAmount" class="field" type="number" min="0.001" step="0.001" inputmode="decimal" placeholder="اكتب أي مبلغ تبيه">
-      <div style="margin-top:14px;padding:15px;border-radius:14px;background:${isLibyana ? 'rgba(124,58,237,.10)' : 'rgba(22,163,74,.10)'};border:1px solid ${accent};display:flex;justify-content:space-between;align-items:center;gap:10px">
-        <span class="muted">المبلغ المختار</span><b id="walletChosenAmount" style="font-size:23px;color:${accent}">— د.ل</b>
+      <div style="margin-top:14px;padding:15px;border-radius:14px;background:\${isLibyana ? 'rgba(124,58,237,.10)' : 'rgba(22,163,74,.10)'};border:1px solid \${accent};display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <span class="muted">المبلغ المختار</span><b id="walletChosenAmount" style="font-size:23px;color:\${accent}">— د.ل</b>
       </div>
     </section>
     <section class="card" style="margin-top:12px">
-      <h3 style="margin-top:0">📱 ${isLibyana ? 'كود تحويل ليبيانا' : 'رقم التحويل'}</h3>
-      ${isLibyana ? `<p class="muted">الكود يتغيّر حسب المبلغ. راجع الكود قبل فتح تطبيق الاتصال.</p>
+      <label for="walletSenderPhone" style="font-weight:800;display:block;margin-bottom:8px">رقم الهاتف اللي حوّلت منه</label>
+      <input id="walletSenderPhone" class="field" type="tel" inputmode="tel" placeholder="09xxxxxxxx">
+      <p class="muted" style="font-size:12px">اكتب رقمك اللي استخدمته في التحويل حتى تقدر الإدارة تراجع العملية.</p>
+    </section>
+    <section class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">📱 \${isLibyana ? 'كود تحويل ليبيانا' : 'رقم التحويل'}</h3>
+      \${isLibyana ? \`<p class="muted">الكود يتغيّر حسب المبلغ. راجع الكود قبل فتح تطبيق الاتصال.</p>
       <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px;text-align:center">
         <code id="walletGeneratedCode" dir="ltr" style="font-size:20px;word-break:break-all;display:block">اكتب المبلغ لعرض الكود</code>
       </div>
-      <button class="btn" id="walletCopyCode" style="width:100%;margin-bottom:10px;border-color:${accent};color:${accent}" disabled>📋 نسخ كود التحويل</button>
-      <button class="btn primary" id="walletCallTopup" style="width:100%;background:${accent};border-color:${accent}" disabled>📞 فتح الكود في الاتصال</button>` : `
+      <button class="btn" id="walletCopyCode" style="width:100%;margin-bottom:10px;border-color:\${accent};color:\${accent}" disabled>📋 نسخ كود التحويل</button>
+      <button class="btn primary" id="walletCallTopup" style="width:100%;background:\${accent};border-color:\${accent}" disabled>📞 فتح الكود في الاتصال</button>\` : \`
       <p class="muted">بعد ما تراجع المبلغ، اضغط اتصال لفتح تطبيق الهاتف.</p>
       <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:12px;text-align:center">
-        <div class="muted" style="font-size:12px;margin-bottom:5px">رقم ${provider}</div>
-        <b style="font-size:22px;direction:ltr;display:block">${esc(displayPhone)}</b>
+        <div class="muted" style="font-size:12px;margin-bottom:5px">رقم \${provider}</div>
+        <b style="font-size:22px;direction:ltr;display:block">\${esc(displayPhone)}</b>
       </div>
-      <button class="btn primary" id="walletCallTopup" style="width:100%;background:${accent};border-color:${accent}" disabled>📞 اتصال بـ ${provider}</button>`}
-      <p class="muted" style="font-size:12px;margin-bottom:0">مهم: الزر يفتح تطبيق الاتصال فقط. راجع الكود والمبلغ وأكمل العملية بنفسك؛ لن تُضاف أموال للمحفظة تلقائيًا بمجرد فتح الاتصال.</p>
+      <button class="btn primary" id="walletCallTopup" style="width:100%;background:\${accent};border-color:\${accent}" disabled>📞 اتصال بـ \${provider}</button>\`}
+      <button class="btn primary" id="walletSubmitTopup" style="width:100%;margin-top:12px;background:\${accent};border-color:\${accent}" disabled>✓ تم التحويل — إرسال طلب للإدارة</button>
+      <p class="muted" style="font-size:12px;margin-bottom:0">إرسال الطلب لا يضيف الرصيد مباشرة. الإدارة ستراجع التحويل؛ سيُضاف الرصيد بعد اعتماد الطلب فقط.</p>
+      <p id="walletTopupMsg" class="muted" role="status" aria-live="polite" style="margin-bottom:0"></p>
     </section>
-  </div>`;
+  </div>\`;
   el('backWalletProviders').onclick = renderWallet;
   const custom = el('walletCustomAmount');
+  const senderInput = el('walletSenderPhone');
   const callButton = el('walletCallTopup');
+  const submitButton = el('walletSubmitTopup');
   const codeEl = isLibyana ? el('walletGeneratedCode') : null;
   const copyButton = isLibyana ? el('walletCopyCode') : null;
   let selectedAmount = 0;
@@ -670,8 +679,10 @@ async function renderWalletTopupPage(method, nums={}) {
       copyButton.disabled = !valid;
     }
     callButton.disabled = !valid;
+    submitButton.disabled = !valid || !senderInput.value.trim();
   };
   custom.addEventListener('input', refreshAmount);
+  senderInput.addEventListener('input', refreshAmount);
   if (copyButton) copyButton.onclick = async () => {
     refreshAmount();
     if (!generatedCode) return;
@@ -700,8 +711,38 @@ async function renderWalletTopupPage(method, nums={}) {
       window.location.href = 'tel:+' + destination;
     }
   };
+  submitButton.onclick = async () => {
+    refreshAmount();
+    const senderPhone = senderInput.value.trim();
+    if (!(Number.isFinite(selectedAmount) && selectedAmount > 0)) {
+      alert('اكتب مبلغًا صحيحًا أولاً');
+      return;
+    }
+    if (senderPhone.replace(/\D/g, '').length < 8) {
+      alert('اكتب رقم الهاتف اللي حوّلت منه بشكل صحيح.');
+      return;
+    }
+    if (!confirm('هل أكملت التحويل فعلًا وتبي ترسل طلب الشحن للإدارة؟')) return;
+    submitButton.disabled = true;
+    submitButton.textContent = 'جارٍ إرسال الطلب...';
+    const result = await sb.from('wallet_topups').insert({
+      user_id: session.user.id,
+      amount: Math.round(selectedAmount * 1000) / 1000,
+      method: method,
+      sender_phone: senderPhone,
+      status: 'pending'
+    }).select('id').single();
+    if (result.error) {
+      const msg = el('walletTopupMsg');
+      if (msg) msg.textContent = 'تعذر إرسال الطلب: ' + result.error.message;
+      submitButton.disabled = false;
+      submitButton.textContent = '✓ تم التحويل — إرسال طلب للإدارة';
+      return;
+    }
+    alert('تم إرسال طلب الشحن للإدارة بنجاح. سيُضاف الرصيد بعد مراجعة الطلب واعتماده.');
+    await renderWallet();
+  };
 }
-
 async function renderOrders(){
   const view=el('view');
   view.innerHTML='<div class="lc-orders-page"><div class="lc-orders-loading"><div>⏳</div><b>جارٍ تحميل طلباتك...</b><span>نسترجع آخر مشترياتك وأكوادك بأمان.</span></div></div>';
