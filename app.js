@@ -616,7 +616,7 @@ async function renderWalletTopupPage(method, nums={}){
   const isLibyana=method==='libyana';
   const provider=isLibyana?'ليبيانا':'المدار الجديد';
   const fallbackNumber=isLibyana?'218925629538':'218910005566';
-  const rawDestination=String(nums[isLibyana?'libyana_number':'almadar_number']||'').replace(/\\D/g,'');
+  const rawDestination=String(nums[isLibyana?'libyana_number':'almadar_number']||'').replace(/\D/g,'');
   const destination=rawDestination||fallbackNumber;
   const logo=isLibyana?'https://commons.wikimedia.org/wiki/Special:FilePath/Libyana_mobile_phone_logo.png':'https://commons.wikimedia.org/wiki/Special:FilePath/Almadar_Aljadid_Logo.png';
   const accent=isLibyana?'#7c3aed':'#16a34a';
