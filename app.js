@@ -661,7 +661,7 @@ async function renderWalletTopupPage(method, nums={}){
   callButton.onclick=()=>{
     refreshAmount();
     if(!(Number.isFinite(selectedAmount)&&selectedAmount>0)){alert('اكتب مبلغًا صحيحًا أولاً');return}
-    window.location.href='tel:+'${destination};
+    window.location.href='tel:+'+destination;
   };
 }
 
