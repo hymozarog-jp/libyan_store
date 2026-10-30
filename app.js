@@ -740,7 +740,21 @@ async function renderWalletTopupPage(method, nums={}) {
       submitButton.textContent = '✓ تم التحويل — إرسال طلب للإدارة';
       return;
     }
-    alert('تم إرسال طلب الشحن للإدارة بنجاح. سيُضاف الرصيد بعد مراجعة الطلب واعتماده.');
+    // Notify Telegram only after the wallet topup is safely stored.
+    // Failures never create a second order or grant wallet credit.
+    let telegramNotified = false;
+    try {
+      const notice = await sb.functions.invoke('telegram-bot-v2', {
+        body: {type:'wallet_topup_request', topup_id: result.data.id}
+      });
+      telegramNotified = !notice.error && notice.data?.ok === true;
+      if (!telegramNotified) console.warn('Telegram notification not confirmed:', notice.error || notice.data?.error);
+    } catch (notifyError) {
+      console.warn('Telegram notification unavailable:', notifyError);
+    }
+    alert(telegramNotified
+      ? 'تم إرسال طلب الشحن إلى الإدارة في تيليجرام. سيُضاف الرصيد عند قبول الطلب.'
+      : 'تم حفظ طلب الشحن في الموقع، ولكن تعذّر إرسال إشعار تيليجرام. الإدارة تقدر تراجع الطلب من لوحة التحكم.');
     await renderWallet();
   };
 }
