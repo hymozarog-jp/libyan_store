@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: telegram-ai-coder
+    runtime: python
+    plan: free
+    region: oregon
+    rootDir: telegram_ai_coder
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    autoDeploy: false
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: ALLOWED_TELEGRAM_USER_IDS
+        sync: false
+      - key: ALLOWED_REPOSITORIES
+        value: hymozarog-jp/libyan_store
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: WEBHOOK_PATH
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
